@@ -12,6 +12,8 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { ValidationPipe } from '@nestjs/common';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -55,12 +57,22 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await new Promise<void>((resolve, reject) => {
       req.session.destroy((err) => {
-        if (err) return reject(new Error(err.message));
+        if (err) return reject(new Error(err?.message));
         resolve();
       });
     });
 
     res.clearCookie('sid');
     return { success: true };
+  }
+
+  @Post('forgot-password')
+  forgot(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  reset(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 }
