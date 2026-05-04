@@ -13,6 +13,7 @@ import * as crypto from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
+import { otpEmailTemplate } from 'src/mail/templates/otp-email.template';
 import { Resend } from 'resend';
 @Injectable()
 export class AuthService {
@@ -20,7 +21,6 @@ export class AuthService {
 
   constructor(private readonly databaseService: DatabaseService) {}
 
-  // ================== HELPERS ==================
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
   }
@@ -44,7 +44,7 @@ export class AuthService {
       from: 'onboarding@resend.dev',
       to: email,
       subject: 'TrackStack Password Reset OTP',
-      html: `<p>Your OTP is <strong>${otp}</strong>.</p>`,
+      html: otpEmailTemplate(otp),
     });
 
     if (error) {
@@ -53,7 +53,6 @@ export class AuthService {
     }
   }
 
-  // ================== SIGNUP ==================
   async signup(dto: SignupDto) {
     const email = this.normalizeEmail(dto.email);
 
@@ -91,7 +90,6 @@ export class AuthService {
     };
   }
 
-  // ================== LOGIN ==================
   async validateUser(dto: LoginDto) {
     const email = this.normalizeEmail(dto.email);
 
@@ -117,7 +115,6 @@ export class AuthService {
     return user;
   }
 
-  // ================== ME ==================
   async me(userId: string) {
     const user = await this.databaseService.user.findUnique({
       where: { id: userId },
@@ -134,7 +131,6 @@ export class AuthService {
     };
   }
 
-  // ================== FORGOT PASSWORD ==================
   async forgotPassword(dto: ForgotPasswordDto) {
     const email = this.normalizeEmail(dto.email);
 
@@ -142,7 +138,6 @@ export class AuthService {
       where: { email },
     });
 
-    // Always return success (avoid email enumeration)
     if (!user) {
       return {
         success: true,
@@ -163,7 +158,6 @@ export class AuthService {
       where: { email },
     });
 
-    // Always return success (avoid email enumeration)
     if (!user) {
       return {
         success: true,
@@ -171,7 +165,6 @@ export class AuthService {
       };
     }
 
-    // Basic rate limit to avoid OTP spam.
     if (
       user.resetTokenExpiry &&
       new Date(user.resetTokenExpiry).getTime() - Date.now() > 9 * 60 * 1000
@@ -238,7 +231,6 @@ export class AuthService {
     };
   }
 
-  // ================== RESET PASSWORD ==================
   async resetPassword(dto: ResetPasswordDto) {
     const email = this.normalizeEmail(dto.email);
     const hashedToken = crypto

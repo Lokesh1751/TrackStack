@@ -218,7 +218,7 @@ export function AuthShell() {
                 <button
                   type="button"
                   onClick={() => setView("auth")}
-                  className="text-sm text-blue-600"
+                  className="text-sm cursor-pointer text-[#7189D0]"
                 >
                   Back to login
                 </button>
@@ -292,7 +292,7 @@ export function AuthShell() {
                       <button
                         type="button"
                         onClick={() => setView("forgot")}
-                        className="text-blue-600 hover:text-blue-500"
+                        className="text-[#7189D0]"
                       >
                         Forgot password?
                       </button>
