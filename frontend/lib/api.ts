@@ -64,6 +64,7 @@ export async function getCurrentUser() {
 export async function logout() {
   return request<{ success: boolean }>("/auth/logout", {
     method: "POST",
+    credentials: 'include',
   });
 }
 
