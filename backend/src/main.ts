@@ -4,6 +4,8 @@ import session from 'express-session';
 import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
 
+import { ValidationPipe } from '@nestjs/common';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
@@ -29,6 +31,13 @@ async function bootstrap() {
         sameSite: 'lax',
         maxAge: 1000 * 60 * 60 * 24 * 7,
       },
+    }),
+  );
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 

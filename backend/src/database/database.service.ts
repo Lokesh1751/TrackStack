@@ -12,10 +12,12 @@ export class DatabaseService extends PrismaClient implements OnModuleInit {
     }
 
     const adapter = new PrismaPg({ connectionString });
-    super({ adapter }); // eslint-disable-line @typescript-eslint/no-unsafe-call
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    super({ adapter });
   }
 
   async onModuleInit() {
-    await this.$connect(); // eslint-disable-line @typescript-eslint/no-unsafe-call
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    await this.$connect();
   }
 }

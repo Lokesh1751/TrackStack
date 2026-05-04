@@ -13,11 +13,34 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
+  // ================== HELPERS ==================
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  private generateResetToken() {
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const hashedToken = crypto.createHash('sha256').update(otp).digest('hex');
+    return { otp, hashedToken };
+  }
+
+  private sendResetOtpEmail(email: string, otp: string) {
+    // TODO: Replace with your actual mail provider integration.
+    console.log(`[auth] OTP for ${email}: ${otp}`);
+  }
+
+  // ================== SIGNUP ==================
   async signup(dto: SignupDto) {
-    const existing = await this.db.user.findUnique({
-      where: { email: dto.email },
+    const email = this.normalizeEmail(dto.email);
+
+    if (!dto.password || dto.password.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters');
+    }
+
+    const existing = await this.databaseService.user.findUnique({
+      where: { email },
       select: { id: true },
     });
 
@@ -27,9 +50,9 @@ export class AuthService {
 
     const passwordHash = await argon2.hash(dto.password);
 
-    return this.db.user.create({
+    const user = await this.databaseService.user.create({
       data: {
-        email: dto.email,
+        email,
         passwordHash,
       },
       select: {
@@ -38,11 +61,20 @@ export class AuthService {
         createdAt: true,
       },
     });
+
+    return {
+      success: true,
+      message: 'User created successfully',
+      data: user,
+    };
   }
 
+  // ================== LOGIN ==================
   async validateUser(dto: LoginDto) {
-    const user = await this.db.user.findUnique({
-      where: { email: dto.email },
+    const email = this.normalizeEmail(dto.email);
+
+    const user = await this.databaseService.user.findUnique({
+      where: { email },
       select: {
         id: true,
         email: true,
@@ -54,16 +86,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const valid = await argon2.verify(user.passwordHash, dto.password);
-    if (!valid) {
+    const isValid = await argon2.verify(user.passwordHash, dto.password);
+
+    if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     return user;
   }
 
+  // ================== ME ==================
   async me(userId: string) {
-    const user = await this.db.user.findUnique({
+    const user = await this.databaseService.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -71,70 +105,100 @@ export class AuthService {
         createdAt: true,
       },
     });
-    return user;
+
+    return {
+      success: true,
+      data: user,
+    };
   }
 
+  // ================== FORGOT PASSWORD ==================
   async forgotPassword(dto: ForgotPasswordDto) {
-    const user = await this.db.user.findUnique({
-      where: { email: dto.email },
+    const email = this.normalizeEmail(dto.email);
+
+    const user = await this.databaseService.user.findUnique({
+      where: { email },
     });
-    console.log('user=====>', user);
-    // Always return success (security)
+
+    // Always return success (avoid email enumeration)
     if (!user) {
-      return { message: 'If email exists, reset link sent' };
+      return {
+        success: true,
+        message: 'If email exists, reset link sent',
+      };
     }
 
-    const rawToken = crypto.randomBytes(32).toString('hex');
+    // Basic rate limit to avoid OTP spam.
+    if (
+      user.resetTokenExpiry &&
+      new Date(user.resetTokenExpiry).getTime() - Date.now() > 9 * 60 * 1000
+    ) {
+      throw new BadRequestException(
+        'Please wait before requesting another OTP',
+      );
+    }
 
-    const hashedToken = await argon2.hash(rawToken);
+    const { otp, hashedToken } = this.generateResetToken();
 
-    await this.db.user.update({
-      where: { email: dto.email },
+    await this.databaseService.user.update({
+      where: { email },
       data: {
         resetToken: hashedToken,
-        resetTokenExpiry: new Date(Date.now() + 15 * 60 * 1000),
+        resetTokenExpiry: new Date(Date.now() + 10 * 60 * 1000),
       },
     });
 
-    const resetLink = `http://localhost:3001/reset-password?token=${rawToken}`;
+    this.sendResetOtpEmail(email, otp);
 
-    return { message: 'Reset link sent', resetLink };
+    return {
+      success: true,
+      message: 'OTP sent to your email',
+    };
   }
 
+  // ================== RESET PASSWORD ==================
   async resetPassword(dto: ResetPasswordDto) {
-    const { token, newPassword } = dto;
+    const email = this.normalizeEmail(dto.email);
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(dto.otp)
+      .digest('hex');
 
-    const users = await this.db.user.findMany({
-      where: {
-        resetToken: { not: null },
-      },
+    const user = await this.databaseService.user.findUnique({
+      where: { email },
     });
 
-    let matchedUser: any = null;
-
-    for (const user of users) {
-      const isMatch = await argon2.verify(user.resetToken!, token);
-      if (isMatch) {
-        matchedUser = user;
-        break;
-      }
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      throw new BadRequestException('Invalid or expired OTP');
     }
 
-    if (!matchedUser) {
-      throw new BadRequestException('Invalid or expired token');
+    if (!user.passwordHash) {
+      throw new BadRequestException('Invalid user state');
     }
 
-    if (
-      !matchedUser.resetTokenExpiry ||
-      matchedUser.resetTokenExpiry < new Date()
-    ) {
-      throw new BadRequestException('Token expired');
+    if (user.resetToken !== hashedToken) {
+      throw new BadRequestException('Invalid OTP');
     }
 
-    const passwordHash = await argon2.hash(newPassword);
+    if (user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('OTP expired');
+    }
 
-    await this.db.user.update({
-      where: { id: matchedUser.id },
+    const isSamePassword = await argon2.verify(
+      user.passwordHash,
+      dto.newPassword,
+    );
+
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password must be different from old password',
+      );
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword);
+
+    await this.databaseService.user.update({
+      where: { id: user.id },
       data: {
         passwordHash,
         resetToken: null,
@@ -142,6 +206,9 @@ export class AuthService {
       },
     });
 
-    return { message: 'Password reset successful' };
+    return {
+      success: true,
+      message: 'Password reset successful',
+    };
   }
 }

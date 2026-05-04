@@ -1,7 +1,7 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,20 +19,37 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/useToast";
 
-const authSchema = z.object({
+const passwordSchema = z
+  .string()
+  .min(6, "Password must be at least 6 characters.")
+  .max(100, "Password is too long.")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter.")
+  .regex(/[0-9]/, "Password must contain at least one number.");
+
+const loginSchema = z.object({
   email: z.string().email("Enter a valid email address."),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters.")
-    .max(100, "Password is too long."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
 });
+
+const signupSchema = z
+  .object({
+    email: z.string().email("Enter a valid email address."),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your password."),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match.",
+  });
 
 const forgotSchema = z.object({
   email: z.string().email("Enter a valid email"),
 });
 
-type AuthFormValues = z.infer<typeof authSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 type ForgotFormValues = z.infer<typeof forgotSchema>;
 
 export function AuthShell() {
@@ -40,14 +57,21 @@ export function AuthShell() {
 
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [view, setView] = useState<"auth" | "forgot">("auth");
-  const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [resetLink, setResetLink] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] =
+    useState(false);
+  const toast = useToast();
 
-  // ---------------- AUTH FORM ----------------
-  const form = useForm<AuthFormValues>({
-    resolver: zodResolver(authSchema),
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
+  });
+
+  const signupForm = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { email: "", password: "", confirmPassword: "" },
   });
 
   // ---------------- FORGOT FORM ----------------
@@ -60,33 +84,43 @@ export function AuthShell() {
   const signupMutation = useMutation({
     mutationFn: signup,
     onSuccess: () => {
-      setErrorMessage("");
       router.push("/dashboard");
       router.refresh();
+      setActiveTab("login");
+      signupForm.reset();
     },
-    onError: (error: Error) => setErrorMessage(error.message || "Something went wrong"),
+    onError: (error: Error) => {
+      toast.error("Something went wrong", {
+        description: error?.message,
+        duration: 10000,
+      });
+    },
   });
 
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: () => {
-      setErrorMessage("");
       router.push("/dashboard");
       router.refresh();
     },
-    onError: (error: Error) => setErrorMessage(error.message || "Something went wrong"),
+    onError: (error: Error) => {
+      toast.error("Login failed", {
+        description: error.message || "Something went wrong",
+      });
+    },
   });
 
   const forgotMutation = useMutation({
     mutationFn: (email: string) => forgotPassword(email),
-    onSuccess: (data: { message: string, resetLink: string }) => {
+    onSuccess: (data: { message: string }, email: string) => {
       setSuccessMessage(data?.message);
-      setErrorMessage("");
-      setResetLink(data?.resetLink);
-      console.log('data',data)
-      window.open(data?.resetLink, "_blank");
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     },
-    onError: (error: Error) => setErrorMessage(error.message || "Something went wrong"),
+    onError: (error: Error) => {
+      toast.error("Failed to send OTP", {
+        description: error.message || "Something went wrong",
+      });
+    },
   });
 
   const isLoading =
@@ -94,18 +128,15 @@ export function AuthShell() {
     loginMutation.isPending ||
     forgotMutation.isPending;
 
-  // ---------------- HANDLERS ----------------
-  const onSubmit = (values: AuthFormValues) => {
-    setErrorMessage("");
-    if (activeTab === "signup") {
-      signupMutation.mutate(values);
-      return;
-    }
+  const onLoginSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);
   };
 
+  const onSignupSubmit = (values: SignupFormValues) => {
+    signupMutation.mutate({ email: values.email, password: values.password });
+  };
+
   const onForgotSubmit = (values: ForgotFormValues) => {
-    setErrorMessage("");
     setSuccessMessage("");
     forgotMutation.mutate(values?.email);
   };
@@ -116,7 +147,7 @@ export function AuthShell() {
       {/* LEFT SIDE */}
       <div className="relative hidden overflow-hidden lg:block">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1508261305436-b6f84f9727c9?auto=format&fit=crop&w=1400&q=80')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/70 via-blue-800/60 to-slate-950/80" />
+        <div className="absolute inset-0 bg-linear-to-br from-blue-900/70 via-blue-800/60 to-slate-950/80" />
         <div className="relative flex h-full flex-col justify-between p-10 text-white">
           <p className="text-3xl font-semibold tracking-tight">TrackStack</p>
           <div className="max-w-sm space-y-2">
@@ -135,13 +166,11 @@ export function AuthShell() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>
-              {view === "forgot"
-                ? "Forgot Password"
-                : "Welcome to TrackStack"}
+              {view === "forgot" ? "Forgot Password" : "Welcome to TrackStack"}
             </CardTitle>
             <CardDescription>
               {view === "forgot"
-                ? "Enter your email to receive a reset link"
+                ? "Enter your email to receive an OTP"
                 : "Sign in or create a new account"}
             </CardDescription>
           </CardHeader>
@@ -155,20 +184,23 @@ export function AuthShell() {
               >
                 <div>
                   <Label>Email</Label>
-                  <Input {...forgotForm.register("email")} />
+                  <Input
+                    placeholder="you@example.com"
+                    {...forgotForm.register("email")}
+                  />
+                  {forgotForm.formState.errors.email && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {forgotForm.formState.errors.email.message}
+                    </p>
+                  )}
                 </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Sending..." : "Send OTP"}
+                </Button>
 
                 {successMessage && (
-                  <p className="text-sm text-green-600">{successMessage}</p>
+                  <p className="text-sm text-green-700">{successMessage}</p>
                 )}
-
-                {errorMessage && (
-                  <p className="text-sm text-red-600">{errorMessage}</p>
-                )}
-
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send Reset Link"}
-                </Button>
 
                 <button
                   type="button"
@@ -191,36 +223,67 @@ export function AuthShell() {
                   <TabsTrigger value="signup">Sign up</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value={activeTab}>
+                <TabsContent value="login">
                   <form
-                    onSubmit={form.handleSubmit(onSubmit)}
+                    onSubmit={loginForm.handleSubmit(onLoginSubmit)}
                     className="mt-4 space-y-4"
                   >
                     <div>
                       <Label>Email</Label>
-                      <Input {...form.register("email")} />
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        {...loginForm.register("email")}
+                      />
+                      {loginForm.formState.errors.email && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {loginForm.formState.errors.email.message}
+                        </p>
+                      )}
                     </div>
 
                     <div>
                       <Label>Password</Label>
-                      <Input type="password" {...form.register("password")} />
-                    </div>
-
-                    {activeTab === "login" && (
-                      <div className="text-sm text-right">
+                      <div className="relative">
+                        <Input
+                          type={showLoginPassword ? "text" : "password"}
+                          className="pr-10"
+                          placeholder="Enter your password"
+                          {...loginForm.register("password")}
+                        />
                         <button
                           type="button"
-                          onClick={() => setView("forgot")}
-                          className="text-blue-600 hover:text-blue-500"
+                          onClick={() => setShowLoginPassword((prev) => !prev)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500"
+                          aria-label={
+                            showLoginPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
                         >
-                          Forgot password?
+                          {showLoginPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
-                    )}
+                      {loginForm.formState.errors.password && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {loginForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
 
-                    {errorMessage && (
-                      <p className="text-sm text-red-600">{errorMessage}</p>
-                    )}
+                    <div className="text-sm text-right">
+                      <button
+                        type="button"
+                        onClick={() => setView("forgot")}
+                        className="text-blue-600 hover:text-blue-500"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
 
                     <Button
                       type="submit"
@@ -229,9 +292,109 @@ export function AuthShell() {
                     >
                       {isLoading
                         ? "Please wait..."
-                        : activeTab === "login"
-                        ? "Sign in"
-                        : "Create account"}
+                        : "Sign in"}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="signup">
+                  <form
+                    onSubmit={signupForm.handleSubmit(onSignupSubmit)}
+                    className="mt-4 space-y-4"
+                  >
+                    <div>
+                      <Label>Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        {...signupForm.register("email")}
+                      />
+                      {signupForm.formState.errors.email && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {signupForm.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label>Password</Label>
+                      <div className="relative">
+                        <Input
+                          type={showSignupPassword ? "text" : "password"}
+                          className="pr-10"
+                          placeholder="Password"
+                          {...signupForm.register("password")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSignupPassword((prev) => !prev)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500"
+                          aria-label={
+                            showSignupPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                        >
+                          {showSignupPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                      {signupForm.formState.errors.password && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {signupForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label>Confirm Password</Label>
+                      <div className="relative">
+                        <Input
+                          type={showSignupConfirmPassword ? "text" : "password"}
+                          className="pr-10"
+                          placeholder="Confirm Password"
+                          {...signupForm.register("confirmPassword")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowSignupConfirmPassword((prev) => !prev)
+                          }
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500"
+                          aria-label={
+                            showSignupConfirmPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                        >
+                          {showSignupConfirmPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                      {signupForm.formState.errors.confirmPassword && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {signupForm.formState.errors.confirmPassword.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-500">
+                      Password must be at least 6 characters with 1 uppercase
+                      letter and 1 number.
+                    </p>
+
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Please wait..." : "Create account"}
                     </Button>
                   </form>
                 </TabsContent>

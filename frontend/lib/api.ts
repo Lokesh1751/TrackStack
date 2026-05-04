@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 type SignupInput = {
   email: string;
@@ -75,21 +75,12 @@ export async function forgotPassword(email: string) {
 }
 
 export const resetPassword = async (data: {
-  token: string;
+  email: string;
+  otp: string;
   newPassword: string;
 }) => {
-  const res = await fetch("http://localhost:3000/auth/reset-password", {
+  return request<{ message: string }>("/auth/reset-password", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(data),
   });
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.message || "Failed to reset password");
-  }
-
-  return res.json();
 };
