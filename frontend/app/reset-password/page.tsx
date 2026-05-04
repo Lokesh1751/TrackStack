@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { resetPassword } from "@/lib/api";
+import { resetPassword, validateResetOtp } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -88,10 +88,28 @@ export default function ResetPasswordPage() {
     },
   });
 
+  const validateOtpMutation = useMutation({
+    mutationFn: validateResetOtp,
+    onSuccess: (_data, variables) => {
+      setMessage(null);
+      setVerifiedOtpData({ email: variables.email, otp: variables.otp });
+      setStep(2);
+      toast.success("OTP verified", {
+        description: "You can now set your new password.",
+      });
+    },
+    onError: (err: Error) => {
+      toast.error("Invalid OTP", {
+        description: err?.message || "Please enter a valid OTP.",
+      });
+    },
+  });
+
   const onContinueFromOtp = (data: OtpFormValues) => {
-    setMessage(null);
-    setVerifiedOtpData({ email: data.email, otp: data.otp });
-    setStep(2);
+    validateOtpMutation.mutate({
+      email: data.email,
+      otp: data.otp,
+    });
   };
 
   const onResetPassword = (data: PasswordFormValues) => {
@@ -166,7 +184,7 @@ export default function ResetPasswordPage() {
               </div>
 
               <Button type="submit" className="w-full">
-                Continue
+                {validateOtpMutation.isPending ? "Verifying..." : "Continue"}
               </Button>
             </form>
           ) : (
@@ -244,14 +262,14 @@ export default function ResetPasswordPage() {
                   variant="outline"
                   className="w-full"
                   onClick={() => setStep(1)}
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || validateOtpMutation.isPending}
                 >
                   Back
                 </Button>
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || validateOtpMutation.isPending}
                 >
                   {mutation.isPending ? "Updating..." : "Reset Password"}
                 </Button>

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { login, signup, forgotPassword } from "@/lib/api";
+import { login, signup, forgotPassword, generateResetOtp } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -112,9 +112,8 @@ export function AuthShell() {
 
   const forgotMutation = useMutation({
     mutationFn: (email: string) => forgotPassword(email),
-    onSuccess: (data: { message: string }, email: string) => {
-      setSuccessMessage(data?.message);
-      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+    onSuccess: (_data: { message: string }, email: string) => {
+      generateOtpMutation.mutate(email);
     },
     onError: (error: Error) => {
       toast.error("Failed to send OTP", {
@@ -123,10 +122,24 @@ export function AuthShell() {
     },
   });
 
+  const generateOtpMutation = useMutation({
+    mutationFn: (email: string) => generateResetOtp(email),
+    onSuccess: (data: { message: string }, email: string) => {
+      setSuccessMessage(data?.message);
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to generate OTP", {
+        description: error.message || "Something went wrong",
+      });
+    },
+  });
+
   const isLoading =
     signupMutation.isPending ||
     loginMutation.isPending ||
-    forgotMutation.isPending;
+    forgotMutation.isPending ||
+    generateOtpMutation.isPending;
 
   const onLoginSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);

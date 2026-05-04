@@ -74,6 +74,23 @@ export async function forgotPassword(email: string) {
   });
 }
 
+export async function generateResetOtp(email: string) {
+  return request<{ message: string; otpPreview?: string }>(
+    "/auth/generate-reset-otp",
+    {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    },
+  );
+}
+
+export async function validateResetOtp(data: { email: string; otp: string }) {
+  return request<{ message: string }>("/auth/validate-reset-otp", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export const resetPassword = async (data: {
   email: string;
   otp: string;

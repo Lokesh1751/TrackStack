@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
@@ -49,11 +50,11 @@ export default function DashboardPage() {
           <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-700">
             <p>
               <span className="font-semibold">User ID:</span>{" "}
-              {data?.user.id ?? "Unavailable"}
+              {data?.user?.id ?? "Unavailable"}
             </p>
             <p>
               <span className="font-semibold">Email:</span>{" "}
-              {data?.user.email ?? "Unavailable"}
+              {data?.user?.email ?? "Unavailable"}
             </p>
           </div>
           <Button
@@ -61,6 +62,9 @@ export default function DashboardPage() {
             disabled={logoutMutation.isPending}
           >
             {logoutMutation.isPending ? "Logging out..." : "Logout"}
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/">Go back</Link>
           </Button>
         </CardContent>
       </Card>

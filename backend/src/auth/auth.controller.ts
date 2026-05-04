@@ -13,6 +13,7 @@ import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -58,31 +59,33 @@ export class AuthController {
     return { success: true, data: user };
   }
 
-  @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  @Post('logout') async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await new Promise<void>((resolve, reject) => {
-      req.session.destroy((err) => {
-        if (err) {
-          reject(
-            err instanceof Error ? err : new Error('Failed to destroy session'),
-          );
-          return;
-        }
+      req.session.destroy((err: Error) => {
+        if (err) return reject(new Error(err?.message));
         resolve();
       });
     });
-
-    res.clearCookie('connect.sid');
-
-    return {
-      success: true,
-      message: 'Logged out successfully',
-    };
+    res.clearCookie('sid');
+    return { success: true };
   }
 
   @Post('forgot-password')
   forgot(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
+  }
+
+  @Post('generate-reset-otp')
+  generateResetOtp(@Body() dto: ForgotPasswordDto) {
+    return this.authService.generateResetOtp(dto);
+  }
+
+  @Post('validate-reset-otp')
+  validateResetOtp(@Body() dto: ValidateResetOtpDto) {
+    return this.authService.validateResetOtp(dto);
   }
 
   @Post('reset-password')

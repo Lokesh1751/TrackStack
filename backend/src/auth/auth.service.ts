@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
@@ -10,9 +12,12 @@ import { SignupDto } from './dto/signup.dto';
 import * as crypto from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
-
+import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
+import { Resend } from 'resend';
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(private readonly databaseService: DatabaseService) {}
 
   // ================== HELPERS ==================
@@ -26,9 +31,26 @@ export class AuthService {
     return { otp, hashedToken };
   }
 
-  private sendResetOtpEmail(email: string, otp: string) {
-    // TODO: Replace with your actual mail provider integration.
-    console.log(`[auth] OTP for ${email}: ${otp}`);
+  private async sendResetOtpEmail(email: string, otp: string) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+      this.logger.error('RESEND_API_KEY is missing');
+      throw new InternalServerErrorException('Email service is not configured');
+    }
+
+    const resend = new Resend(resendApiKey);
+    const { error } = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: email,
+      subject: 'TrackStack Password Reset OTP',
+      html: `<p>Your OTP is <strong>${otp}</strong>.</p>`,
+    });
+
+    if (error) {
+      this.logger.error(`Failed to send OTP email: ${error.message}`);
+      throw new InternalServerErrorException('Failed to send OTP email');
+    }
   }
 
   // ================== SIGNUP ==================
@@ -124,7 +146,28 @@ export class AuthService {
     if (!user) {
       return {
         success: true,
-        message: 'If email exists, reset link sent',
+        message: 'If email exists, verification is accepted',
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Verification accepted',
+    };
+  }
+
+  async generateResetOtp(dto: ForgotPasswordDto) {
+    const email = this.normalizeEmail(dto.email);
+
+    const user = await this.databaseService.user.findUnique({
+      where: { email },
+    });
+
+    // Always return success (avoid email enumeration)
+    if (!user) {
+      return {
+        success: true,
+        message: 'If email exists, OTP sent',
       };
     }
 
@@ -148,11 +191,50 @@ export class AuthService {
       },
     });
 
-    this.sendResetOtpEmail(email, otp);
+    await this.sendResetOtpEmail(email, otp);
 
     return {
       success: true,
       message: 'OTP sent to your email',
+    };
+  }
+
+  async validateResetOtp(dto: ValidateResetOtpDto) {
+    const email = this.normalizeEmail(dto.email);
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(dto.otp)
+      .digest('hex');
+
+    const user = await this.databaseService.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        resetToken: true,
+        resetTokenExpiry: true,
+      },
+    });
+
+    if (!user || !user.resetToken || !user.resetTokenExpiry) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    if (user.resetToken !== hashedToken) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    if (user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('OTP expired');
+    }
+
+    const remainingMs = user.resetTokenExpiry.getTime() - Date.now();
+
+    const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+
+    return {
+      success: true,
+      message: 'OTP verified',
+      expiresIn: remainingSeconds, // ⏱ send to FE
     };
   }
 
