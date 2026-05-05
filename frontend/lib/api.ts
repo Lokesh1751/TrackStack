@@ -64,7 +64,7 @@ export async function getCurrentUser() {
 export async function logout() {
   return request<{ success: boolean }>("/auth/logout", {
     method: "POST",
-    credentials: 'include',
+    credentials: "include",
   });
 }
 
@@ -76,15 +76,16 @@ export async function forgotPassword(email: string) {
 }
 
 export async function generateResetOtp(email: string) {
-  return request<{ message: string; otpPreview?: string }>(
+  if (!email) throw new Error("Email is required");
+
+  return request<{ message: string; resetTokenExpiry: string }>(
     "/auth/generate-reset-otp",
     {
       method: "POST",
-      body: JSON.stringify({ email }),
-    },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    }
   );
 }
-
 export async function validateResetOtp(data: { email: string; otp: string }) {
   return request<{ message: string }>("/auth/validate-reset-otp", {
     method: "POST",

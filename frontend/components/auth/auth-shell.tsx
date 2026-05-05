@@ -124,8 +124,16 @@ export function AuthShell() {
 
   const generateOtpMutation = useMutation({
     mutationFn: (email: string) => generateResetOtp(email),
-    onSuccess: (data: { message: string }, email: string) => {
-      setSuccessMessage(data?.message);
+    onSuccess: (data: { message: string; resetTokenExpiry: string }, email: string) => {
+      toast.success(data.message);
+  
+      sessionStorage.setItem(
+        "otp_expiry",
+        data.resetTokenExpiry
+      );
+  
+      sessionStorage.setItem("otp_email", email);
+  
       router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     },
     onError: (error: Error) => {
@@ -292,7 +300,7 @@ export function AuthShell() {
                       <button
                         type="button"
                         onClick={() => setView("forgot")}
-                        className="text-[#7189D0]"
+                        className="text-[#7189D0] cursor-pointer"
                       >
                         Forgot password?
                       </button>
