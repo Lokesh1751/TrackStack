@@ -11,12 +11,37 @@ datasource db {
   provider = "postgresql"
 }
 
+model Membership {
+  id          String @id @default(uuid())
+  userId      String @db.Uuid
+  workspaceId String
+  role        String // ADMIN / MEMBER
+
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  owner   User         @relation("UserOwnedWorkspaces", fields: [ownerId], references: [id])
+  members Membership[]
+}
+
 model User {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String    @unique
+  passwordHash     String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   resetToken       String?
   resetTokenExpiry DateTime?
+
+  memberships     Membership[]
+  ownedWorkspaces Workspace[]  @relation("UserOwnedWorkspaces")
 }

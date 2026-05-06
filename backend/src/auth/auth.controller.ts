@@ -6,6 +6,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -14,6 +15,7 @@ import { SignupDto } from './dto/signup.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
+import { SessionAuthGuard } from '../database/session-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -44,6 +46,7 @@ export class AuthController {
     };
   }
 
+  @UseGuards(SessionAuthGuard)
   @Get('me')
   async me(@Req() req: Request) {
     if (!req.session.userId) {
@@ -91,5 +94,16 @@ export class AuthController {
   @Post('reset-password')
   reset(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+  @UseGuards(SessionAuthGuard)
+  @Get('users')
+  getAllUsers(@Req() req: Request) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException();
+    }
+
+    return this.authService.getAllUsers(userId);
   }
 }

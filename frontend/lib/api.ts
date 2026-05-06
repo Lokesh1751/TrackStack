@@ -83,7 +83,7 @@ export async function generateResetOtp(email: string) {
     {
       method: "POST",
       body: JSON.stringify({ email: email.trim().toLowerCase() }),
-    }
+    },
   );
 }
 export async function validateResetOtp(data: { email: string; otp: string }) {
@@ -103,3 +103,71 @@ export const resetPassword = async (data: {
     body: JSON.stringify(data),
   });
 };
+
+export const getWorkspaces = async () => {
+  return request<{
+    workspaces: {
+      id: string;
+      name: string;
+      role: "ADMIN" | "MEMBER";
+    }[];
+  }>("/workspace", {
+    method: "GET",
+  });
+};
+
+export const createWorkspace = async (data: { name: string }) => {
+  return request<{
+    id: string;
+    name: string;
+  }>("/workspace", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteWorkspace = async (workspaceId: string) => {
+  return request<{ message: string }>(`/workspace/${workspaceId}`, {
+    method: "DELETE",
+  });
+};
+
+export const getWorkspaceById = async (id: string) => {
+  return request<{ workspace: any }>(`/workspace/${id}`);
+};
+
+export const updateWorkspace = async ({
+  id,
+  name,
+}: {
+  id: string;
+  name: string;
+}) => {
+  return request<{ message: string }>(`/workspace/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+};
+
+export const getWorkspaceMembers = (id: string) =>
+  request(`/workspace/${id}/members`);
+
+export const addMember = (id: string, data: any) =>
+  request(`/workspace/${id}/add-member`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const removeMember = (id: string, userId: string) =>
+  request(`/workspace/${id}/remove-member/${userId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ userId }),
+  });
+
+export const updateMemberRole = (id: string, data: any) =>
+  request(`/workspace/${id}/update-role`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getAllUsers = () => request(`/auth/users`);

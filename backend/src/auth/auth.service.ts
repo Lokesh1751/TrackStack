@@ -176,11 +176,13 @@ export class AuthService {
 
     const { otp, hashedToken } = this.generateResetToken();
 
+    const expiryTime = Number(process.env.OTP_EXPIRY_TIME);
+
     await this.databaseService.user.update({
       where: { email },
       data: {
         resetToken: hashedToken,
-        resetTokenExpiry: new Date(Date.now() + 10 * 60 * 1000),
+        resetTokenExpiry: new Date(Date.now() + expiryTime),
       },
     });
 
@@ -189,6 +191,7 @@ export class AuthService {
     return {
       success: true,
       message: 'OTP sent to your email',
+      resetTokenExpiry: new Date(Date.now() + expiryTime),
     };
   }
 
@@ -284,5 +287,24 @@ export class AuthService {
       success: true,
       message: 'Password reset successful',
     };
+  }
+  async getAllUsers(currentUserId: string) {
+    const users = await this.databaseService.user.findMany({
+      where: {
+        id: {
+          not: currentUserId,
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return { users };
   }
 }
