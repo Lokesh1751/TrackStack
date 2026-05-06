@@ -28,9 +28,7 @@ export function MembersTable({
                 {isAdmin ? (
                   <select
                     value={m.role}
-                    onChange={(e) =>
-                      onRoleChange(m.userId, e.target.value)
-                    }
+                    onChange={(e) => onRoleChange(m.userId, e.target.value)}
                     className="border rounded px-2 py-1"
                   >
                     <option value="ADMIN">ADMIN</option>
@@ -44,7 +42,6 @@ export function MembersTable({
               {isAdmin && (
                 <td className="p-3 text-right">
                   <Button
-                    variant="destructive"
                     size="sm"
                     onClick={() => onRemove(m.userId)}
                   >

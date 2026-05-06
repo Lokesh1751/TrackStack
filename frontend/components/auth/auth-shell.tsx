@@ -84,7 +84,6 @@ export function AuthShell() {
   const signupMutation = useMutation({
     mutationFn: signup,
     onSuccess: () => {
-      router.push("/dashboard");
       router.refresh();
       setActiveTab("login");
       signupForm.reset();

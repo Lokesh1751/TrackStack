@@ -127,7 +127,7 @@ export class WorkspaceController {
   }
 
   // ✅ Update role
-  @Patch(':id/update-role')
+  @Post(':id/update-role')
   updateRole(
     @Param('id') workspaceId: string,
     @Body(ValidationPipe) dto: AddMemberDto,

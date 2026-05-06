@@ -8,6 +8,7 @@ export function InviteMemberModal({
   onClose,
   users,
   onInvite,
+  isLoading,
 }: any) {
   const [selectedUser, setSelectedUser] = useState("");
   const [role, setRole] = useState("MEMBER");
@@ -17,7 +18,6 @@ export function InviteMemberModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
-
         <h2 className="text-lg font-semibold">Invite Member</h2>
 
         {/* User dropdown */}
@@ -53,7 +53,7 @@ export function InviteMemberModal({
             onClick={() => onInvite(selectedUser, role)}
             disabled={!selectedUser}
           >
-            Add Member
+            {isLoading ? "Adding..." : "Add Member"}
           </Button>
         </div>
       </div>

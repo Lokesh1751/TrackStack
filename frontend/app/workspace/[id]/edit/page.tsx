@@ -15,11 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { MembersTable } from "@/components/members-table";
 import { InviteMemberModal } from "@/components/invite-member-modal";
+import { useToast } from "@/hooks/useToast";
 
 export default function WorkspacePage() {
   const { id } = useParams();
   const queryClient = useQueryClient();
-
+  const toast = useToast();
   const [open, setOpen] = useState(false);
 
   // 👥 members
@@ -28,7 +29,7 @@ export default function WorkspacePage() {
     queryFn: () => getWorkspaceMembers(id as string),
   });
 
-  // 👤 all users (for dropdown)
+  // 👤 users
   const { data: usersData } = useQuery({
     queryKey: ["users"],
     queryFn: getAllUsers,
@@ -37,60 +38,91 @@ export default function WorkspacePage() {
   const members = data?.members ?? [];
   const users = usersData?.users ?? [];
 
-  // assume current user is admin (you can refine later)
-  const isAdmin = members.find((m: any) => m.role === "ADMIN");
+  const isAdmin = members.find((m: { role: string }) => m.role === "ADMIN");
 
-  // ➕ add
   const addMutation = useMutation({
-    mutationFn: ({ userId, role }: any) =>
+    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
       addMember(id as string, { userId, role }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["members", id] });
+    onSuccess: (data: any) => {
       setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["members", id] });
+      toast.success("", {
+        description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      setOpen(false);
+      toast.error("", {
+        description: error.message,
+      });
     },
   });
 
-  // ❌ remove
   const removeMutation = useMutation({
-    mutationFn: (userId: string) =>
-      removeMember(id as string, userId),
-    onSuccess: () => {
+    mutationFn: (userId: string) => removeMember(id as string, userId),
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["members", id] });
+      toast.success("", {
+        description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("", {
+        description: error.message,
+      });
     },
   });
 
-  // 🔁 role change
   const roleMutation = useMutation({
-    mutationFn: ({ userId, role }: any) =>
+    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
       updateMemberRole(id as string, { userId, role }),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["members", id] });
+      toast.success("", {
+        description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      toast.error("", {
+        description: error.message,
+      });
     },
   });
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen w-full bg-slate-50">
+      {/* Container */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Workspace Members
+            </h1>
+            <p className="text-sm text-slate-500">
+              Manage access and roles for this workspace
+            </p>
+          </div>
 
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Workspace Members</h1>
+          <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
+            Invite Member
+          </Button>
+        </div>
 
-        <Button onClick={() => setOpen(true)}>
-          Invite Member
-        </Button>
+        {/* Table Wrapper */}
+        <div className="w-full rounded-xl border bg-white shadow-sm overflow-hidden">
+          <div className="w-full overflow-x-auto">
+            <MembersTable
+              members={members}
+              isAdmin={!!isAdmin}
+              onRemove={(userId: string) => removeMutation.mutate(userId)}
+              onRoleChange={(userId: string, role: string) =>
+                roleMutation.mutate({ userId, role })
+              }
+            />
+          </div>
+        </div>
       </div>
-
-      {/* Table */}
-      <MembersTable
-        members={members}
-        isAdmin={!!isAdmin}
-        onRemove={(userId: string) =>
-          removeMutation.mutate(userId)
-        }
-        onRoleChange={(userId: string, role: string) =>
-          roleMutation.mutate({ userId, role })
-        }
-      />
 
       {/* Modal */}
       <InviteMemberModal
@@ -100,6 +132,7 @@ export default function WorkspacePage() {
         onInvite={(userId: string, role: string) =>
           addMutation.mutate({ userId, role })
         }
+        isLoading = {addMutation.isPending}
       />
     </div>
   );
