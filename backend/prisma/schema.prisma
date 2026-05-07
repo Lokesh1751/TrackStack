@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,9 +11,9 @@ datasource db {
 
 model Membership {
   id          String @id @default(uuid())
+
   userId      String @db.Uuid
-  workspaceId String
-  role        String // ADMIN / MEMBER
+  workspaceId String @db.Uuid
 
   user      User      @relation(fields: [userId], references: [id])
   workspace Workspace @relation(fields: [workspaceId], references: [id])
@@ -24,24 +22,50 @@ model Membership {
 }
 
 model Workspace {
-  id        String   @id @default(uuid())
-  name      String
-  ownerId   String
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+
+  ownerId     String   @db.Uuid
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   owner   User         @relation("UserOwnedWorkspaces", fields: [ownerId], references: [id])
   members Membership[]
+  projects Project[]
+}
+
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+
+  workspaceId String @db.Uuid
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
 }
 
 model User {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email            String    @unique
   passwordHash     String
+
+  role             String    @default("MEMBER")
+
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
   resetToken       String?
   resetTokenExpiry DateTime?
 
-  memberships     Membership[]
-  ownedWorkspaces Workspace[]  @relation("UserOwnedWorkspaces")
+  memberships      Membership[]
+  ownedWorkspaces  Workspace[] @relation("UserOwnedWorkspaces")
 }

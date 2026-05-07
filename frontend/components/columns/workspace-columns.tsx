@@ -1,47 +1,84 @@
 "use client";
 
+import Image from "next/image";
 import { ColumnDef } from "@tanstack/react-table";
+
 import { Button } from "@/components/ui/button";
 
 export type Workspace = {
   id: string;
   name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
   ownerId: string;
   role: "ADMIN" | "MEMBER";
 };
 
 export const getColumns = (
-  onEdit: (id: string) => void,
+  onEdit: (id: string | undefined) => void,
   onDelete: (id: string) => void,
   deleteLoading: boolean,
+  onInvite: (id: string) => void,
 ): ColumnDef<Workspace>[] => [
+  // ✅ Logo + Name
   {
     accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
-  },
-  {
-    accessorKey: "id",
-    header: "Workspace ID",
+    header: "Workspace",
+
     cell: ({ row }) => (
-      <span className="text-xs text-slate-500">{row.original.id}</span>
+      <div className="flex items-center gap-3 min-w-[220px]">
+        {/* Logo */}
+        <div className="h-10 w-10 rounded-xl overflow-hidden border bg-slate-100 flex items-center justify-center shrink-0">
+          {row.original.logoUrl ? (
+            <Image
+              src={row.original.logoUrl}
+              alt={row.original.name}
+              width={40}
+              height={40}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-[10px] text-slate-400">N/A</span>
+          )}
+        </div>
+
+        {/* Name */}
+        <div className="min-w-0">
+          <p className="font-medium truncate">{row.original.name}</p>
+
+          <p className="text-xs text-slate-500 truncate">
+            /{row.original.slug}
+          </p>
+        </div>
+      </div>
     ),
   },
+
+  // ✅ Description
   {
-    accessorKey: "ownerId",
-    header: "Owner ID",
+    accessorKey: "description",
+    header: "Description",
+
     cell: ({ row }) => (
-      <span className="text-xs text-slate-500">{row.original.ownerId}</span>
+      <div className="max-w-[320px]">
+        <p className="text-sm text-slate-600 line-clamp-2">
+          {row.original.description || "—"}
+        </p>
+      </div>
     ),
   },
+
+  // ✅ Role
   {
     accessorKey: "role",
     header: "Role",
+
     cell: ({ row }) => (
       <span
-        className={`text-xs px-2 py-1 rounded ${
+        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
           row.original.role === "ADMIN"
-            ? "bg-green-100 text-green-700"
+            ? "bg-emerald-100 text-emerald-700"
             : "bg-blue-100 text-blue-700"
         }`}
       >
@@ -49,29 +86,47 @@ export const getColumns = (
       </span>
     ),
   },
+
+  // ✅ Owner
+  {
+    accessorKey: "ownerId",
+    header: "Owner",
+
+    cell: ({ row }) => (
+      <span className="text-xs text-slate-500">
+        {row.original.ownerId.slice(0, 8)}...
+      </span>
+    ),
+  },
+
+  // ✅ Actions
   {
     id: "actions",
     header: "Actions",
+
     cell: ({ row }) =>
       row.original.role === "ADMIN" ? (
-        <div className="flex gap-2 justify-end">
+        <div
+          className="flex items-center justify-end gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Button
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(row.original.id);
-            }}
+            variant="outline"
+            onClick={() => onInvite(row.original.id)}
           >
-            Edit
+            Invite
           </Button>
 
           <Button
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(row.original.id);
-            }}
+            variant="outline"
+            onClick={() => onEdit(row.original.id)}
           >
+            Edit
+          </Button>
+
+          <Button size="sm" onClick={() => onDelete(row.original.id)}>
             {deleteLoading ? "Deleting..." : "Delete"}
           </Button>
         </div>

@@ -125,17 +125,4 @@ export class WorkspaceController {
       userId,
     );
   }
-
-  // ✅ Update role
-  @Post(':id/update-role')
-  updateRole(
-    @Param('id') workspaceId: string,
-    @Body(ValidationPipe) dto: AddMemberDto,
-    @Req() req: Request,
-  ) {
-    const userId = req.session.userId;
-    if (!userId) throw new UnauthorizedException();
-
-    return this.workspaceService.updateMemberRole(workspaceId, dto, userId);
-  }
 }

@@ -3,18 +3,23 @@ import { DatabaseService } from 'src/database/database.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AddMemberDto } from './dto/add-member.dto';
-import type { Request } from 'express';
 
 @Injectable()
 export class WorkspaceService {
   constructor(private readonly db: DatabaseService) {}
 
-  // ✅ Create workspace
+  // =========================
+  // CREATE WORKSPACE
+  // =========================
   async createWorkspace(userId: string, dto: CreateWorkspaceDto) {
     const workspace = await this.db.workspace.create({
       data: {
         name: dto.name,
+        slug: dto.slug,
+        description: dto.description,
+        logoUrl: dto.logoUrl,
         ownerId: userId,
+
         members: {
           create: {
             userId,
@@ -24,9 +29,15 @@ export class WorkspaceService {
       },
     });
 
-    return workspace;
+    return {
+      message: 'Workspace created successfully',
+      workspace,
+    };
   }
 
+  // =========================
+  // GET USER WORKSPACES
+  // =========================
   async getUserWorkspaces(userId: string) {
     const memberships = await this.db.membership.findMany({
       where: { userId },
@@ -41,11 +52,20 @@ export class WorkspaceService {
         .map((m) => ({
           id: m.workspace.id,
           name: m.workspace.name,
-          role: m.role,
+          slug: m.workspace.slug,
+          description: m.workspace.description,
+          logoUrl: m.workspace.logoUrl,
           ownerId: m.workspace.ownerId,
+          createdAt: m.workspace.createdAt,
+          updatedAt: m.workspace.updatedAt,
+          role: m.role,
         })),
     };
   }
+
+  // =========================
+  // GET WORKSPACE BY ID
+  // =========================
   async getWorkspaceById(workspaceId: string, userId: string) {
     const workspace = await this.db.workspace.findUnique({
       where: { id: workspaceId },
@@ -68,9 +88,17 @@ export class WorkspaceService {
       throw new BadRequestException('Access denied');
     }
 
-    return { workspace };
+    return {
+      workspace: {
+        ...workspace,
+        role: membership.role,
+      },
+    };
   }
 
+  // =========================
+  // UPDATE WORKSPACE
+  // =========================
   async updateWorkspace(
     workspaceId: string,
     dto: UpdateWorkspaceDto,
@@ -97,14 +125,19 @@ export class WorkspaceService {
       where: { id: workspaceId },
       data: {
         name: dto.name,
+        slug: dto.slug,
+        description: dto.description,
+        logoUrl: dto.logoUrl,
       },
     });
 
     return { message: 'Workspace updated' };
   }
 
+  // =========================
+  // DELETE WORKSPACE
+  // =========================
   async deleteWorkspace(workspaceId: string, userId: string) {
-    // 🔍 1. Check workspace exists
     const workspace = await this.db.workspace.findUnique({
       where: { id: workspaceId },
     });
@@ -113,7 +146,6 @@ export class WorkspaceService {
       throw new BadRequestException('Workspace not found');
     }
 
-    // 🔐 2. Check membership
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -127,24 +159,25 @@ export class WorkspaceService {
       throw new BadRequestException('Access denied');
     }
 
-    // 👑 3. Only ADMIN can delete
     if (membership.role !== 'ADMIN') {
       throw new BadRequestException('Only admin can delete workspace');
     }
 
-    // 🧹 4. Delete (handle relations)
     await this.db.workspace.delete({
       where: { id: workspaceId },
     });
 
     return { message: 'Workspace deleted successfully' };
   }
+
+  // =========================
+  // ADD MEMBER
+  // =========================
   async addMember(
     workspaceId: string,
     dto: AddMemberDto,
     currentUserId: string,
   ) {
-    // 🔍 check admin
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -158,7 +191,6 @@ export class WorkspaceService {
       throw new BadRequestException('Only admin can add members');
     }
 
-    // ❌ already exists
     const exists = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -183,8 +215,10 @@ export class WorkspaceService {
     return { message: 'Member added' };
   }
 
+  // =========================
+  // GET MEMBERS
+  // =========================
   async getWorkspaceMembers(workspaceId: string, userId: string) {
-    // check access
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -220,6 +254,9 @@ export class WorkspaceService {
     };
   }
 
+  // =========================
+  // REMOVE MEMBER
+  // =========================
   async removeMember(
     workspaceId: string,
     memberUserId: string,
@@ -238,7 +275,6 @@ export class WorkspaceService {
       throw new BadRequestException('Only admin can remove members');
     }
 
-    // prevent removing yourself (optional)
     if (memberUserId === currentUserId) {
       throw new BadRequestException('You cannot remove yourself');
     }
@@ -253,38 +289,5 @@ export class WorkspaceService {
     });
 
     return { message: 'Member removed' };
-  }
-
-  async updateMemberRole(
-    workspaceId: string,
-    dto: { userId: string; role: string },
-    currentUserId: string,
-  ) {
-    const current = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId: currentUserId,
-          workspaceId,
-        },
-      },
-    });
-
-    if (!current || current.role !== 'ADMIN') {
-      throw new BadRequestException('Only admin can change roles');
-    }
-
-    await this.db.membership.update({
-      where: {
-        userId_workspaceId: {
-          userId: dto.userId,
-          workspaceId,
-        },
-      },
-      data: {
-        role: dto.role,
-      },
-    });
-
-    return { message: 'Role updated' };
   }
 }

@@ -1,139 +1,269 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
 import {
+  getWorkspaceById,
+  updateWorkspace,
   getWorkspaceMembers,
-  addMember,
   removeMember,
-  updateMemberRole,
-  getAllUsers,
 } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
-import { MembersTable } from "@/components/members-table";
-import { InviteMemberModal } from "@/components/invite-member-modal";
 import { useToast } from "@/hooks/useToast";
 
-export default function WorkspacePage() {
+export default function EditWorkspacePage() {
   const { id } = useParams();
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const toast = useToast();
-  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  // 👥 members
-  const { data } = useQuery({
-    queryKey: ["members", id],
+  const currentRole =
+    typeof window !== "undefined" ? localStorage.getItem("role") : null;
+
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+
+  // ✅ fetch workspace
+  const { data, isLoading } = useQuery({
+    queryKey: ["workspace", id],
+    queryFn: () => getWorkspaceById(id as string),
+  });
+
+  // ✅ fetch members
+  const { data: membersData } = useQuery({
+    queryKey: ["workspace-members", id],
     queryFn: () => getWorkspaceMembers(id as string),
   });
 
-  // 👤 users
-  const { data: usersData } = useQuery({
-    queryKey: ["users"],
-    queryFn: getAllUsers,
-  });
+  const members = membersData?.members ?? [];
 
-  const members = data?.members ?? [];
-  const users = usersData?.users ?? [];
+  useEffect(() => {
+    if (!data?.workspace) return;
 
-  const isAdmin = members.find((m: { role: string }) => m.role === "ADMIN");
+    setName(data.workspace.name || "");
+    setSlug(data.workspace.slug || "");
+    setDescription(data.workspace.description || "");
+    setLogoUrl(data.workspace.logoUrl || "");
+  }, [data]);
 
-  const addMutation = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      addMember(id as string, { userId, role }),
+  // ✅ update mutation
+  const updateMutation = useMutation({
+    mutationFn: (payload: {
+      name: string;
+      slug: string;
+      description?: string;
+      logoUrl?: string;
+    }) => updateWorkspace(id as string, payload),
+
     onSuccess: (data: any) => {
-      setOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["members", id] });
-      toast.success("", {
+      toast.success("Workspace updated", {
         description: data.message,
       });
+
+      router.push("/dashboard");
     },
+
     onError: (error: Error) => {
-      setOpen(false);
-      toast.error("", {
+      toast.error("Error", {
         description: error.message,
       });
     },
   });
 
+  // ✅ remove member
   const removeMutation = useMutation({
-    mutationFn: (userId: string) => removeMember(id as string, userId),
+    mutationFn: (userId: string) =>
+      removeMember(id as string, userId),
+
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["members", id] });
-      toast.success("", {
+      queryClient.invalidateQueries({
+        queryKey: ["workspace-members", id],
+      });
+
+      toast.success("Member removed", {
         description: data.message,
       });
     },
+
     onError: (error: Error) => {
-      toast.error("", {
+      toast.error("Error", {
         description: error.message,
       });
     },
   });
 
-  const roleMutation = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      updateMemberRole(id as string, { userId, role }),
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["members", id] });
-      toast.success("", {
-        description: data.message,
-      });
-    },
-    onError: (error: Error) => {
-      toast.error("", {
-        description: error.message,
-      });
-    },
-  });
+  // ✅ upload image
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const localUrl = URL.createObjectURL(file);
+
+    setLogoUrl(localUrl);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        Loading workspace...
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen w-full bg-slate-50">
-      {/* Container */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Workspace Members
-            </h1>
-            <p className="text-sm text-slate-500">
-              Manage access and roles for this workspace
+    <div className="min-h-screen bg-slate-100">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Workspace Card */}
+        <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+          {/* Header */}
+          <div className="border-b px-6 py-5">
+            <h1 className="text-2xl font-semibold">Edit Workspace</h1>
+
+            <p className="text-sm text-slate-500 mt-1">
+              Update workspace details and branding
             </p>
           </div>
 
-          <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
-            Invite Member
-          </Button>
+          {/* Body */}
+          <div className="p-6 space-y-6">
+            {/* Logo */}
+            <div className="flex items-center gap-5">
+              <div className="h-24 w-24 rounded-2xl border overflow-hidden bg-slate-100 flex items-center justify-center">
+                {logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt="logo"
+                    width={96}
+                    height={96}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs text-slate-400">No Logo</span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                />
+
+                <p className="text-xs text-slate-500">Upload workspace logo</p>
+              </div>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Workspace Name</label>
+
+              <input
+                className="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                placeholder="Workspace name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+
+            {/* Slug */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Slug</label>
+
+              <input
+                className="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                placeholder="workspace-slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+              />
+
+              <p className="text-xs text-slate-500">Used in workspace URLs</p>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+
+              <textarea
+                rows={5}
+                className="w-full border rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 focus:ring-black/10"
+                placeholder="Workspace description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t px-6 py-4 flex justify-end gap-3">
+            <Button variant="outline" onClick={() => router.back()}>
+              Cancel
+            </Button>
+
+            <Button
+              disabled={!name || !slug || updateMutation.isPending}
+              onClick={() =>
+                updateMutation.mutate({
+                  name,
+                  slug,
+                  description,
+                  logoUrl,
+                })
+              }
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
         </div>
 
-        {/* Table Wrapper */}
-        <div className="w-full rounded-xl border bg-white shadow-sm overflow-hidden">
-          <div className="w-full overflow-x-auto">
-            <MembersTable
-              members={members}
-              isAdmin={!!isAdmin}
-              onRemove={(userId: string) => removeMutation.mutate(userId)}
-              onRoleChange={(userId: string, role: string) =>
-                roleMutation.mutate({ userId, role })
-              }
-            />
+        {/* Members */}
+        <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
+          <div className="border-b px-6 py-5">
+            <h2 className="text-xl font-semibold">Workspace Members</h2>
+
+            <p className="text-sm text-slate-500 mt-1">
+              Manage workspace users and access
+            </p>
+          </div>
+
+          <div className="divide-y">
+            {members.length === 0 ? (
+              <div className="p-6 text-sm text-slate-500">No members found</div>
+            ) : (
+              members.map((member: any) => (
+                <div
+                  key={member.userId}
+                  className="px-6 py-4 flex items-center justify-between"
+                >
+                  <div>
+                    <p className="font-medium">{member.email}</p>
+
+                    <p className="text-xs text-slate-500 mt-1">{member.role}</p>
+                  </div>
+
+                  {(currentRole === "SUPER_ADMIN" ||
+                    currentRole === "ADMIN") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={removeMutation.isPending}
+                      onClick={() => removeMutation.mutate(member.userId)}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
-
-      {/* Modal */}
-      <InviteMemberModal
-        open={open}
-        onClose={() => setOpen(false)}
-        users={users}
-        onInvite={(userId: string, role: string) =>
-          addMutation.mutate({ userId, role })
-        }
-        isLoading = {addMutation.isPending}
-      />
     </div>
   );
 }

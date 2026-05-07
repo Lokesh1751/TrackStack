@@ -98,7 +98,8 @@ export function AuthShell() {
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      localStorage.setItem("role", data.data.role);
       router.push("/dashboard");
       router.refresh();
     },

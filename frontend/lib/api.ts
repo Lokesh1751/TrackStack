@@ -116,10 +116,21 @@ export const getWorkspaces = async () => {
   });
 };
 
-export const createWorkspace = async (data: { name: string }) => {
+export const createWorkspace = async (data: {
+  name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+}) => {
   return request<{
     id: string;
     name: string;
+    slug: string;
+    description?: string;
+    logoUrl?: string;
+    ownerId: string;
+    createdAt: string;
+    updatedAt: string;
   }>("/workspace", {
     method: "POST",
     body: JSON.stringify(data),
@@ -133,19 +144,30 @@ export const deleteWorkspace = async (workspaceId: string) => {
 };
 
 export const getWorkspaceById = async (id: string) => {
-  return request<{ workspace: any }>(`/workspace/${id}`);
+  return request<{
+    workspace: {
+      id: string;
+      name: string;
+      slug: string;
+      description?: string;
+      logoUrl?: string;
+      role: string;
+    };
+  }>(`/workspace/${id}`);
 };
 
-export const updateWorkspace = async ({
-  id,
-  name,
-}: {
-  id: string;
-  name: string;
-}) => {
-  return request<{ message: string }>(`/workspace/${id}`, {
+export const updateWorkspace = async (
+  id: string,
+  data: {
+    name?: string;
+    slug?: string;
+    description?: string;
+    logoUrl?: string;
+  },
+) => {
+  return request(`/workspace/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(data),
   });
 };
 
@@ -164,10 +186,24 @@ export const removeMember = (id: string, userId: string) =>
     body: JSON.stringify({ userId }),
   });
 
-export const updateMemberRole = (id: string, data: any) =>
-  request(`/workspace/${id}/update-role`, {
+export const getAllUsers = async () => {
+  return request<{
+    users: {
+      id: string;
+      email: string;
+      createdAt: string;
+    }[];
+  }>("/auth/users");
+};
+
+export const updateMemberRole = async (
+  data: {
+    userId: string;
+    role: string;
+  },
+) => {
+  return request(`/auth/update-role`, {
     method: "POST",
     body: JSON.stringify(data),
   });
-
-export const getAllUsers = () => request(`/auth/users`);
+};

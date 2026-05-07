@@ -1,7 +1,19 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateWorkspaceDto {
+  @IsOptional()
   @IsString()
-  @MinLength(2)
-  name: string;
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
 }

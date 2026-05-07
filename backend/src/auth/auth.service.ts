@@ -15,6 +15,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
 import { otpEmailTemplate } from 'src/mail/templates/otp-email.template';
 import { Resend } from 'resend';
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -95,10 +96,12 @@ export class AuthService {
 
     const user = await this.databaseService.user.findUnique({
       where: { email },
+
       select: {
         id: true,
         email: true,
         passwordHash: true,
+        role: true,
       },
     });
 
@@ -197,6 +200,7 @@ export class AuthService {
 
   async validateResetOtp(dto: ValidateResetOtpDto) {
     const email = this.normalizeEmail(dto.email);
+
     const hashedToken = crypto
       .createHash('sha256')
       .update(dto.otp)
@@ -288,23 +292,73 @@ export class AuthService {
       message: 'Password reset successful',
     };
   }
+
+  // ✅ FIXED: ROLE FROM MEMBERSHIP ONLY
   async getAllUsers(currentUserId: string) {
     const users = await this.databaseService.user.findMany({
       where: {
-        id: {
-          not: currentUserId,
-        },
+        id: { not: currentUserId },
       },
+
       select: {
         id: true,
         email: true,
+        role: true,
         createdAt: true,
       },
+
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return { users };
+    return {
+      users,
+    };
+  }
+
+  async updateUserRole(
+    dto: { userId: string; role: 'SUPER_ADMIN' | 'ADMIN' | 'MEMBER' },
+    currentUserId: string,
+  ) {
+    // 1. Get current user (actor)
+    const currentUser = await this.databaseService.user.findUnique({
+      where: { id: currentUserId },
+    });
+
+    if (!currentUser) {
+      throw new BadRequestException('User not found');
+    }
+
+    // 2. ONLY SUPER_ADMIN can update roles
+    if (currentUser.role !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Only SUPER_ADMIN can update user roles');
+    }
+
+    // 3. Get target user
+    const targetUser = await this.databaseService.user.findUnique({
+      where: { id: dto.userId },
+    });
+
+    if (!targetUser) {
+      throw new BadRequestException('Target user not found');
+    }
+
+    // 4. Prevent demoting last super admin (optional safety)
+    if (targetUser.id === currentUserId && dto.role !== 'SUPER_ADMIN') {
+      throw new BadRequestException('You cannot demote yourself');
+    }
+
+    // 5. Update role
+    await this.databaseService.user.update({
+      where: { id: dto.userId },
+      data: {
+        role: dto.role,
+      },
+    });
+
+    return {
+      message: 'User role updated successfully',
+    };
   }
 }

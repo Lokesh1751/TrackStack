@@ -16,6 +16,8 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
 import { SessionAuthGuard } from '../database/session-auth.guard';
+import { ValidationPipe } from '@nestjs/common';
+import { Session } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
@@ -28,20 +30,21 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
+  async login(
+    @Body(ValidationPipe) dto: LoginDto,
+    @Session() session: Record<string, any>,
+  ) {
     const user = await this.authService.validateUser(dto);
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    req.session.userId = user.id;
+    session.userId = user.id;
 
     return {
       success: true,
+
       data: {
         id: user.id,
         email: user.email,
+        role: user.role,
       },
     };
   }
@@ -105,5 +108,22 @@ export class AuthController {
     }
 
     return this.authService.getAllUsers(userId);
+  }
+  @Post('update-role')
+  async updateRole(
+    @Body(ValidationPipe)
+    dto: {
+      userId: string;
+      role: 'SUPER_ADMIN' | 'ADMIN' | 'MEMBER';
+    },
+    @Req() req: Request,
+  ) {
+    const currentUserId = req.session?.userId;
+
+    if (!currentUserId) {
+      throw new UnauthorizedException('Not logged in');
+    }
+
+    return this.authService.updateUserRole(dto, currentUserId);
   }
 }
