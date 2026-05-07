@@ -158,7 +158,7 @@ export default function DashboardPage() {
       localStorage.removeItem("role");
 
       router.push("/");
-
+      window.location.reload();
       toast.success("Logged out");
     },
 

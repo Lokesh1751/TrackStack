@@ -12,6 +12,22 @@ export class WorkspaceService {
   // CREATE WORKSPACE
   // =========================
   async createWorkspace(userId: string, dto: CreateWorkspaceDto) {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // ✅ only ADMIN / SUPER_ADMIN can create workspace
+    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      throw new BadRequestException('Only admin can create workspace');
+    }
+
     const workspace = await this.db.workspace.create({
       data: {
         name: dto.name,
@@ -23,7 +39,6 @@ export class WorkspaceService {
         members: {
           create: {
             userId,
-            role: 'ADMIN',
           },
         },
       },
@@ -41,8 +56,14 @@ export class WorkspaceService {
   async getUserWorkspaces(userId: string) {
     const memberships = await this.db.membership.findMany({
       where: { userId },
+
       include: {
         workspace: true,
+        user: {
+          select: {
+            role: true,
+          },
+        },
       },
     });
 
@@ -58,7 +79,9 @@ export class WorkspaceService {
           ownerId: m.workspace.ownerId,
           createdAt: m.workspace.createdAt,
           updatedAt: m.workspace.updatedAt,
-          role: m.role,
+
+          // ✅ role from user table
+          role: m.user.role,
         })),
     };
   }
@@ -88,10 +111,17 @@ export class WorkspaceService {
       throw new BadRequestException('Access denied');
     }
 
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+      },
+    });
+
     return {
       workspace: {
         ...workspace,
-        role: membership.role,
+        role: user?.role || 'MEMBER',
       },
     };
   }
@@ -117,7 +147,14 @@ export class WorkspaceService {
       throw new BadRequestException('Access denied');
     }
 
-    if (membership.role !== 'ADMIN') {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+      },
+    });
+
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
       throw new BadRequestException('Only admin can edit workspace');
     }
 
@@ -159,7 +196,14 @@ export class WorkspaceService {
       throw new BadRequestException('Access denied');
     }
 
-    if (membership.role !== 'ADMIN') {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+      },
+    });
+
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
       throw new BadRequestException('Only admin can delete workspace');
     }
 
@@ -167,7 +211,9 @@ export class WorkspaceService {
       where: { id: workspaceId },
     });
 
-    return { message: 'Workspace deleted successfully' };
+    return {
+      message: 'Workspace deleted successfully',
+    };
   }
 
   // =========================
@@ -187,7 +233,21 @@ export class WorkspaceService {
       },
     });
 
-    if (!membership || membership.role !== 'ADMIN') {
+    if (!membership) {
+      throw new BadRequestException('Access denied');
+    }
+
+    const currentUser = await this.db.user.findUnique({
+      where: { id: currentUserId },
+      select: {
+        role: true,
+      },
+    });
+
+    if (
+      !currentUser ||
+      (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN')
+    ) {
       throw new BadRequestException('Only admin can add members');
     }
 
@@ -204,11 +264,38 @@ export class WorkspaceService {
       throw new BadRequestException('User already a member');
     }
 
+    // ✅ check if another ADMIN already exists
+    if (dto.role === 'ADMIN') {
+      const existingAdmin = await this.db.user.findFirst({
+        where: {
+          role: 'ADMIN',
+
+          memberships: {
+            some: {
+              workspaceId,
+            },
+          },
+        },
+      });
+
+      if (existingAdmin) {
+        throw new BadRequestException('Workspace already has an admin');
+      }
+    }
+
+    // ✅ update user role
+    await this.db.user.update({
+      where: { id: dto.userId },
+      data: {
+        role: dto.role,
+      },
+    });
+
+    // ✅ create membership
     await this.db.membership.create({
       data: {
         userId: dto.userId,
         workspaceId,
-        role: dto.role,
       },
     });
 
@@ -234,11 +321,13 @@ export class WorkspaceService {
 
     const members = await this.db.membership.findMany({
       where: { workspaceId },
+
       include: {
         user: {
           select: {
             id: true,
             email: true,
+            role: true,
           },
         },
       },
@@ -249,7 +338,9 @@ export class WorkspaceService {
         id: m.id,
         userId: m.userId,
         email: m.user.email,
-        role: m.role,
+
+        // ✅ role from user table
+        role: m.user.role,
       })),
     };
   }
@@ -271,7 +362,21 @@ export class WorkspaceService {
       },
     });
 
-    if (!current || current.role !== 'ADMIN') {
+    if (!current) {
+      throw new BadRequestException('Access denied');
+    }
+
+    const currentUser = await this.db.user.findUnique({
+      where: { id: currentUserId },
+      select: {
+        role: true,
+      },
+    });
+
+    if (
+      !currentUser ||
+      (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN')
+    ) {
       throw new BadRequestException('Only admin can remove members');
     }
 
@@ -285,6 +390,14 @@ export class WorkspaceService {
           userId: memberUserId,
           workspaceId,
         },
+      },
+    });
+
+    // ✅ reset removed user role to MEMBER
+    await this.db.user.update({
+      where: { id: memberUserId },
+      data: {
+        role: 'MEMBER',
       },
     });
 

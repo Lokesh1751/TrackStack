@@ -10,43 +10,46 @@ datasource db {
 }
 
 model Membership {
-  id          String @id @default(uuid())
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   userId      String @db.Uuid
   workspaceId String @db.Uuid
 
-  user      User      @relation(fields: [userId], references: [id])
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@unique([userId, workspaceId])
 }
 
 model Workspace {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String  @id @default(uuid()) @db.Uuid
   name        String
-  slug        String   @unique
+  slug        String  @unique
   description String?
   logoUrl     String?
 
-  ownerId     String   @db.Uuid
+  ownerId String @db.Uuid
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  owner   User         @relation("UserOwnedWorkspaces", fields: [ownerId], references: [id])
-  members Membership[]
+  owner    User         @relation("UserOwnedWorkspaces", fields: [ownerId], references: [id])
+  members  Membership[]
   projects Project[]
 }
 
 model Project {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String  @id @default(uuid()) @db.Uuid
   name        String
   description String?
 
   workspaceId String @db.Uuid
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
 
@@ -54,18 +57,18 @@ model Project {
 }
 
 model User {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email            String    @unique
-  passwordHash     String
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String @unique
+  passwordHash String
 
-  role             String    @default("MEMBER")
+  role String @default("MEMBER")
 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   resetToken       String?
   resetTokenExpiry DateTime?
 
-  memberships      Membership[]
-  ownedWorkspaces  Workspace[] @relation("UserOwnedWorkspaces")
+  memberships     Membership[]
+  ownedWorkspaces Workspace[]  @relation("UserOwnedWorkspaces")
 }

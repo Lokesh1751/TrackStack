@@ -298,6 +298,9 @@ export class AuthService {
     const users = await this.databaseService.user.findMany({
       where: {
         id: { not: currentUserId },
+        role: {
+          not: 'SUPER_ADMIN',
+        },
       },
 
       select: {

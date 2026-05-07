@@ -12,7 +12,7 @@ export type Workspace = {
   description?: string;
   logoUrl?: string;
   ownerId: string;
-  role: "ADMIN" | "MEMBER";
+  role: "ADMIN" | "MEMBER" | "SUPER_ADMIN";
 };
 
 export const getColumns = (
@@ -105,7 +105,7 @@ export const getColumns = (
     header: "Actions",
 
     cell: ({ row }) =>
-      row.original.role === "ADMIN" ? (
+      row.original.role === "ADMIN" || row.original.role === "SUPER_ADMIN" ? (
         <div
           className="flex items-center justify-end gap-2"
           onClick={(e) => e.stopPropagation()}
@@ -115,7 +115,7 @@ export const getColumns = (
             variant="outline"
             onClick={() => onInvite(row.original.id)}
           >
-            Invite
+            +
           </Button>
 
           <Button
