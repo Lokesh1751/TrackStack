@@ -169,29 +169,6 @@ export default function DashboardPage() {
   });
 
   // =========================
-  // LOGOUT
-  // =========================
-  const logoutMutation = useMutation({
-    mutationFn: logout,
-
-    onSuccess: () => {
-      localStorage.removeItem("isSuperAdmin");
-
-      router.push("/");
-
-      window.location.reload();
-
-      toast.success("Logged out");
-    },
-
-    onError: (error: Error) => {
-      toast.error("Error", {
-        description: error.message,
-      });
-    },
-  });
-
-  // =========================
   // LOGO UPLOAD
   // =========================
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -230,14 +207,6 @@ export default function DashboardPage() {
                 <Button onClick={() => setOpen(true)}>+ New Workspace</Button>
               </>
             )}
-
-            <Button
-              variant="outline"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-            >
-              {logoutMutation.isPending ? "Logging out..." : "Logout"}
-            </Button>
           </div>
         </div>
 
@@ -258,11 +227,6 @@ export default function DashboardPage() {
                   : "You are not added to any workspace yet. Contact your administrator."}
               </p>
 
-              {isSuperAdmin && (
-                <Button className="mt-4" onClick={() => setOpen(true)}>
-                  Create Workspace
-                </Button>
-              )}
             </div>
           </div>
         ) : (
