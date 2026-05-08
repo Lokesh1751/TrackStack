@@ -201,7 +201,7 @@ export const updateMemberRole = async (
   data: {
     userId: string;
     role: "SUPER_ADMIN" | "ADMIN" | "MEMBER";
-  }
+  },
 ) => {
   return request(`/workspace/${workspaceId}/update-member-role`, {
     method: "POST",
@@ -210,4 +210,99 @@ export const updateMemberRole = async (
     },
     body: JSON.stringify(data),
   });
+};
+
+// =========================
+// CREATE PROJECT
+// =========================
+export const createProject = async (
+  workspaceId: string,
+  data: {
+    name: string;
+    description?: string;
+  },
+) => {
+  return request<{ message: string; project: any }>(
+    `/workspace/${workspaceId}/projects`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+};
+
+// =========================
+// GET PROJECTS
+// =========================
+export const getProjects = async (workspaceId: string) => {
+  return request<{ projects: any[] }>(`/workspace/${workspaceId}/projects`);
+};
+
+// =========================
+// GET PROJECT BY ID
+// =========================
+export const getProjectById = async (projectId: string) => {
+  return request<{ project: any }>(`/project/${projectId}`);
+};
+
+// =========================
+// UPDATE PROJECT
+// =========================
+export const updateProject = async (
+  projectId: string,
+  data: {
+    name: string;
+    description?: string;
+  },
+) => {
+  return request<{ message: string; project: any }>(`/projects/${projectId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
+// =========================
+// DELETE PROJECT
+// =========================
+export const deleteProject = async (projectId: string) => {
+  return request<{ message: string }>(`/projects/${projectId}`, {
+    method: "DELETE",
+  });
+};
+
+// =========================
+// GET PROJECT MEMBERS
+// =========================
+export const getProjectMembers = async (projectId: string) => {
+  return request<{ members: any[] }>(`/${projectId}/members`);
+};
+
+// =========================
+// ADD PROJECT MEMBER
+// =========================
+export const addProjectMember = async (
+  projectId: string,
+  data: {
+    email: string;
+  },
+) => {
+  return request<{ message: string }>(`/${projectId}/members`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+// =========================
+// REMOVE PROJECT MEMBER
+// =========================
+export const removeProjectMember = async (
+  projectId: string,
+  userId: string,
+) => {
+  return request<{ message: string }>(
+    `/${projectId}/members/${userId}`,
+    {
+      method: "DELETE",
+    },
+  );
 };

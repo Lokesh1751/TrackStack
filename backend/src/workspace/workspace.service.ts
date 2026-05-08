@@ -554,7 +554,22 @@ export class WorkspaceService {
         );
       }
     }
+    // 4. Prevent multiple ADMINs in workspace
+    if (newRole === 'ADMIN') {
+      const existingAdmin = await this.db.membership.findFirst({
+        where: {
+          workspaceId,
+          role: 'ADMIN',
+        },
+      });
 
+      // if another admin exists and it's not the same user
+      if (existingAdmin && existingAdmin.userId !== targetUserId) {
+        throw new BadRequestException(
+          'Workspace already has an ADMIN. Please demote existing admin first.',
+        );
+      }
+    }
     // 4. Execution
     return this.db.membership.update({
       where: { userId_workspaceId: { userId: targetUserId, workspaceId } },

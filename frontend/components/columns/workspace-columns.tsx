@@ -20,6 +20,8 @@ export const getColumns = (
   onDelete: (id: string) => void,
   deleteLoading: boolean,
   onInvite: (id: string) => void,
+  isSuperAdmin: boolean,
+  redirectUrl: (workspaceId: string) => void,
 ): ColumnDef<Workspace>[] => [
   // ✅ Logo + Name
   {
@@ -104,32 +106,46 @@ export const getColumns = (
     id: "actions",
     header: "Actions",
 
-    cell: ({ row }) =>
-      row.original.role === "ADMIN" || row.original.role === "SUPER_ADMIN" ? (
-        <div
-          className="flex items-center justify-end gap-2"
-          onClick={(e) => e.stopPropagation()}
+    cell: ({ row }) => (
+      <div
+        className="flex flex-row gap-2 w-[50%]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {(row.original.role === "ADMIN" ||
+          row.original.role === "SUPER_ADMIN") && (
+          <div
+            className="flex items-center  gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onInvite(row.original.id)}
+            >
+              +
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onEdit(row.original.id)}
+            >
+              Edit
+            </Button>
+
+            <Button size="sm" onClick={() => onDelete(row.original.id)}>
+              {deleteLoading ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => redirectUrl(row.original.id)}
         >
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onInvite(row.original.id)}
-          >
-            +
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onEdit(row.original.id)}
-          >
-            Edit
-          </Button>
-
-          <Button size="sm" onClick={() => onDelete(row.original.id)}>
-            {deleteLoading ? "Deleting..." : "Delete"}
-          </Button>
-        </div>
-      ) : null,
+          Projects
+        </Button>
+      </div>
+    ),
   },
 ];

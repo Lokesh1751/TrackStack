@@ -289,13 +289,12 @@ export default function DashboardPage() {
                   },
 
                   isSuperAdmin,
+                  (workspaceId: string) => {
+                    router.push(`/workspace/${workspaceId}/projects`);
+                  },
                 )}
                 onRowClick={(row: { id: string; role: WorkspaceRole }) => {
-                  if (row.role === "ADMIN" || isSuperAdmin) {
-                    router.push(`/workspace/${row.id}`);
-                  } else {
-                    router.push(`/workspace/${row.id}/projects`);
-                  }
+                  router.push(`/workspace/${row.id}`);
                 }}
               />
             </div>
