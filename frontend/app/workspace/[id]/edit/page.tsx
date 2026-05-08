@@ -10,6 +10,7 @@ import {
   updateWorkspace,
   getWorkspaceMembers,
   removeMember,
+  updateMemberRole,
 } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
@@ -17,12 +18,10 @@ import { useToast } from "@/hooks/useToast";
 
 export default function EditWorkspacePage() {
   const { id } = useParams();
+
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
-
-  const currentRole =
-    typeof window !== "undefined" ? localStorage.getItem("role") : null;
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -34,7 +33,7 @@ export default function EditWorkspacePage() {
     queryKey: ["workspace", id],
     queryFn: () => getWorkspaceById(id as string),
   });
-
+  const currentRole = data?.workspace?.role;
   // ✅ fetch members
   const { data: membersData } = useQuery({
     queryKey: ["workspace-members", id],
@@ -42,6 +41,7 @@ export default function EditWorkspacePage() {
   });
 
   const members = membersData?.members ?? [];
+  const filteredMembers = members.filter((m: any) => m.isSuperAdmin === false);
 
   useEffect(() => {
     if (!data?.workspace) return;
@@ -52,7 +52,7 @@ export default function EditWorkspacePage() {
     setLogoUrl(data.workspace.logoUrl || "");
   }, [data]);
 
-  // ✅ update mutation
+  // ✅ update workspace mutation
   const updateMutation = useMutation({
     mutationFn: (payload: {
       name: string;
@@ -64,6 +64,14 @@ export default function EditWorkspacePage() {
     onSuccess: (data: any) => {
       toast.success("Workspace updated", {
         description: data.message,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", id],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["workspaces"],
       });
 
       router.push("/dashboard");
@@ -78,8 +86,7 @@ export default function EditWorkspacePage() {
 
   // ✅ remove member
   const removeMutation = useMutation({
-    mutationFn: (userId: string) =>
-      removeMember(id as string, userId),
+    mutationFn: (userId: string) => removeMember(id as string, userId),
 
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({
@@ -87,6 +94,39 @@ export default function EditWorkspacePage() {
       });
 
       toast.success("Member removed", {
+        description: data.message,
+      });
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // ✅ update member role
+  const updateRoleMutation = useMutation({
+    mutationFn: ({
+      userId,
+      role,
+    }: {
+      userId: string;
+      role: "SUPER_ADMIN" | "ADMIN" | "MEMBER";
+    }) => updateMemberRole(id as string, {
+      userId: userId,
+      role: role,
+    }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({
+        queryKey: ["workspace-members", id],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["workspaces"],
+      });
+
+      toast.success("Role updated", {
         description: data.message,
       });
     },
@@ -233,10 +273,10 @@ export default function EditWorkspacePage() {
           </div>
 
           <div className="divide-y">
-            {members.length === 0 ? (
+            {filteredMembers.length === 0 ? (
               <div className="p-6 text-sm text-slate-500">No members found</div>
             ) : (
-              members.map((member: any) => (
+              filteredMembers.map((member: any) => (
                 <div
                   key={member.userId}
                   className="px-6 py-4 flex items-center justify-between"
@@ -244,7 +284,34 @@ export default function EditWorkspacePage() {
                   <div>
                     <p className="font-medium">{member.email}</p>
 
-                    <p className="text-xs text-slate-500 mt-1">{member.role}</p>
+                    <div className="mt-2">
+                      {currentRole === "SUPER_ADMIN" ||
+                      currentRole === "ADMIN" ? (
+                        <select
+                          value={member.role}
+                          className="border rounded-lg px-2 py-1 text-xs"
+                          onChange={(e) =>
+                            updateRoleMutation.mutate({
+                              userId: member.userId,
+                              role: e.target.value as
+                                | "SUPER_ADMIN"
+                                | "ADMIN"
+                                | "MEMBER",
+                            })
+                          }
+                        >
+                          <option value="MEMBER">MEMBER</option>
+
+                          <option value="ADMIN">ADMIN</option>
+
+                          {currentRole === "SUPER_ADMIN" && (
+                            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                          )}
+                        </select>
+                      ) : (
+                        <p className="text-xs text-slate-500">{member.role}</p>
+                      )}
+                    </div>
                   </div>
 
                   {(currentRole === "SUPER_ADMIN" ||
@@ -252,7 +319,9 @@ export default function EditWorkspacePage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={removeMutation.isPending}
+                      disabled={
+                        removeMutation.isPending || updateRoleMutation.isPending
+                      }
                       onClick={() => removeMutation.mutate(member.userId)}
                     >
                       Remove

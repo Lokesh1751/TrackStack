@@ -1,6 +1,11 @@
 // workspace.service.ts
 
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { DatabaseService } from 'src/database/database.service';
 
@@ -496,5 +501,64 @@ export class WorkspaceService {
     return {
       message: 'Member removed',
     };
+  }
+
+  // =========================
+  // UPDATE MEMBER ROLE
+  // =========================
+  async updateMemberRole(
+    workspaceId: string,
+    targetUserId: string, // Renamed for clarity
+    newRole: 'SUPER_ADMIN' | 'ADMIN' | 'MEMBER',
+    currentUserId: string,
+  ) {
+    // 1. Get current user's role
+    const currentUser = await this.db.membership.findUnique({
+      where: { userId_workspaceId: { userId: currentUserId, workspaceId } },
+    });
+
+    if (
+      !currentUser ||
+      (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN')
+    ) {
+      throw new ForbiddenException(
+        'You do not have permission to manage roles',
+      );
+    }
+
+    // 2. Target member check
+    const targetMember = await this.db.membership.findUnique({
+      where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+    });
+
+    if (!targetMember) {
+      throw new NotFoundException('Member not found in this workspace');
+    }
+
+    // 3. Safety: Prevent removing the last person with administrative power
+    const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
+    if (
+      adminRoles.includes(targetMember.role) &&
+      !adminRoles.includes(newRole)
+    ) {
+      const adminCount = await this.db.membership.count({
+        where: {
+          workspaceId,
+          role: { in: adminRoles },
+        },
+      });
+
+      if (adminCount <= 1) {
+        throw new BadRequestException(
+          'Cannot demote the only remaining administrator',
+        );
+      }
+    }
+
+    // 4. Execution
+    return this.db.membership.update({
+      where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+      data: { role: newRole },
+    });
   }
 }

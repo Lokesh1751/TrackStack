@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   UseGuards,
   ValidationPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
@@ -123,6 +124,36 @@ export class WorkspaceController {
       workspaceId,
       memberUserId,
       userId,
+    );
+  }
+
+  // =========================
+  // UPDATE MEMBER ROLE
+
+  @Post(':workspaceId/update-member-role')
+  async updateMemberRole(
+    @Param('workspaceId') workspaceId: string,
+    @Body() dto: { userId: string; role: 'SUPER_ADMIN' | 'ADMIN' | 'MEMBER' },
+    @Req() req: Request,
+  ) {
+    const currentUserId = req.session.userId;
+
+    if (!currentUserId) throw new UnauthorizedException();
+    if (!dto.userId) throw new BadRequestException('Target userId is required');
+
+    // Basic enum validation
+    const validRoles = ['SUPER_ADMIN', 'ADMIN', 'MEMBER'];
+    if (!validRoles.includes(dto.role)) {
+      throw new BadRequestException(
+        `Invalid role. Must be one of: ${validRoles.join(', ')}`,
+      );
+    }
+
+    return this.workspaceService.updateMemberRole(
+      workspaceId,
+      dto.userId,
+      dto.role,
+      currentUserId,
     );
   }
 }

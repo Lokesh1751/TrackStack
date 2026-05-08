@@ -197,13 +197,17 @@ export const getAllUsers = async () => {
 };
 
 export const updateMemberRole = async (
+  workspaceId: string,
   data: {
     userId: string;
-    role: string;
-  },
+    role: "SUPER_ADMIN" | "ADMIN" | "MEMBER";
+  }
 ) => {
-  return request(`/auth/update-role`, {
+  return request(`/workspace/${workspaceId}/update-member-role`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(data),
   });
 };
