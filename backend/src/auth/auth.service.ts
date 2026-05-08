@@ -1,3 +1,5 @@
+// auth.service.ts
+
 import {
   BadRequestException,
   Injectable,
@@ -28,7 +30,9 @@ export class AuthService {
 
   private generateResetToken() {
     const otp = crypto.randomInt(100000, 1000000).toString();
+
     const hashedToken = crypto.createHash('sha256').update(otp).digest('hex');
+
     return { otp, hashedToken };
   }
 
@@ -37,10 +41,12 @@ export class AuthService {
 
     if (!resendApiKey) {
       this.logger.error('RESEND_API_KEY is missing');
+
       throw new InternalServerErrorException('Email service is not configured');
     }
 
     const resend = new Resend(resendApiKey);
+
     const { error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: email,
@@ -50,6 +56,7 @@ export class AuthService {
 
     if (error) {
       this.logger.error(`Failed to send OTP email: ${error.message}`);
+
       throw new InternalServerErrorException('Failed to send OTP email');
     }
   }
@@ -63,7 +70,9 @@ export class AuthService {
 
     const existing = await this.databaseService.user.findUnique({
       where: { email },
-      select: { id: true },
+      select: {
+        id: true,
+      },
     });
 
     if (existing) {
@@ -76,10 +85,13 @@ export class AuthService {
       data: {
         email,
         passwordHash,
+        isSuperAdmin: false,
       },
+
       select: {
         id: true,
         email: true,
+        isSuperAdmin: true,
         createdAt: true,
       },
     });
@@ -101,7 +113,7 @@ export class AuthService {
         id: true,
         email: true,
         passwordHash: true,
-        role: true,
+        isSuperAdmin: true,
       },
     });
 
@@ -121,9 +133,11 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.databaseService.user.findUnique({
       where: { id: userId },
+
       select: {
         id: true,
         email: true,
+        isSuperAdmin: true,
         createdAt: true,
       },
     });
@@ -183,6 +197,7 @@ export class AuthService {
 
     await this.databaseService.user.update({
       where: { email },
+
       data: {
         resetToken: hashedToken,
         resetTokenExpiry: new Date(Date.now() + expiryTime),
@@ -208,6 +223,7 @@ export class AuthService {
 
     const user = await this.databaseService.user.findUnique({
       where: { email },
+
       select: {
         id: true,
         resetToken: true,
@@ -234,12 +250,13 @@ export class AuthService {
     return {
       success: true,
       message: 'OTP verified',
-      expiresIn: remainingSeconds, // ⏱ send to FE
+      expiresIn: remainingSeconds,
     };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
     const email = this.normalizeEmail(dto.email);
+
     const hashedToken = crypto
       .createHash('sha256')
       .update(dto.otp)
@@ -280,6 +297,7 @@ export class AuthService {
 
     await this.databaseService.user.update({
       where: { id: user.id },
+
       data: {
         passwordHash,
         resetToken: null,
@@ -293,20 +311,20 @@ export class AuthService {
     };
   }
 
-  // ✅ FIXED: ROLE FROM MEMBERSHIP ONLY
   async getAllUsers(currentUserId: string) {
     const users = await this.databaseService.user.findMany({
       where: {
-        id: { not: currentUserId },
-        role: {
-          not: 'SUPER_ADMIN',
+        id: {
+          not: currentUserId,
         },
+
+        isSuperAdmin: false,
       },
 
       select: {
         id: true,
         email: true,
-        role: true,
+        isSuperAdmin: true,
         createdAt: true,
       },
 
@@ -321,47 +339,59 @@ export class AuthService {
   }
 
   async updateUserRole(
-    dto: { userId: string; role: 'SUPER_ADMIN' | 'ADMIN' | 'MEMBER' },
+    dto: {
+      userId: string;
+      isSuperAdmin: boolean;
+    },
     currentUserId: string,
   ) {
-    // 1. Get current user (actor)
     const currentUser = await this.databaseService.user.findUnique({
-      where: { id: currentUserId },
+      where: {
+        id: currentUserId,
+      },
+
+      select: {
+        id: true,
+        isSuperAdmin: true,
+      },
     });
 
     if (!currentUser) {
       throw new BadRequestException('User not found');
     }
 
-    // 2. ONLY SUPER_ADMIN can update roles
-    if (currentUser.role !== 'SUPER_ADMIN') {
+    if (!currentUser.isSuperAdmin) {
       throw new BadRequestException('Only SUPER_ADMIN can update user roles');
     }
 
-    // 3. Get target user
     const targetUser = await this.databaseService.user.findUnique({
-      where: { id: dto.userId },
+      where: {
+        id: dto.userId,
+      },
     });
 
     if (!targetUser) {
       throw new BadRequestException('Target user not found');
     }
 
-    // 4. Prevent demoting last super admin (optional safety)
-    if (targetUser.id === currentUserId && dto.role !== 'SUPER_ADMIN') {
-      throw new BadRequestException('You cannot demote yourself');
+    if (targetUser.id === currentUserId && dto.isSuperAdmin === false) {
+      throw new BadRequestException(
+        'You cannot remove yourself as super admin',
+      );
     }
 
-    // 5. Update role
     await this.databaseService.user.update({
-      where: { id: dto.userId },
+      where: {
+        id: dto.userId,
+      },
+
       data: {
-        role: dto.role,
+        isSuperAdmin: dto.isSuperAdmin,
       },
     });
 
     return {
-      message: 'User role updated successfully',
+      message: 'User updated successfully',
     };
   }
 }

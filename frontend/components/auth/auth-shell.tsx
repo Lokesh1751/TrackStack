@@ -99,7 +99,7 @@ export function AuthShell() {
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: (data: any) => {
-      localStorage.setItem("role", data.data.role);
+      localStorage.setItem("isSuperAdmin", data.data.isSuperAdmin);
       router.push("/dashboard");
       router.refresh();
     },
