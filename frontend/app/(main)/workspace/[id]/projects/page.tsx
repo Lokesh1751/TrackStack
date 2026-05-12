@@ -83,13 +83,14 @@ export default function Projects() {
 
   const projectMembers = membersData?.members || [];
 
-  const projectMemberEmails = projectMembers.map(
-    (member: any) => member.email
-  );
+  const projectMemberEmails = projectMembers.map((member: any) => member.email);
 
   const availableMembers = workspaceMembers.filter(
-    (member: any) => !projectMemberEmails.includes(member.email) && !member.isSuperAdmin 
+    (member: any) =>
+      !projectMemberEmails.includes(member.email) &&
+      !member.isSuperAdmin
   );
+  console.log("availablemembers", availableMembers);
 
   // =========================
   // CREATE PROJECT
@@ -313,7 +314,7 @@ export default function Projects() {
                       <td
                         className="px-6 py-4 font-medium"
                         onClick={() =>
-                          router.push(`/projects/${project.id}/tasks`)
+                          router.push(`/tasks/${project.id}`)
                         }
                       >
                         {project.name}
@@ -322,7 +323,7 @@ export default function Projects() {
                       <td
                         className="px-6 py-4 text-sm text-slate-600"
                         onClick={() =>
-                          router.push(`/projects/${project.id}/tasks`)
+                          router.push(`/tasks/${project.id}`)
                         }
                       >
                         {project.description || "No description"}
@@ -331,7 +332,7 @@ export default function Projects() {
                       <td
                         className="px-6 py-4 text-sm text-slate-500"
                         onClick={() =>
-                          router.push(`/projects/${project.id}/tasks`)
+                          router.push(`/tasks/${project.id}`)
                         }
                       >
                         {new Date(project.createdAt).toLocaleDateString()}
@@ -397,9 +398,7 @@ export default function Projects() {
                   </select>
 
                   <Button
-                    disabled={
-                      !selectedMemberEmail || inviteMutation.isPending
-                    }
+                    disabled={!selectedMemberEmail || inviteMutation.isPending}
                     onClick={() =>
                       inviteMutation.mutate({
                         projectId: selectedProjectId,

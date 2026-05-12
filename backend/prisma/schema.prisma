@@ -9,6 +9,30 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TaskType {
+  STORY
+  BUG
+  TASK
+  SUBTASK
+  EPIC
+  IMPROVEMENT
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  BLOCKED
+}
+
 model Membership {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -73,6 +97,8 @@ model Project {
 
   members ProjectMember[]
 
+  tasks Task[]
+
   @@index([workspaceId])
 }
 
@@ -90,7 +116,87 @@ model User {
   resetTokenExpiry DateTime?
 
   memberships     Membership[]
-  ownedWorkspaces Workspace[] @relation("UserOwnedWorkspaces")
+  ownedWorkspaces Workspace[]  @relation("UserOwnedWorkspaces")
 
   projectMembers ProjectMember[]
+
+  reportedTasks Task[] @relation("TaskReporter")
+
+  assignedTasks Task[] @relation("TaskAssignee")
+
+  taskComments   TaskComment[]
+  taskActivities TaskActivity[]
+}
+
+model Task {
+  id String @id @default(uuid()) @db.Uuid
+
+  title       String
+  description String?
+
+  taskKey String @unique
+
+  projectId String @db.Uuid
+
+  reporterId String @db.Uuid
+
+  assigneeId String? @db.Uuid
+
+  type     TaskType     @default(TASK)
+  priority TaskPriority @default(MEDIUM)
+  status   TaskStatus   @default(TODO)
+
+  dueDate DateTime?
+
+  estimateMinutes Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  reporter User @relation("TaskReporter", fields: [reporterId], references: [id])
+
+  assignee User? @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  comments TaskComment[]
+
+  activities TaskActivity[]
+}
+
+model TaskComment {
+  id String @id @default(uuid()) @db.Uuid
+
+  taskId String @db.Uuid
+  userId String @db.Uuid
+
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskActivity {
+  id String @id @default(uuid()) @db.Uuid
+
+  taskId String @db.Uuid
+  userId String @db.Uuid
+
+  action String // STATUS_CHANGED, COMMENT_ADDED
+
+  field    String?
+  oldValue String?
+  newValue String?
+
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

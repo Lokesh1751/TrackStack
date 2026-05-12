@@ -80,7 +80,7 @@ export default function DashboardPage() {
   }, [name]);
 
   useEffect(() => {
-    setSlug(generatedSlug);
+    setSlug(generatedSlug );
   }, [generatedSlug]);
 
   // =========================
@@ -240,7 +240,7 @@ export default function DashboardPage() {
               <DataTable
                 data={workspaces}
                 columns={getColumns(
-                  (workspaceId: string) =>
+                  (workspaceId: string | undefined) =>
                     router.push(`/workspace/${workspaceId}/edit`),
 
                   (workspaceId: string) => deleteMutation.mutate(workspaceId),

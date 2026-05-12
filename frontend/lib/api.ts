@@ -299,10 +299,146 @@ export const removeProjectMember = async (
   projectId: string,
   userId: string,
 ) => {
-  return request<{ message: string }>(
-    `/${projectId}/members/${userId}`,
+  return request<{ message: string }>(`/${projectId}/members/${userId}`, {
+    method: "DELETE",
+  });
+};
+
+// =====================================
+// CREATE TASK
+// =====================================
+
+export const createTask = async (
+  projectId: string,
+  data: {
+    title: string;
+    description?: string;
+    type: string;
+    priority: string;
+    estimateMinutes?: number;
+    dueDate?: string;
+  },
+) => {
+  return request<{ message: string; task: any }>(
+    `/projects/${projectId}/tasks`,
     {
-      method: "DELETE",
+      method: "POST",
+      body: JSON.stringify(data),
     },
   );
+};
+
+// =====================================
+// GET PROJECT TASKS
+// =====================================
+
+export const getProjectTasks = async (
+  projectId: string,
+  userId?: string,
+) => {
+  return request<{ tasks: any[] }>(
+    `/projects/${projectId}/tasks${userId ? `?userId=${userId}` : ""}`,
+  );
+};
+
+// =====================================
+// GET TASK BY ID
+// =====================================
+
+export const getTaskById = async (taskId: string) => {
+  return request<{ task: any }>(`/tasks/${taskId}`);
+};
+
+// =====================================
+// UPDATE TASK
+// =====================================
+
+export const updateTask = async (
+  taskId: string,
+  data: {
+    title?: string;
+    description?: string;
+    priority?: string;
+    estimateMinutes?: number;
+    dueDate?: string;
+  },
+) => {
+  return request<{ message: string; task: any }>(`/tasks/${taskId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
+// =====================================
+// DELETE TASK
+// =====================================
+
+export const deleteTask = async (taskId: string) => {
+  return request<{ message: string }>(`/tasks/${taskId}`, {
+    method: "DELETE",
+  });
+};
+
+// =====================================
+// UPDATE TASK STATUS
+// =====================================
+
+export const updateTaskStatus = async (
+  taskId: string,
+  data: {
+    status: string;
+  },
+) => {
+  return request<{ message: string; task: any }>(`/tasks/${taskId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
+// =====================================
+// ASSIGN TASK
+// =====================================
+
+export const assignTask = async (taskId: string, assigneeId: string) => {
+  return request<{ message: string; task: any }>(`/tasks/${taskId}/assign`, {
+    method: "PATCH",
+    body: JSON.stringify({ assigneeId }),
+  });
+};
+
+// =====================================
+// ADD COMMENT
+// =====================================
+
+export const addTaskComment = async (
+  taskId: string,
+  data: {
+    content: string;
+  },
+) => {
+  return request<{ message: string; comment: any }>(
+    `/tasks/${taskId}/comments`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+};
+
+// =====================================
+// GET COMMENTS
+// =====================================
+
+export const getTaskComments = async (taskId: string) => {
+  return request<{ comments: any[] }>(`/tasks/${taskId}/comments`);
+};
+
+// =====================================
+// DELETE COMMENT
+// =====================================
+
+export const deleteComment = async (commentId: string) => {
+  return request<{ message: string }>(`/comments/${commentId}`, {
+    method: "DELETE",
+  });
 };
