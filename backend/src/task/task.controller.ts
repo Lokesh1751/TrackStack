@@ -56,7 +56,13 @@ export class TasksController {
   @Get('projects/:projectId/tasks')
   getProjectTasks(
     @Param('projectId') projectId: string,
+
+    // FILTER BY USER
     @Query('userId') filterUserId: string,
+
+    // FILTER BY SPRINT
+    @Query('sprintId') sprintId: string,
+
     @Req() req: Request,
   ) {
     const userId = req.session.userId;
@@ -65,7 +71,27 @@ export class TasksController {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return this.tasksService.getProjectTasks(projectId, userId, filterUserId);
+    return this.tasksService.getProjectTasks(
+      projectId,
+      userId,
+      filterUserId,
+      sprintId,
+    );
+  }
+
+  // =====================================
+  // GET BACKLOG TASKS
+  // =====================================
+
+  @Get('projects/:projectId/backlog')
+  getBacklogTasks(@Param('projectId') projectId: string, @Req() req: Request) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return this.tasksService.getBacklogTasks(projectId, userId);
   }
 
   // =====================================
@@ -121,6 +147,25 @@ export class TasksController {
     }
 
     return this.tasksService.updateTaskStatus(taskId, dto, userId);
+  }
+
+  // =====================================
+  // MOVE TASK TO SPRINT
+  // =====================================
+
+  @Patch('tasks/:taskId/move-to-sprint')
+  moveTaskToSprint(
+    @Param('taskId') taskId: string,
+    @Body('sprintId') sprintId: string | null,
+    @Req() req: Request,
+  ) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return this.tasksService.moveTaskToSprint(taskId, sprintId, userId);
   }
 
   // =====================================
@@ -187,6 +232,11 @@ export class TasksController {
 
     return this.tasksService.deleteComment(commentId, userId);
   }
+
+  // =====================================
+  // ASSIGN TASK
+  // =====================================
+
   @Patch('tasks/:taskId/assign')
   assignTask(
     @Param('taskId') taskId: string,

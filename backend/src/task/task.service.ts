@@ -11,6 +11,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -32,18 +33,18 @@ export class TasksService {
       throw new BadRequestException('Project not found');
     }
 
-    //     const workspaceMembership = await this.db.membership.findUnique({
-    //       where: {
-    //         userId_workspaceId: {
-    //           userId,
-    //           workspaceId: project.workspaceId,
-    //         },
-    //       },
-    //     });
-    //  console.log('userIddd',userId,project.workspaceId,workspaceMembership)
-    //     if (!workspaceMembership) {
-    //       throw new UnauthorizedException('Access denied');
-    //     }
+    const membership = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: project.workspaceId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Access denied');
+    }
 
     const projectMember = await this.db.projectMember.findUnique({
       where: {
@@ -54,8 +55,39 @@ export class TasksService {
       },
     });
 
-    if (!projectMember) {
-      throw new ForbiddenException('You are not project member');
+    const canCreateTask =
+      !!projectMember ||
+      membership.role === 'ADMIN' ||
+      membership.role === 'SUPER_ADMIN';
+
+    if (!canCreateTask) {
+      throw new ForbiddenException(
+        'Only project members or workspace admins can create tasks',
+      );
+    }
+
+    // =====================================
+    // VALIDATE SPRINT
+    // =====================================
+
+    if (dto.sprintId) {
+      const sprint = await this.db.sprint.findUnique({
+        where: {
+          id: dto.sprintId,
+        },
+      });
+
+      if (!sprint) {
+        throw new BadRequestException('Sprint not found');
+      }
+
+      if (sprint.projectId !== projectId) {
+        throw new BadRequestException('Sprint does not belong to this project');
+      }
+
+      if (sprint.status === 'COMPLETED') {
+        throw new BadRequestException('Sprint is already Completed');
+      }
     }
 
     const taskKey = `TSK-${randomUUID().slice(0, 8).toUpperCase()}`;
@@ -65,9 +97,12 @@ export class TasksService {
         title: dto.title,
         description: dto.description,
         projectId,
+
+        // SPRINT
+        sprintId: dto.sprintId || null,
+
         reporterId: userId,
 
-        // initially unassigned
         assigneeId: null,
 
         type: dto.type,
@@ -92,6 +127,8 @@ export class TasksService {
             email: true,
           },
         },
+
+        sprint: true,
       },
     });
 
@@ -109,6 +146,7 @@ export class TasksService {
     projectId: string,
     userId: string,
     filterUserId?: string,
+    sprintId?: string,
   ) {
     const project = await this.db.project.findUnique({
       where: {
@@ -120,7 +158,6 @@ export class TasksService {
       throw new BadRequestException('Project not found');
     }
 
-    // ✅ Check logged-in user belongs to workspace
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -134,13 +171,20 @@ export class TasksService {
       throw new UnauthorizedException('Access denied');
     }
 
-    // ✅ Dynamic filter
     const whereClause: any = {
       projectId,
     };
 
     if (filterUserId) {
       whereClause.assigneeId = filterUserId;
+    }
+
+    // =====================================
+    // FILTER BY SPRINT
+    // =====================================
+
+    if (sprintId) {
+      whereClause.sprintId = sprintId;
     }
 
     const tasks = await this.db.task.findMany({
@@ -160,6 +204,8 @@ export class TasksService {
             email: true,
           },
         },
+
+        sprint: true,
 
         _count: {
           select: {
@@ -207,6 +253,8 @@ export class TasksService {
             email: true,
           },
         },
+
+        sprint: true,
 
         comments: {
           include: {
@@ -279,7 +327,10 @@ export class TasksService {
       throw new UnauthorizedException('Access denied');
     }
 
-    // validate assignee if passed
+    // =====================================
+    // VALIDATE ASSIGNEE
+    // =====================================
+
     if (dto.assigneeId) {
       const assigneeMember = await this.db.projectMember.findUnique({
         where: {
@@ -292,6 +343,26 @@ export class TasksService {
 
       if (!assigneeMember) {
         throw new BadRequestException('Assignee is not project member');
+      }
+    }
+
+    // =====================================
+    // VALIDATE SPRINT
+    // =====================================
+
+    if (dto.sprintId) {
+      const sprint = await this.db.sprint.findUnique({
+        where: {
+          id: dto.sprintId,
+        },
+      });
+
+      if (!sprint) {
+        throw new BadRequestException('Sprint not found');
+      }
+
+      if (sprint.projectId !== task.projectId) {
+        throw new BadRequestException('Sprint does not belong to this project');
       }
     }
 
@@ -308,8 +379,11 @@ export class TasksService {
         dueDate: dto.dueDate,
         estimateMinutes: dto.estimateMinutes,
 
-        // assign while updating
+        // ASSIGNEE
         assigneeId: dto.assigneeId,
+
+        // SPRINT
+        sprintId: dto.sprintId,
       },
 
       include: {
@@ -326,6 +400,8 @@ export class TasksService {
             email: true,
           },
         },
+
+        sprint: true,
       },
     });
 
@@ -378,6 +454,10 @@ export class TasksService {
 
       data: {
         status: dto.status,
+      },
+
+      include: {
+        sprint: true,
       },
     });
 
@@ -606,9 +686,9 @@ export class TasksService {
     };
   }
 
-  // =========================
+  // =====================================
   // ASSIGN TASK
-  // =========================
+  // =====================================
 
   async assignTask(taskId: string, assigneeId: string, userId: string) {
     const task = await this.db.task.findUnique({
@@ -638,7 +718,6 @@ export class TasksService {
       throw new UnauthorizedException('Access denied');
     }
 
-    // CHECK PROJECT MEMBER
     const projectMember = await this.db.projectMember.findUnique({
       where: {
         projectId_userId: {
@@ -668,11 +747,160 @@ export class TasksService {
             email: true,
           },
         },
+
+        sprint: true,
       },
     });
 
     return {
       message: 'Task assigned successfully',
+      task: updatedTask,
+    };
+  }
+
+  // =====================================
+  // GET BACKLOG TASKS
+  // =====================================
+
+  async getBacklogTasks(projectId: string, userId: string) {
+    const project = await this.db.project.findUnique({
+      where: {
+        id: projectId,
+      },
+    });
+
+    if (!project) {
+      throw new BadRequestException('Project not found');
+    }
+
+    const membership = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: project.workspaceId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const tasks = await this.db.task.findMany({
+      where: {
+        projectId,
+        sprintId: null,
+      },
+
+      include: {
+        reporter: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+
+        assignee: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+
+        sprint: true,
+
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
+      },
+
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return {
+      tasks: tasks.map((task) => ({
+        ...task,
+        commentsCount: task._count.comments,
+      })),
+    };
+  }
+
+  // =====================================
+  // MOVE TASK TO SPRINT
+  // =====================================
+
+  async moveTaskToSprint(
+    taskId: string,
+    sprintId: string | null,
+    userId: string,
+  ) {
+    const task = await this.db.task.findUnique({
+      where: {
+        id: taskId,
+      },
+
+      include: {
+        project: true,
+      },
+    });
+
+    if (!task) {
+      throw new BadRequestException('Task not found');
+    }
+
+    const membership = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: task.project.workspaceId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    // VALIDATE SPRINT
+    if (sprintId) {
+      const sprint = await this.db.sprint.findUnique({
+        where: {
+          id: sprintId,
+        },
+      });
+
+      if (!sprint) {
+        throw new BadRequestException('Sprint not found');
+      }
+
+      if (sprint.projectId !== task.projectId) {
+        throw new BadRequestException('Sprint does not belong to this project');
+      }
+    }
+
+    const updatedTask = await this.db.task.update({
+      where: {
+        id: taskId,
+      },
+
+      data: {
+        sprintId,
+      },
+
+      include: {
+        sprint: true,
+      },
+    });
+
+    return {
+      message: sprintId
+        ? 'Task moved to sprint successfully'
+        : 'Task moved to backlog successfully',
+
       task: updatedTask,
     };
   }

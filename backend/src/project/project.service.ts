@@ -82,52 +82,88 @@ export class ProjectService {
       throw new UnauthorizedException('Access denied');
     }
 
+    let projects: any[] = [];
+
     // =========================
     // ADMIN / SUPER ADMIN
     // =========================
 
     if (membership.role === 'ADMIN' || membership.role === 'SUPER_ADMIN') {
-      const projects = await this.db.project.findMany({
+      projects = await this.db.project.findMany({
         where: {
           workspaceId,
+        },
+
+        include: {
+          sprints: {
+            where: {
+              status: 'ACTIVE',
+            },
+
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              startDate: true,
+              endDate: true,
+            },
+
+            take: 1,
+          },
         },
 
         orderBy: {
           createdAt: 'desc',
         },
       });
+    } else {
+      // =========================
+      // MEMBER
+      // =========================
 
-      return {
-        projects,
-      };
-    }
+      projects = await this.db.project.findMany({
+        where: {
+          workspaceId,
 
-    // =========================
-    // MEMBER
-    // =========================
-
-    const projects = await this.db.project.findMany({
-      where: {
-        workspaceId,
-
-        members: {
-          some: {
-            userId,
+          members: {
+            some: {
+              userId,
+            },
           },
         },
-      },
 
-      orderBy: {
-        createdAt: 'desc',
-      },
+        include: {
+          members: true,
 
-      include: {
-        members: true,
-      },
-    });
+          sprints: {
+            where: {
+              status: 'ACTIVE',
+            },
+
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              startDate: true,
+              endDate: true,
+            },
+
+            take: 1,
+          },
+        },
+
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }
 
     return {
-      projects,
+      projects: projects.map((project: any) => ({
+        ...project,
+        activeSprint: project.sprints[0] || null,
+        sprints: undefined,
+      })),
     };
   }
 

@@ -87,8 +87,7 @@ export default function Projects() {
 
   const availableMembers = workspaceMembers.filter(
     (member: any) =>
-      !projectMemberEmails.includes(member.email) &&
-      !member.isSuperAdmin
+      !projectMemberEmails.includes(member.email) && !member.isSuperAdmin,
   );
   console.log("availablemembers", availableMembers);
 
@@ -302,6 +301,9 @@ export default function Projects() {
                         Actions
                       </th>
                     )}
+                    <th className="text-left px-6 py-4 text-sm font-medium">
+                      Sprint
+                    </th>
                   </tr>
                 </thead>
 
@@ -313,27 +315,21 @@ export default function Projects() {
                     >
                       <td
                         className="px-6 py-4 font-medium"
-                        onClick={() =>
-                          router.push(`/tasks/${project.id}`)
-                        }
+                        onClick={() => router.push(`/tasks/${project.id}?sprint=${project?.activeSprint?.id}`)}
                       >
                         {project.name}
                       </td>
 
                       <td
                         className="px-6 py-4 text-sm text-slate-600"
-                        onClick={() =>
-                          router.push(`/tasks/${project.id}`)
-                        }
+                        onClick={() => router.push(`/tasks/${project.id}?sprint=${project?.activeSprint?.id}`)}
                       >
                         {project.description || "No description"}
                       </td>
 
                       <td
                         className="px-6 py-4 text-sm text-slate-500"
-                        onClick={() =>
-                          router.push(`/tasks/${project.id}`)
-                        }
+                        onClick={() => router.push(`/tasks/${project.id}?sprint=${project?.activeSprint?.id}`)}
                       >
                         {new Date(project.createdAt).toLocaleDateString()}
                       </td>
@@ -360,6 +356,16 @@ export default function Projects() {
                           </Button>
                         </td>
                       )}
+
+                      <td>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => router.push(`/sprint/${project.id}`)}
+                        >
+                          Sprints
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

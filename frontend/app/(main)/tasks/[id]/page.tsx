@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import {
   createTask,
   getProjectTasks,
@@ -14,6 +14,8 @@ import {
   getProjectMembers,
   deleteComment,
   getCurrentUser,
+  addTaskToSprint,
+  removeTaskFromSprint,
 } from "@/lib/api";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,7 +30,11 @@ export default function Page() {
   const { id } = useParams();
 
   const projectId = id as string;
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
+  const sprintId = searchParams.get("sprint");
+  console.log("sprintId", sprintId);
   const queryClient = useQueryClient();
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -75,9 +81,13 @@ export default function Page() {
   // =========================
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["tasks", projectId, selectedUserId],
+    queryKey: ["tasks", projectId, selectedUserId, sprintId],
     queryFn: () =>
-      getProjectTasks(projectId, selectedUserId ? selectedUserId : undefined),
+      getProjectTasks(
+        projectId,
+        selectedUserId ? selectedUserId : undefined,
+        sprintId || undefined,
+      ),
     enabled: !!currentUser?.id,
   });
 
@@ -91,11 +101,11 @@ export default function Page() {
     mutationFn: () =>
       createTask(projectId, {
         ...form,
+        sprintId: sprintId || undefined,
         dueDate: form.dueDate
           ? new Date(form.dueDate).toISOString()
           : undefined,
       }),
-
     onSuccess: () => {
       toast.success("Task created");
 
@@ -176,6 +186,47 @@ export default function Page() {
 
     return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
   };
+  const currentSprint = tasks?.find((t: any) => t?.sprint?.id === sprintId)
+    ?.sprint?.name;
+
+  if (sprintId === "undefined") {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-3xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
+          {/* ICON */}
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-3xl">
+            !
+          </div>
+
+          {/* TITLE */}
+          <h2 className="text-2xl font-bold text-neutral-900">
+            No Active Sprint
+          </h2>
+
+          {/* DESC */}
+          <p className="mt-3 text-sm leading-6 text-neutral-500">
+            There is currently no active sprint for this project. Activate a
+            sprint to start managing tasks on the board.
+          </p>
+
+          {/* BUTTON */}
+          <button
+            onClick={() => router.push(`/sprint/${projectId}`)}
+            className="mt-6 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Make Any Sprint Active
+          </button>
+
+          <button
+            onClick={() => router.push(`/sprint/${projectId}/backlog`)}
+            className="mt-6 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Backlogs
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-100 p-6">
@@ -183,17 +234,19 @@ export default function Page() {
       <div className="mb-8 rounded-3xl bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Tasks Board</h1>
+            <h1 className="text-3xl font-bold">
+              Tasks Board for {currentSprint}
+            </h1>
             <p className="mt-1 text-sm text-neutral-500">
               Manage project tasks like Jira
             </p>
           </div>
 
           <button
-            onClick={() => refetch()}
-            className="rounded-xl border px-4 py-2 text-sm"
+            onClick={() => router.push(`/sprint/${projectId}/backlog`)}
+            className="rounded-xl border px-4 py-2 text-sm cursor-pointer"
           >
-            Refresh
+            Backlogs
           </button>
         </div>
 
@@ -667,6 +720,46 @@ function TaskModal({ task, projectId, onClose, refetch }: any) {
   });
   const isSuperAdmin = userDataa?.data?.isSuperAdmin;
   const isAdmin = userDataa?.data?.role === "ADMIN";
+
+  const addToSprintMutation = useMutation({
+    mutationFn: (sprintId: string) => addTaskToSprint(sprintId, task.id),
+
+    onSuccess: () => {
+      toast.success("Task added to sprint");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      refetch();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  const removeFromSprintMutation = useMutation({
+    mutationFn: () => removeTaskFromSprint(task.id),
+
+    onSuccess: () => {
+      toast.success("Task removed from sprint");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      refetch();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-3xl bg-white p-6 shadow-2xl">
@@ -683,6 +776,29 @@ function TaskModal({ task, projectId, onClose, refetch }: any) {
           </button>
         </div>
 
+        <div className="mt-4 rounded-2xl border bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-neutral-700">
+                Sprint Assignment
+              </p>
+
+              <p className="text-xs text-neutral-500">
+                {task.sprint ? task.sprint.name : "Not assigned to sprint"}
+              </p>
+            </div>
+
+            {task.sprint && (
+              <button
+                onClick={() => removeFromSprintMutation.mutate()}
+                className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+              >
+                Move to Backlog
+              </button>
+            )}
+          </div>
+        </div>
+        <div>Sprint: {task.sprint.name}</div>
         {/* EDIT */}
         <div className="rounded-3xl border bg-neutral-50 p-5">
           <h3 className="mb-5 text-lg font-semibold">Task Details</h3>

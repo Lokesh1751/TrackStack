@@ -6,9 +6,10 @@ import { DatabaseModule } from './database/database.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { ProjectModule } from './project/project.module';
 import { TaskModule } from './task/task.module';
+import { SprintModule } from './sprint/sprint.module';
 
 @Module({
-  imports: [AuthModule, DatabaseModule, WorkspaceModule, ProjectModule, TaskModule],
+  imports: [AuthModule, DatabaseModule, WorkspaceModule, ProjectModule, TaskModule, SprintModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
 } from 'class-validator';
 
@@ -37,4 +38,11 @@ export class CreateTaskDto {
   @IsInt()
   @Min(0)
   estimateMinutes?: number;
+
+  // =========================
+  // SPRINT SUPPORT
+  // =========================
+
+  @IsString()
+  sprintId?: string;
 }

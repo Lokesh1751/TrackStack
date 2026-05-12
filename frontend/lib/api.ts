@@ -8,9 +8,11 @@ type SignupInput = {
 type LoginInput = SignupInput;
 
 export type AuthUser = {
-  id: string;
-  email: string;
-  createdAt?: string;
+  data: {
+    id: string;
+    email: string;
+    createdAt?: string;
+  };
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -315,8 +317,13 @@ export const createTask = async (
     description?: string;
     type: string;
     priority: string;
+    status?: string;
     estimateMinutes?: number;
     dueDate?: string;
+
+    // ✅ NEW
+    sprintId?: string | null;
+    assigneeId?: string | null;
   },
 ) => {
   return request<{ message: string; task: any }>(
@@ -335,9 +342,23 @@ export const createTask = async (
 export const getProjectTasks = async (
   projectId: string,
   userId?: string,
+  sprintId?: string,
 ) => {
+  const params = new URLSearchParams();
+
+  if (userId) {
+    params.append("userId", userId);
+  }
+
+  // ✅ NEW
+  if (sprintId) {
+    params.append("sprintId", sprintId);
+  }
+
+  const query = params.toString();
+
   return request<{ tasks: any[] }>(
-    `/projects/${projectId}/tasks${userId ? `?userId=${userId}` : ""}`,
+    `/projects/${projectId}/tasks${query ? `?${query}` : ""}`,
   );
 };
 
@@ -359,8 +380,13 @@ export const updateTask = async (
     title?: string;
     description?: string;
     priority?: string;
+    status?: string;
     estimateMinutes?: number;
     dueDate?: string;
+
+    // ✅ NEW
+    sprintId?: string | null;
+    assigneeId?: string | null;
   },
 ) => {
   return request<{ message: string; task: any }>(`/tasks/${taskId}`, {
@@ -441,4 +467,137 @@ export const deleteComment = async (commentId: string) => {
   return request<{ message: string }>(`/comments/${commentId}`, {
     method: "DELETE",
   });
+};
+
+// =====================================================
+// SPRINT APIs
+// =====================================================
+
+// =====================================
+// CREATE SPRINT
+// =====================================
+
+export const createSprint = async (
+  projectId: string,
+  data: {
+    name: string;
+    goal?: string;
+    startDate?: string;
+    endDate?: string;
+  },
+) => {
+  return request<{ message: string; sprint: any }>(
+    `/projects/${projectId}/sprints`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+};
+
+// =====================================
+// GET PROJECT SPRINTS
+// =====================================
+
+export const getProjectSprints = async (projectId: string) => {
+  return request<{ sprints: any[] }>(`/projects/${projectId}/sprints`);
+};
+
+// =====================================
+// GET SPRINT BY ID
+// =====================================
+
+export const getSprintById = async (sprintId: string) => {
+  return request<{ sprint: any }>(`/sprints/${sprintId}`);
+};
+
+// =====================================
+// UPDATE SPRINT
+// =====================================
+
+export const updateSprint = async (
+  sprintId: string,
+  data: {
+    name?: string;
+    goal?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  },
+) => {
+  return request<{ message: string; sprint: any }>(`/sprints/${sprintId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
+// =====================================
+// DELETE SPRINT
+// =====================================
+
+export const deleteSprint = async (sprintId: string) => {
+  return request<{ message: string }>(`/sprints/${sprintId}`, {
+    method: "DELETE",
+  });
+};
+
+// =====================================
+// START SPRINT
+// =====================================
+
+export const startSprint = async (sprintId: string) => {
+  return request<{ message: string; sprint: any }>(
+    `/sprints/${sprintId}/start`,
+    {
+      method: "PATCH",
+    },
+  );
+};
+
+// =====================================
+// COMPLETE SPRINT
+// =====================================
+
+export const completeSprint = async (sprintId: string) => {
+  return request<{ message: string; sprint: any }>(
+    `/sprints/${sprintId}/complete`,
+    {
+      method: "PATCH",
+    },
+  );
+};
+
+// =====================================
+// ADD TASK TO SPRINT
+// =====================================
+
+export const addTaskToSprint = async (sprintId: string, taskId: string) => {
+  return request<{ message: string; task: any }>(
+    `/sprints/${sprintId}/tasks/${taskId}`,
+    {
+      method: "PATCH",
+    },
+  );
+};
+
+// =====================================
+// REMOVE TASK FROM SPRINT
+// =====================================
+
+export const removeTaskFromSprint = async (taskId: string) => {
+  return request<{ message: string; task: any }>(
+    `/tasks/${taskId}/remove-sprint`,
+    {
+      method: "PATCH",
+    },
+  );
+};
+
+// =====================================
+// GET BACKLOG TASKS
+// Tasks with sprintId = null
+// =====================================
+
+export const getBacklogTasks = async (projectId: string) => {
+  return request<{ tasks: any[] }>(`/projects/${projectId}/backlog`);
 };
