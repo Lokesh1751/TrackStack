@@ -759,77 +759,6 @@ export class TasksService {
   }
 
   // =====================================
-  // GET BACKLOG TASKS
-  // =====================================
-
-  async getBacklogTasks(projectId: string, userId: string) {
-    const project = await this.db.project.findUnique({
-      where: {
-        id: projectId,
-      },
-    });
-
-    if (!project) {
-      throw new BadRequestException('Project not found');
-    }
-
-    const membership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: project.workspaceId,
-        },
-      },
-    });
-
-    if (!membership) {
-      throw new UnauthorizedException('Access denied');
-    }
-
-    const tasks = await this.db.task.findMany({
-      where: {
-        projectId,
-        sprintId: null,
-      },
-
-      include: {
-        reporter: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-
-        assignee: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-
-        sprint: true,
-
-        _count: {
-          select: {
-            comments: true,
-          },
-        },
-      },
-
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return {
-      tasks: tasks.map((task) => ({
-        ...task,
-        commentsCount: task._count.comments,
-      })),
-    };
-  }
-
-  // =====================================
   // MOVE TASK TO SPRINT
   // =====================================
 
@@ -902,6 +831,61 @@ export class TasksService {
         : 'Task moved to backlog successfully',
 
       task: updatedTask,
+    };
+  }
+
+  // =====================================
+  // GET BACKLOG TASKS
+  // =====================================
+
+  async getBacklogTasks(projectId: string, userId: string) {
+    const project = await this.db.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      throw new BadRequestException('Project not found');
+    }
+
+    const membership = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: project.workspaceId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const tasks = await this.db.task.findMany({
+      where: {
+        projectId,
+        sprintId: null,
+      },
+      include: {
+        assignee: {
+          select: { id: true, email: true },
+        },
+        reporter: {
+          select: { id: true, email: true },
+        },
+        _count: {
+          select: { comments: true },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return {
+      tasks: tasks.map((t) => ({
+        ...t,
+        commentsCount: t._count.comments,
+      })),
     };
   }
 }

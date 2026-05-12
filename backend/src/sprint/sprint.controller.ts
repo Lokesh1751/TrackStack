@@ -163,15 +163,4 @@ export class SprintController {
   removeTaskFromSprint(@Param('taskId') taskId: string) {
     return this.sprintService.removeTaskFromSprint(taskId);
   }
-
-  @Get('projects/:projectId/backlog')
-  getBacklogTasks(@Param('projectId') projectId: string, @Req() req: Request) {
-    const userId = req.session.userId;
-
-    if (!userId) {
-      throw new UnauthorizedException('Unauthorized');
-    }
-
-    return this.tasksService.getBacklogTasks(projectId, userId);
-  }
 }
