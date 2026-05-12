@@ -11,6 +11,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class TasksService {
@@ -57,35 +58,7 @@ export class TasksService {
       throw new ForbiddenException('You are not project member');
     }
 
-    const taskCount = await this.db.task.count({
-      where: {
-        projectId,
-      },
-    });
-
-    const latestTask = await this.db.task.findFirst({
-      where: {
-        projectId,
-      },
-
-      orderBy: {
-        createdAt: 'desc',
-      },
-
-      select: {
-        taskKey: true,
-      },
-    });
-
-    let nextNumber = 1;
-
-    if (latestTask?.taskKey) {
-      const currentNumber = Number(latestTask.taskKey.replace('TSK-', ''));
-
-      nextNumber = currentNumber + 1;
-    }
-
-    const taskKey = `TSK-${nextNumber}`;
+    const taskKey = `TSK-${randomUUID().slice(0, 8).toUpperCase()}`;
 
     const task = await this.db.task.create({
       data: {

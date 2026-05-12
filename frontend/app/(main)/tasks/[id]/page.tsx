@@ -52,9 +52,11 @@ export default function Page() {
   });
 
   const currentUser = currentUserData?.data;
+  console.log("currentUser", currentUser);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
     currentUser?.id,
   );
+  console.log("selectedUserId", currentUser);
 
   // =========================
   // MEMBERS
@@ -245,7 +247,7 @@ export default function Page() {
             disabled={createTaskMutation.isPending}
             className="flex items-center justify-center gap-2 rounded-2xl bg-black px-4 py-3 font-medium text-white"
           >
-            Create
+            {createTaskMutation.isPending ? "Creating..." : "Create"}
           </button>
         </div>
       </div>
@@ -281,12 +283,9 @@ export default function Page() {
                 <option value="ALL">👥 All Project Tasks</option>
 
                 {/* CURRENT USER */}
-                {currentUser && (
-                  <option value={currentUser.id}>
-                    🙋 My Tasks ({currentUser.email})
-                  </option>
-                )}
-
+                <option value={currentUser ? currentUser.id : undefined}>
+                  🙋 My Tasks ({currentUser && currentUser.email})
+                </option>
                 {/* MEMBERS */}
                 {members
                   .filter((m: any) => m.userId !== currentUser?.id)
@@ -522,7 +521,9 @@ function TaskModal({ task, projectId, onClose, refetch }: any) {
 
   const currentUser = userData?.data;
 
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(
+    currentUser?.id,
+  );
 
   const { data: membersData } = useQuery({
     queryKey: ["members", projectId],
@@ -664,7 +665,6 @@ function TaskModal({ task, projectId, onClose, refetch }: any) {
     queryKey: ["me"],
     queryFn: getCurrentUser,
   });
-  const currentUserr = userDataa?.data;
   const isSuperAdmin = userDataa?.data?.isSuperAdmin;
   const isAdmin = userDataa?.data?.role === "ADMIN";
   return (

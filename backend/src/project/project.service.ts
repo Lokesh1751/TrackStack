@@ -82,13 +82,47 @@ export class ProjectService {
       throw new UnauthorizedException('Access denied');
     }
 
+    // =========================
+    // ADMIN / SUPER ADMIN
+    // =========================
+
+    if (membership.role === 'ADMIN' || membership.role === 'SUPER_ADMIN') {
+      const projects = await this.db.project.findMany({
+        where: {
+          workspaceId,
+        },
+
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return {
+        projects,
+      };
+    }
+
+    // =========================
+    // MEMBER
+    // =========================
+
     const projects = await this.db.project.findMany({
       where: {
         workspaceId,
+
+        members: {
+          some: {
+            userId,
+          },
+        },
       },
 
       orderBy: {
         createdAt: 'desc',
+      },
+
+      include: {
+        members: true,
       },
     });
 
