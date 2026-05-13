@@ -256,6 +256,32 @@ export class TasksService {
 
         sprint: true,
 
+        linkedTasks: {
+          include: {
+            targetTask: {
+              select: {
+                id: true,
+                title: true,
+                taskKey: true,
+                status: true,
+              },
+            },
+          },
+        },
+
+        linkedFromTasks: {
+          include: {
+            sourceTask: {
+              select: {
+                id: true,
+                title: true,
+                taskKey: true,
+                status: true,
+              },
+            },
+          },
+        },
+
         comments: {
           include: {
             user: {
@@ -384,6 +410,7 @@ export class TasksService {
 
         // SPRINT
         sprintId: dto.sprintId,
+        type: dto.type,
       },
 
       include: {
@@ -726,7 +753,6 @@ export class TasksService {
         },
       },
     });
-
     if (!projectMember) {
       throw new BadRequestException('User is not project member');
     }

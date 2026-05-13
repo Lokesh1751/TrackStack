@@ -1,0 +1,959 @@
+"use client";
+
+import { useState } from "react";
+import {
+  getProjectTasks,
+  deleteTask,
+  assignTask,
+  addTaskComment,
+  getTaskComments,
+  updateTask,
+  getProjectMembers,
+  deleteComment,
+  getCurrentUser,
+  removeTaskFromSprint,
+  getTaskById,
+  deleteTaskLink,
+  createTaskLink,
+  updateTaskLink,
+} from "@/lib/api";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { Loader2, MessageSquare, Link2 } from "lucide-react";
+import { getTaskTypeIcon } from "@/helpers";
+
+import { toast } from "sonner";
+
+export function TaskModal({
+  task,
+  projectId,
+  onClose,
+  refetch,
+  setSelectedTask,
+}: any) {
+  const queryClient = useQueryClient();
+
+  const [comment, setComment] = useState("");
+
+  const [editForm, setEditForm] = useState({
+    title: task.title,
+    description: task.description,
+    priority: task.priority,
+    estimateMinutes: task.estimateMinutes || 0,
+    type: task.type,
+  });
+
+  // =========================
+  // TASK LINK FORM
+  // =========================
+
+  const [selectedLinkedTaskId, setSelectedLinkedTaskId] = useState("");
+  const [selectedLinkType, setSelectedLinkType] = useState("BLOCKS");
+
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editingLinkType, setEditingLinkType] = useState("BLOCKS");
+
+  // =========================
+  // GET PROJECT TASKS
+  // =========================
+
+  const { data: tasksData, isLoading: tasksLoading } = useQuery({
+    queryKey: ["tasks", projectId],
+    queryFn: () => getProjectTasks(projectId),
+  });
+
+  const availableTasks =
+    tasksData?.tasks?.filter((t: any) => t.id !== task.id) || [];
+
+  // =========================
+  // GET TASK DETAILS
+  // =========================
+
+  const {
+    data: taskDetailsData,
+    refetch: refetchTaskDetails,
+    isLoading: taskDetailsLoading,
+  } = useQuery({
+    queryKey: ["task", task.id],
+    queryFn: () => getTaskById(task.id),
+  });
+
+  const taskData = taskDetailsData?.task || task;
+
+  // =========================
+  // GET COMMENTS
+  // =========================
+
+  const { data: commentsData } = useQuery({
+    queryKey: ["comments", task.id],
+    queryFn: () => getTaskComments(task.id),
+  });
+
+  const comments = commentsData?.comments || [];
+
+  // =========================
+  // GET MEMBERS
+  // =========================
+
+  const { data: userData } = useQuery({
+    queryKey: ["me"],
+    queryFn: getCurrentUser,
+  });
+
+  const currentUser = userData?.data;
+console.log('currentUser',currentUser)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(
+    currentUser?.id,
+  );
+
+  const { data: membersData } = useQuery({
+    queryKey: ["members", projectId],
+    queryFn: () => getProjectMembers(projectId),
+  });
+
+  const members = membersData?.members || [];
+
+  // =========================
+  // UPDATE TASK
+  // =========================
+
+  const updateTaskMutation = useMutation({
+    mutationFn: () => updateTask(task.id, editForm),
+
+    onSuccess: () => {
+      toast.success("Task updated");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      refetch();
+      setSelectedTask(null);
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // ASSIGN TASK
+  // =========================
+
+  const assignTaskMutation = useMutation({
+    mutationFn: (assigneeId: string) => assignTask(task.id, assigneeId),
+
+    onSuccess: () => {
+      toast.success("Task assigned");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      refetch();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // ADD COMMENT
+  // =========================
+
+  const addCommentMutation = useMutation({
+    mutationFn: () =>
+      addTaskComment(task.id, {
+        content: comment,
+      }),
+
+    onSuccess: () => {
+      setComment("");
+
+      queryClient.invalidateQueries({
+        queryKey: ["comments", task.id],
+      });
+
+      toast.success("Comment added");
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // DELETE TASK
+  // =========================
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteTask(task.id),
+
+    onSuccess: () => {
+      toast.success("Task deleted");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      onClose();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // DELETE COMMENT
+  // =========================
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) => deleteComment(commentId),
+
+    onSuccess: () => {
+      toast.success("Comment deleted");
+
+      queryClient.invalidateQueries({
+        queryKey: ["comments", task.id],
+      });
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // REMOVE FROM SPRINT
+  // =========================
+
+  const removeFromSprintMutation = useMutation({
+    mutationFn: () => removeTaskFromSprint(task.id),
+
+    onSuccess: () => {
+      toast.success("Task removed from sprint");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      refetch();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // CREATE TASK LINK
+  // =========================
+
+  const createTaskLinkMutation = useMutation({
+    mutationFn: () =>
+      createTaskLink(task.id, {
+        targetTaskId: selectedLinkedTaskId,
+        type: selectedLinkType,
+      }),
+
+    onSuccess: () => {
+      toast.success("Task link created");
+
+      setSelectedLinkedTaskId("");
+
+      queryClient.invalidateQueries({
+        queryKey: ["task", task.id],
+      });
+
+      refetchTaskDetails();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // UPDATE TASK LINK
+  // =========================
+
+  const updateTaskLinkMutation = useMutation({
+    mutationFn: ({
+      linkId,
+      type,
+    }: {
+      linkId: string;
+      type: "BLOCKS" | "RELATES_TO" | "DUPLICATES" | "DEPENDS_ON" | "CAUSED_BY";
+    }) => updateTaskLink(linkId, type),
+
+    onSuccess: () => {
+      toast.success("Task link updated");
+
+      setEditingLinkId(null);
+
+      queryClient.invalidateQueries({
+        queryKey: ["task", task.id],
+      });
+
+      refetchTaskDetails();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // DELETE TASK LINK
+  // =========================
+
+  const deleteTaskLinkMutation = useMutation({
+    mutationFn: (linkId: string) => deleteTaskLink(linkId),
+
+    onSuccess: () => {
+      toast.success("Task link removed");
+
+      queryClient.invalidateQueries({
+        queryKey: ["task", task.id],
+      });
+
+      refetchTaskDetails();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+  // =========================
+  // FORMAT ESTIMATE
+  // =========================
+
+  const formatEstimate = (minutes?: number) => {
+    const totalMinutes = minutes || 0;
+
+    const hours = totalMinutes / 60;
+
+    if (hours >= 8) {
+      const days = hours / 8;
+
+      return `${Number.isInteger(days) ? days : days.toFixed(1)}d`;
+    }
+
+    return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+  };
+
+  const { data: userDataa } = useQuery({
+    queryKey: ["me"],
+    queryFn: getCurrentUser,
+  });
+
+  const isSuperAdmin = userDataa?.data?.isSuperAdmin;
+  const isAdmin = userDataa?.data?.role === "ADMIN";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-3xl bg-white p-6 shadow-2xl">
+        {/* HEADER */}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <div className="mb-2 text-sm text-neutral-500">
+              {" "}
+              <span className="flex gap-2 items-center">
+                {task.taskKey} {getTaskTypeIcon(task.type)}
+              </span>
+            </div>
+
+            <h2 className="text-3xl font-bold">{task.title}</h2>
+          </div>
+
+          <button onClick={onClose} className="rounded-xl border px-4 py-2">
+            Close
+          </button>
+        </div>
+
+        {/* SPRINT */}
+        <div className="mt-4 rounded-2xl border bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-neutral-700">
+                Sprint Assignment
+              </p>
+
+              <p className="text-xs text-neutral-500">
+                {task.sprint ? task.sprint.name : "Not assigned to sprint"}
+              </p>
+            </div>
+
+            {task.sprint && (
+              <button
+                onClick={() => removeFromSprintMutation.mutate()}
+                className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+              >
+                Move to Backlog
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* EDIT */}
+        <div className="mt-6 rounded-3xl border bg-neutral-50 p-5">
+          <h3 className="mb-5 text-lg font-semibold">Task Details</h3>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <input
+              value={editForm.title}
+              onChange={(e) =>
+                setEditForm({
+                  ...editForm,
+                  title: e.target.value,
+                })
+              }
+              className="rounded-2xl border bg-white p-3"
+            />
+
+            <select
+              value={editForm.priority}
+              onChange={(e) =>
+                setEditForm({
+                  ...editForm,
+                  priority: e.target.value,
+                })
+              }
+              className="rounded-2xl border bg-white p-3"
+            >
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="HIGH">HIGH</option>
+              <option value="HIGHEST">HIGHEST</option>
+            </select>
+
+            <select
+              value={editForm.type}
+              onChange={(e) =>
+                setEditForm({
+                  ...editForm,
+                  type: e.target.value as
+                    | "STORY"
+                    | "TASK"
+                    | "SUBTASK"
+                    | "EPIC"
+                    | "IMPROVEMENT"
+                    | "BUG",
+                })
+              }
+              className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+            >
+              <option value="STORY">STORY</option>
+
+              <option value="TASK">TASK</option>
+
+              <option value="SUBTASK">SUBTASK</option>
+
+              <option value="EPIC">EPIC</option>
+
+              <option value="IMPROVEMENT">IMPROVEMENT</option>
+
+              <option value="BUG">BUG</option>
+            </select>
+          </div>
+
+          <div className="mt-4">
+            <label className="mb-2 block text-sm font-medium text-neutral-600">
+              Estimate
+            </label>
+
+            <div className="relative">
+              <input
+                type="number"
+                value={editForm.estimateMinutes}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    estimateMinutes: Number(e.target.value),
+                  })
+                }
+                className="w-full rounded-2xl border border-neutral-200 bg-white p-3 pr-20 outline-none"
+              />
+
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">
+                {formatEstimate(editForm.estimateMinutes)}
+              </div>
+            </div>
+          </div>
+
+          <textarea
+            rows={5}
+            value={editForm.description}
+            onChange={(e) =>
+              setEditForm({
+                ...editForm,
+                description: e.target.value,
+              })
+            }
+            className="mt-4 w-full rounded-2xl border bg-white p-4"
+          />
+
+          <div className="mt-5 flex gap-3">
+            <button
+              onClick={() => updateTaskMutation.mutate()}
+              disabled={updateTaskMutation.isPending}
+              className="rounded-2xl bg-black px-5 py-3 text-white"
+            >
+              {updateTaskMutation.isPending ? "Updating..." : "Update Task"}
+            </button>
+
+            <button
+              onClick={() => deleteMutation.mutate()}
+              className="rounded-2xl bg-red-500 px-5 py-3 text-white"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+
+        {/* TASK LINKING */}
+        {/* TASK LINKING */}
+        <div className="mt-6 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-neutral-900">Linked Tasks</h3>
+
+            <p className="mt-1 text-sm text-neutral-500">
+              Create dependency and relationship between tasks
+            </p>
+          </div>
+
+          {/* CREATE LINK */}
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* TASK DROPDOWN */}
+            <div>
+              {tasksLoading ? (
+                <div className="flex h-[56px] items-center rounded-2xl border border-neutral-200 bg-neutral-50 px-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-neutral-400" />
+
+                  <span className="ml-2 text-sm text-neutral-500">
+                    Loading tasks...
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={selectedLinkedTaskId}
+                  onChange={(e) => setSelectedLinkedTaskId(e.target.value)}
+                  className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 p-4 outline-none transition focus:border-black"
+                >
+                  <option value="">Select Task</option>
+
+                  {availableTasks.map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.taskKey} - {t.title}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* LINK TYPE */}
+            <select
+              value={selectedLinkType}
+              onChange={(e) => setSelectedLinkType(e.target.value)}
+              className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 outline-none transition focus:border-black"
+            >
+              <option value="BLOCKS">BLOCKS</option>
+
+              <option value="RELATES_TO">RELATES_TO</option>
+
+              <option value="DUPLICATES">DUPLICATES</option>
+
+              <option value="DEPENDS_ON">DEPENDS_ON</option>
+
+              <option value="CAUSED_BY">CAUSED_BY</option>
+            </select>
+
+            {/* CREATE BUTTON */}
+            <button
+              onClick={() => {
+                if (!selectedLinkedTaskId) {
+                  toast.error("Please select task");
+
+                  return;
+                }
+
+                createTaskLinkMutation.mutate();
+              }}
+              disabled={createTaskLinkMutation.isPending}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-white disabled:opacity-50"
+            >
+              {createTaskLinkMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Add Link
+            </button>
+          </div>
+
+          {/* LINKS LIST */}
+          <div className="mt-8 space-y-4">
+            {taskDetailsLoading ? (
+              <div className="rounded-2xl border border-neutral-200 p-8">
+                <div className="flex items-center justify-center gap-3 text-neutral-500">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Loading linked tasks...
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* OUTGOING LINKS */}
+                {taskData?.linkedTasks?.map((link: any) => (
+                  <div
+                    key={link.id}
+                    className="rounded-2xl border border-neutral-200 bg-white p-5"
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      {/* LEFT */}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-black px-2 py-1 text-xs font-semibold text-white">
+                            OUTGOING
+                          </span>
+
+                          <span className="text-sm font-semibold text-neutral-500">
+                            {link.type}
+                          </span>
+                        </div>
+
+                        <div className="mt-2 font-bold text-neutral-900">
+                          {link.targetTask?.taskKey}
+                        </div>
+
+                        <div className="text-sm text-neutral-600">
+                          {link.targetTask?.title}
+                        </div>
+                      </div>
+
+                      {/* RIGHT */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        {editingLinkId === link.id ? (
+                          <>
+                            <select
+                              value={editingLinkType}
+                              onChange={(e) =>
+                                setEditingLinkType(e.target.value)
+                              }
+                              className="rounded-xl border border-neutral-200 px-3 py-2 text-sm"
+                            >
+                              <option value="BLOCKS">BLOCKS</option>
+
+                              <option value="RELATES_TO">RELATES_TO</option>
+
+                              <option value="DUPLICATES">DUPLICATES</option>
+
+                              <option value="DEPENDS_ON">DEPENDS_ON</option>
+
+                              <option value="CAUSED_BY">CAUSED_BY</option>
+                            </select>
+
+                            <button
+                              onClick={() =>
+                                updateTaskLinkMutation.mutate({
+                                  linkId: link.id,
+                                  type: editingLinkType,
+                                })
+                              }
+                              disabled={updateTaskLinkMutation.isPending}
+                              className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+                            >
+                              {updateTaskLinkMutation.isPending
+                                ? "Updating..."
+                                : "Update"}
+                            </button>
+
+                            <button
+                              onClick={() => setEditingLinkId(null)}
+                              className="rounded-xl border px-4 py-2 text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingLinkId(link.id);
+
+                                setEditingLinkType(link.type);
+                              }}
+                              className="rounded-xl border border-neutral-200 px-4 py-2 text-sm"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                deleteTaskLinkMutation.mutate(link.id)
+                              }
+                              className="rounded-xl bg-red-500 px-4 py-2 text-sm text-white"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* INCOMING LINKS */}
+                {taskData?.linkedFromTasks?.map((link: any) => (
+                  <div
+                    key={link.id}
+                    className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5"
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      {/* LEFT */}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-neutral-700 px-2 py-1 text-xs font-semibold text-white">
+                            INCOMING
+                          </span>
+
+                          <span className="text-sm font-semibold text-neutral-500">
+                            {link.type}
+                          </span>
+                        </div>
+
+                        <div className="mt-2 font-bold text-neutral-900">
+                          {link.sourceTask?.taskKey}
+                        </div>
+
+                        <div className="text-sm text-neutral-600">
+                          {link.sourceTask?.title}
+                        </div>
+                      </div>
+
+                      {/* RIGHT */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        {editingLinkId === link.id ? (
+                          <>
+                            <select
+                              value={editingLinkType}
+                              onChange={(e) =>
+                                setEditingLinkType(e.target.value)
+                              }
+                              className="rounded-xl border border-neutral-200 px-3 py-2 text-sm"
+                            >
+                              <option value="BLOCKS">BLOCKS</option>
+
+                              <option value="RELATES_TO">RELATES_TO</option>
+
+                              <option value="DUPLICATES">DUPLICATES</option>
+
+                              <option value="DEPENDS_ON">DEPENDS_ON</option>
+
+                              <option value="CAUSED_BY">CAUSED_BY</option>
+                            </select>
+
+                            <button
+                              onClick={() =>
+                                updateTaskLinkMutation.mutate({
+                                  linkId: link.id,
+                                  type: editingLinkType,
+                                })
+                              }
+                              disabled={updateTaskLinkMutation.isPending}
+                              className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+                            >
+                              {updateTaskLinkMutation.isPending
+                                ? "Updating..."
+                                : "Update"}
+                            </button>
+
+                            <button
+                              onClick={() => setEditingLinkId(null)}
+                              className="rounded-xl border px-4 py-2 text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingLinkId(link.id);
+
+                                setEditingLinkType(link.type);
+                              }}
+                              className="rounded-xl border border-neutral-200 px-4 py-2 text-sm"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                deleteTaskLinkMutation.mutate(link.id)
+                              }
+                              className="rounded-xl bg-red-500 px-4 py-2 text-sm text-white"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* EMPTY STATE */}
+                {!taskData?.linkedTasks?.length &&
+                  !taskData?.linkedFromTasks?.length && (
+                    <div className="rounded-2xl border border-dashed border-neutral-300 p-10 text-center">
+                      <Link2 className="mx-auto mb-3 h-10 w-10 text-neutral-300" />
+
+                      <div className="text-sm font-medium text-neutral-600">
+                        No linked tasks found
+                      </div>
+
+                      <div className="mt-1 text-xs text-neutral-400">
+                        Create relationships between tasks
+                      </div>
+                    </div>
+                  )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ASSIGN */}
+        <div className="mt-6 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-neutral-900">
+                Assign Task
+              </h3>
+
+              <p className="mt-1 text-sm text-neutral-500">
+                Assign this task to a project member
+              </p>
+            </div>
+
+            <button
+              onClick={() => assignTaskMutation.mutate(currentUser?.id)}
+              className="flex items-center gap-2 cursor-pointer rounded-2xl bg-black px-3 py-3 text-sm font-medium text-white transition hover:opacity-90"
+              disabled={assignTaskMutation.isPending}
+            >
+              {assignTaskMutation.isPending ? "Assigning..." : "Assign to me"}
+            </button>
+            {task.assignee && (
+              <div className="rounded-2xl bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700">
+                Current: {task.assignee.email}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-4 md:flex-row">
+            <div className="relative flex-1">
+              <select
+                value={selectedUserId || ""}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4"
+              >
+                <option value="">Select team member</option>
+
+                {members.map((member: any) => (
+                  <option key={member.userId} value={member.userId}>
+                    {member.email} ({member.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={() => {
+                if (!selectedUserId) {
+                  toast.error("Please select a member");
+                  return;
+                }
+
+                assignTaskMutation.mutate(selectedUserId);
+              }}
+              className="rounded-2xl bg-black px-6 py-4 text-white"
+            >
+              Assign Task
+            </button>
+          </div>
+        </div>
+
+        {/* COMMENTS */}
+        <div className="mt-6 rounded-3xl border bg-neutral-50 p-5">
+          <div className="mb-5 flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+
+            <h3 className="text-lg font-semibold">Comments</h3>
+          </div>
+
+          <div className="space-y-4">
+            {comments.map((comment: any) => (
+              <div key={comment.id} className="rounded-2xl bg-white p-4">
+                <div className="mb-1 flex items-center justify-between">
+                  <div className="text-sm font-semibold">
+                    {comment.user.email}
+                  </div>
+
+                  {(comment.userId === currentUser?.id ||
+                    isSuperAdmin ||
+                    isAdmin) && (
+                    <button
+                      onClick={() => deleteCommentMutation.mutate(comment.id)}
+                      className="text-xs text-red-500"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+
+                <div className="text-sm text-neutral-700">
+                  {comment.content}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex gap-3">
+            <input
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Write comment..."
+              className="flex-1 rounded-2xl border bg-white p-3"
+            />
+
+            <button
+              onClick={() => addCommentMutation.mutate()}
+              className="rounded-2xl bg-black px-5 py-3 text-white"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

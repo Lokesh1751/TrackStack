@@ -1,6 +1,4 @@
 "use client";
-
-import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -193,6 +191,16 @@ export default function DashboardPage() {
             <p className="text-sm text-slate-500 mt-1">
               Create and manage your organization workspaces
             </p>
+          </div>
+
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {isSuperAdmin && (
+              <>
+
+                <Button onClick={() => setOpen(true)}>+ New Workspace</Button>
+              </>
+            )}
           </div>
         </div>
 

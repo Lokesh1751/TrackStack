@@ -153,7 +153,7 @@ export const getWorkspaceById = async (id: string) => {
       slug: string;
       description?: string;
       logoUrl?: string;
-      isSuperAdmin?:boolean,
+      isSuperAdmin?: boolean;
       role: string;
     };
   }>(`/workspace/${id}`);
@@ -601,4 +601,66 @@ export const removeTaskFromSprint = async (taskId: string) => {
 
 export const getBacklogTasks = async (projectId: string) => {
   return request<{ tasks: any[] }>(`/projects/${projectId}/backlog`);
+};
+
+// =====================================
+// LINK TASK
+// =====================================
+
+export const createTaskLink = async (
+  taskId: string,
+  data: {
+    targetTaskId: string;
+    type: "BLOCKS" | "RELATES_TO" | "DUPLICATES" | "DEPENDS_ON" | "CAUSED_BY";
+  },
+) => {
+  return request<{
+    message: string;
+    link: any;
+  }>(`/tasks/${taskId}/links`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+// =====================================
+// GET TASK LINKS
+// =====================================
+
+export const getTaskLinks = async (taskId: string) => {
+  return request<{
+    linkedTasks: any[];
+    linkedFromTasks: any[];
+  }>(`/tasks/${taskId}/links`);
+};
+
+// =====================================
+// UPDATE TASK LINK
+// =====================================
+
+export const updateTaskLink = async (
+  linkId: string,
+  type: "BLOCKS" | "RELATES_TO" | "DUPLICATES" | "DEPENDS_ON" | "CAUSED_BY",
+) => {
+  return request<{
+    message: string;
+    link: any;
+  }>(`/task-links/${linkId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      type,
+    }),
+  });
+};
+
+// =====================================
+// DELETE TASK LINK
+// =====================================
+
+export const deleteTaskLink = async (linkId: string) => {
+  return request<{
+    message: string;
+  }>(`/task-links/${linkId}`, {
+    method: "DELETE",
+  });
 };

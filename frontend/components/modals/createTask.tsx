@@ -1,6 +1,6 @@
 "use client";
 
-import {useState } from "react";
+import { useState } from "react";
 
 import { createPortal } from "react-dom";
 
@@ -19,7 +19,6 @@ type Props = {
 
 export function CreateTaskModal({ projectId, sprintId }: Props) {
   const queryClient = useQueryClient();
-
 
   const [open, setOpen] = useState(false);
 
@@ -190,7 +189,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                       <option value="LOW">LOW</option>
                       <option value="MEDIUM">MEDIUM</option>
                       <option value="HIGH">HIGH</option>
-                      <option value="CRITICAL">CRITICAL</option>
+                      <option value="HIGHEST">HIGHEST</option>
                     </select>
                   </div>
 
@@ -215,6 +214,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                       <option value="SUBTASK">SUBTASK</option>
                       <option value="EPIC">EPIC</option>
                       <option value="IMPROVEMENT">IMPROVEMENT</option>
+                      <option value="BUG">BUG</option>
                     </select>
                   </div>
 
@@ -302,9 +302,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   )}
 
-                  {createTaskMutation.isPending
-                    ? "Creating..."
-                    : "Create Task"}
+                  {createTaskMutation.isPending ? "Creating..." : "Create Task"}
                 </button>
               </div>
             </div>
