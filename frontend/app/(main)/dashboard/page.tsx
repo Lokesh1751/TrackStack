@@ -9,7 +9,6 @@ import {
   getWorkspaces,
   deleteWorkspace,
   createWorkspace,
-  logout,
   addMember,
   getAllUsers,
 } from "@/lib/api";
@@ -19,6 +18,7 @@ import { DataTable } from "@/components/columns/data-table";
 import { getColumns } from "@/components/columns/workspace-columns";
 import { useToast } from "@/hooks/useToast";
 import { DashboardPageSkeleton } from "@/components/skeleton/dashboard";
+import {ImageWithFallback} from "@/components/image-fallback"
 
 type WorkspaceRole = "ADMIN" | "MEMBER";
 
@@ -267,7 +267,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-4">
                 <div className="h-20 w-20 rounded-2xl border bg-slate-100 flex items-center justify-center overflow-hidden">
                   {logoUrl ? (
-                    <Image
+                    <ImageWithFallback
                       src={logoUrl}
                       alt="logo"
                       width={80}

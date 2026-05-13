@@ -153,6 +153,7 @@ export const getWorkspaceById = async (id: string) => {
       slug: string;
       description?: string;
       logoUrl?: string;
+      isSuperAdmin?:boolean,
       role: string;
     };
   }>(`/workspace/${id}`);

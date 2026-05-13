@@ -23,6 +23,7 @@ import {
   deleteSprint,
 } from "@/lib/api";
 import { SprintPageSkeleton } from "@/components/skeleton/sprint";
+import { CreateTaskModal } from "@/components/modals/createTask";
 
 export default function SprintPage() {
   const { id } = useParams();
@@ -421,6 +422,8 @@ export default function SprintPage() {
                 >
                   Open Board
                 </button>
+
+                <CreateTaskModal projectId={projectId} sprintId={sprint.id} />
               </div>
             </div>
           ))}

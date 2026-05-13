@@ -13,6 +13,7 @@ import {
 
 import { BacklogSkeleton } from "@/components/skeleton/backlog";
 import { TaskActionModalSkeleton } from "@/components/skeleton/task-modal";
+import { CreateTaskModal } from "@/components/modals/createTask";
 
 export default function BacklogPage() {
   const { id } = useParams();
@@ -57,11 +58,14 @@ export default function BacklogPage() {
   return (
     <div className="min-h-screen bg-neutral-100 p-6">
       {/* HEADER */}
-      <div className="mb-6 rounded-3xl bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-bold">Backlog</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Unassigned tasks (Sprint backlog)
-        </p>
+      <div className="mb-6 rounded-3xl bg-white p-6 shadow-sm flex justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Backlog</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            Unassigned tasks (Sprint backlog)
+          </p>
+        </div>
+        <CreateTaskModal projectId={projectId} sprintId={undefined} />
       </div>
 
       {/* LOADING */}

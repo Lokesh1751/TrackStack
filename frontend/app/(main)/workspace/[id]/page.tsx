@@ -9,6 +9,7 @@ import { getWorkspaceById, getWorkspaceMembers, getProjects } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import { WorkspacePageSkeleton } from "@/components/skeleton/workspace";
+import { ImageWithFallback } from "@/components/image-fallback";
 
 export default function Workspace() {
   const { id } = useParams();
@@ -74,7 +75,7 @@ export default function Workspace() {
               <div className="flex items-end gap-5">
                 <div className="h-28 w-28 rounded-3xl border-4 border-white bg-white overflow-hidden shadow-md flex items-center justify-center">
                   {workspace.logoUrl ? (
-                    <Image
+                    <ImageWithFallback
                       src={workspace.logoUrl}
                       alt="workspace-logo"
                       width={112}

@@ -1,9 +1,8 @@
 "use client";
-
-import Image from "next/image";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "../image-fallback";
 
 export type Workspace = {
   id: string;
@@ -33,7 +32,7 @@ export const getColumns = (
         {/* Logo */}
         <div className="h-10 w-10 rounded-xl overflow-hidden border bg-slate-100 flex items-center justify-center shrink-0">
           {row.original.logoUrl ? (
-            <Image
+            <ImageWithFallback
               src={row.original.logoUrl}
               alt={row.original.name}
               width={40}

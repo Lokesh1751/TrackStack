@@ -25,6 +25,7 @@ import { Loader2, Trash2, Plus, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { TaskBoardSkeleton } from "@/components/skeleton/taskBoard";
 import { TaskModalSkeleton } from "@/components/skeleton/task-edit-modal";
+import { CreateTaskModal } from "@/components/modals/createTask";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 
@@ -233,77 +234,29 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-neutral-100 p-6">
       {/* HEADER */}
-      <div className="mb-8 rounded-3xl bg-white p-6 shadow-sm">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">
-              Tasks Board for {currentSprint}
-            </h1>
-            <p className="mt-1 text-sm text-neutral-500">
-              Manage project tasks like Jira
-            </p>
-          </div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">
+            Tasks Board for {currentSprint}
+          </h1>
 
+          <p className="mt-1 text-sm text-neutral-500">
+            Manage project tasks like Jira
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/sprint/${projectId}/backlog`)}
-            className="rounded-xl border px-4 py-2 text-sm cursor-pointer"
+            className="rounded-xl border px-4 py-2 text-sm"
           >
             Backlogs
           </button>
-        </div>
 
-        {/* CREATE TASK (UNCHANGED) */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-6">
-          <input
-            placeholder="Task title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="rounded-2xl border bg-white p-3 outline-none"
+          <CreateTaskModal
+            projectId={projectId}
+            sprintId={sprintId || undefined}
           />
-
-          <input
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="rounded-2xl border bg-white p-3 outline-none"
-          />
-
-          <select
-            value={form.priority}
-            onChange={(e) => setForm({ ...form, priority: e.target.value })}
-            className="rounded-2xl border bg-white p-3 outline-none"
-          >
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
-            <option value="CRITICAL">CRITICAL</option>
-          </select>
-
-          <select
-            value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
-            className="rounded-2xl border bg-white p-3 outline-none"
-          >
-            <option value="TASK">TASK</option>
-            <option value="BUG">BUG</option>
-            <option value="STORY">STORY</option>
-            <option value="EPIC">EPIC</option>
-          </select>
-
-          <input
-            type="date"
-            value={form.dueDate}
-            onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-            className="rounded-2xl border bg-white p-3 outline-none"
-          />
-
-          <button
-            onClick={() => createTaskMutation.mutate()}
-            disabled={createTaskMutation.isPending}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-black px-4 py-3 font-medium text-white"
-          >
-            {createTaskMutation.isPending ? "Creating..." : "Create"}
-          </button>
         </div>
       </div>
 

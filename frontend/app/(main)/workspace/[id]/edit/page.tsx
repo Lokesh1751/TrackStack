@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/useToast";
 import { EditWorkspacePageSkeleton } from "@/components/skeleton/edit-workspace";
+import { ImageWithFallback } from "@/components/image-fallback";
 
 export default function EditWorkspacePage() {
   const { id } = useParams();
@@ -175,7 +176,7 @@ export default function EditWorkspacePage() {
             <div className="flex items-center gap-5">
               <div className="h-24 w-24 rounded-2xl border overflow-hidden bg-slate-100 flex items-center justify-center">
                 {logoUrl ? (
-                  <Image
+                  <ImageWithFallback
                     src={logoUrl}
                     alt="logo"
                     width={96}
