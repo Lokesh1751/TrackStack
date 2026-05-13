@@ -11,13 +11,15 @@ import {
   UseGuards,
   ValidationPipe,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { SessionAuthGuard } from 'src/database/session-auth.guard';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
+import { WorkspaceQueryDto } from './dto/workspace-query.dto';
 
 @UseGuards(SessionAuthGuard)
 @Controller('workspace')
@@ -40,13 +42,14 @@ export class WorkspaceController {
 
   // ✅ Get all workspaces
   @Get()
-  async findAll(@Req() req: Request) {
+  async findAll(@Req() req: Request, @Query() query: WorkspaceQueryDto) {
     const userId = req.session.userId;
+
     if (!userId) {
       throw new UnauthorizedException();
     }
 
-    return this.workspaceService.getUserWorkspaces(userId);
+    return this.workspaceService.getUserWorkspaces(userId, query);
   }
 
   // ✅ Get single workspace

@@ -12,6 +12,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { WorkspaceQueryDto } from './dto/workspace-query.dto';
 
 @Injectable()
 export class WorkspaceService {
@@ -74,33 +75,56 @@ export class WorkspaceService {
   // =========================
   // GET USER WORKSPACES
   // =========================
-  async getUserWorkspaces(userId: string) {
+  async getUserWorkspaces(userId: string, query: WorkspaceQueryDto) {
+    const page = Number(query.page ?? 1);
+    const limit = Number(query.limit ?? 10);
+
     const memberships = await this.db.membership.findMany({
       where: {
         userId,
+
+        ...(query.role && { role: query.role }),
+
+        workspace: query.search
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  slug: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }
+          : undefined,
       },
 
       include: {
         workspace: true,
       },
+
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
     return {
-      workspaces: memberships
-        .filter((m) => m.workspace)
-        .map((m) => ({
-          id: m.workspace.id,
-          name: m.workspace.name,
-          slug: m.workspace.slug,
-          description: m.workspace.description,
-          logoUrl: m.workspace.logoUrl,
-          ownerId: m.workspace.ownerId,
-          createdAt: m.workspace.createdAt,
-          updatedAt: m.workspace.updatedAt,
-
-          // ✅ workspace specific role
-          role: m.role,
-        })),
+      workspaces: memberships.map((m) => ({
+        id: m.workspace.id,
+        name: m.workspace.name,
+        slug: m.workspace.slug,
+        description: m.workspace.description,
+        logoUrl: m.workspace.logoUrl,
+        ownerId: m.workspace.ownerId,
+        createdAt: m.workspace.createdAt,
+        updatedAt: m.workspace.updatedAt,
+        role: m.role,
+      })),
     };
   }
 
