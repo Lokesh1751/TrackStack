@@ -17,7 +17,7 @@ import {
 } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
-
+import { ProjectsPageSkeleton } from "@/components/skeleton/projects";
 import { useToast } from "@/hooks/useToast";
 
 export default function Projects() {
@@ -274,9 +274,7 @@ export default function Projects() {
           </div>
 
           {isLoading ? (
-            <div className="p-6 text-sm text-slate-500">
-              Loading projects...
-            </div>
+    <ProjectsPageSkeleton/>
           ) : projects.length === 0 ? (
             <div className="p-6 text-sm text-slate-500">No projects found</div>
           ) : (

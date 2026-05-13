@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getWorkspaceById, getWorkspaceMembers, getProjects } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
+import { WorkspacePageSkeleton } from "@/components/skeleton/workspace";
 
 export default function Workspace() {
   const { id } = useParams();
@@ -49,11 +50,7 @@ export default function Workspace() {
   const projects = projectsData?.projects || [];
 
   if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        Loading workspace...
-      </div>
-    );
+    return <WorkspacePageSkeleton/>
   }
 
   if (!workspace) {

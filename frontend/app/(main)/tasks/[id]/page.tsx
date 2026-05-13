@@ -23,6 +23,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2, Plus, MessageSquare } from "lucide-react";
 
 import { toast } from "sonner";
+import { TaskBoardSkeleton } from "@/components/skeleton/taskBoard";
+import { TaskModalSkeleton } from "@/components/skeleton/task-edit-modal";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 
@@ -383,9 +385,7 @@ export default function Page() {
 
       {/* TASK BOARD (UNCHANGED) */}
       {isLoading ? (
-        <div className="flex h-[400px] items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin" />
-        </div>
+        <TaskBoardSkeleton />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           {statuses.map((status) => (
@@ -523,14 +523,19 @@ export default function Page() {
         </div>
       )}
 
-      {/* MODAL */}
       {selectedTask && (
-        <TaskModal
-          task={selectedTask}
-          projectId={projectId}
-          onClose={() => setSelectedTask(null)}
-          refetch={refetch}
-        />
+        <>
+          {isLoading ? (
+            <TaskModalSkeleton />
+          ) : (
+            <TaskModal
+              task={selectedTask}
+              projectId={projectId}
+              onClose={() => setSelectedTask(null)}
+              refetch={refetch}
+            />
+          )}
+        </>
       )}
     </div>
   );

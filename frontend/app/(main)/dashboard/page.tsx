@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/columns/data-table";
 import { getColumns } from "@/components/columns/workspace-columns";
 import { useToast } from "@/hooks/useToast";
+import { DashboardPageSkeleton } from "@/components/skeleton/dashboard";
 
 type WorkspaceRole = "ADMIN" | "MEMBER";
 
@@ -182,7 +183,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className=" bg-slate-100">
       <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
         {/* HEADER */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -193,28 +194,11 @@ export default function DashboardPage() {
               Create and manage your organization workspaces
             </p>
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {isSuperAdmin && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push("/admin/users")}
-                >
-                  Users
-                </Button>
-
-                <Button onClick={() => setOpen(true)}>+ New Workspace</Button>
-              </>
-            )}
-          </div>
         </div>
 
         {/* LOADING */}
         {!data && isLoading ? (
-          <div className="h-[400px] flex items-center justify-center">
-            <p className="text-slate-500">Loading workspaces...</p>
-          </div>
+           <DashboardPageSkeleton />
         ) : workspaces.length === 0 ? (
           // EMPTY
           <div className="bg-white border rounded-2xl p-12 text-center shadow-sm">

@@ -22,6 +22,7 @@ import {
   completeSprint,
   deleteSprint,
 } from "@/lib/api";
+import { SprintPageSkeleton } from "@/components/skeleton/sprint";
 
 export default function SprintPage() {
   const { id } = useParams();
@@ -298,9 +299,7 @@ export default function SprintPage() {
       {/* ========================= */}
 
       {isLoading ? (
-        <div className="flex h-[400px] items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin" />
-        </div>
+        <SprintPageSkeleton />
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           {sprints.map((sprint: any) => (

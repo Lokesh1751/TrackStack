@@ -15,6 +15,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/useToast";
+import { EditWorkspacePageSkeleton } from "@/components/skeleton/edit-workspace";
 
 export default function EditWorkspacePage() {
   const { id } = useParams();
@@ -113,10 +114,11 @@ export default function EditWorkspacePage() {
     }: {
       userId: string;
       role: "SUPER_ADMIN" | "ADMIN" | "MEMBER";
-    }) => updateMemberRole(id as string, {
-      userId: userId,
-      role: role,
-    }),
+    }) =>
+      updateMemberRole(id as string, {
+        userId: userId,
+        role: role,
+      }),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({
         queryKey: ["workspace-members", id],
@@ -150,11 +152,7 @@ export default function EditWorkspacePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        Loading workspace...
-      </div>
-    );
+    return <EditWorkspacePageSkeleton />;
   }
 
   return (

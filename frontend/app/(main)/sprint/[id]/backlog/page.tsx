@@ -11,13 +11,12 @@ import {
   addTaskToSprint,
 } from "@/lib/api";
 
-import { Loader2 } from "lucide-react";
+import { BacklogSkeleton } from "@/components/skeleton/backlog";
+import { TaskActionModalSkeleton } from "@/components/skeleton/task-modal";
 
 export default function BacklogPage() {
   const { id } = useParams();
   const projectId = id as string;
-
-  const queryClient = useQueryClient();
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
 
@@ -37,7 +36,7 @@ export default function BacklogPage() {
   // MEMBERS
   // =========================
 
-  const { data: membersData } = useQuery({
+  const { data: membersData, isLoading: isMembersLoading } = useQuery({
     queryKey: ["members", projectId],
     queryFn: () => getProjectMembers(projectId),
   });
@@ -67,18 +66,14 @@ export default function BacklogPage() {
 
       {/* LOADING */}
       {isLoading ? (
-        <div className="flex h-[300px] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+        <BacklogSkeleton />
       ) : (
         <div className="rounded-3xl bg-white p-4 shadow-sm">
           {/* EMPTY STATE */}
           {tasks.length === 0 ? (
             <div className="py-20 text-center">
               <div className="text-5xl">📦</div>
-              <h2 className="mt-4 text-xl font-semibold">
-                Backlog is empty
-              </h2>
+              <h2 className="mt-4 text-xl font-semibold">Backlog is empty</h2>
               <p className="text-sm text-neutral-500">
                 No unplanned tasks available
               </p>
@@ -124,14 +119,17 @@ export default function BacklogPage() {
       )}
 
       {/* MODAL */}
-      {selectedTask && (
-        <TaskActionModal
-          task={selectedTask}
-          members={members}
-          sprints={sprints}
-          onClose={() => setSelectedTask(null)}
-        />
-      )}
+      {selectedTask &&
+        (isMembersLoading ? (
+          <TaskActionModalSkeleton />
+        ) : (
+          <TaskActionModal
+            task={selectedTask}
+            members={members}
+            sprints={sprints}
+            onClose={() => setSelectedTask(null)}
+          />
+        ))}
     </div>
   );
 }
@@ -140,12 +138,7 @@ export default function BacklogPage() {
    MODAL COMPONENT
 ====================================================== */
 
-function TaskActionModal({
-  task,
-  members,
-  sprints,
-  onClose,
-}: any) {
+function TaskActionModal({ task, members, sprints, onClose }: any) {
   const queryClient = useQueryClient();
 
   const [selectedUser, setSelectedUser] = useState("");
@@ -156,8 +149,7 @@ function TaskActionModal({
   // =========================
 
   const assignMutation = useMutation({
-    mutationFn: (assigneeId: string) =>
-      assignTask(task.id, assigneeId),
+    mutationFn: (assigneeId: string) => assignTask(task.id, assigneeId),
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["backlog"] });
@@ -170,8 +162,7 @@ function TaskActionModal({
   // =========================
 
   const sprintMutation = useMutation({
-    mutationFn: (sprintId: string) =>
-      addTaskToSprint(sprintId, task.id),
+    mutationFn: (sprintId: string) => addTaskToSprint(sprintId, task.id),
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["backlog"] });
@@ -190,9 +181,7 @@ function TaskActionModal({
 
         {/* ASSIGN USER */}
         <div className="mb-6">
-          <label className="mb-2 block text-sm font-medium">
-            Assign User
-          </label>
+          <label className="mb-2 block text-sm font-medium">Assign User</label>
 
           <select
             value={selectedUser}
