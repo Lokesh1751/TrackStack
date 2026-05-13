@@ -106,14 +106,28 @@ export const resetPassword = async (data: {
   });
 };
 
-export const getWorkspaces = async () => {
+export const getWorkspaces = async (params?: {
+  role?: "ADMIN" | "MEMBER";
+  search?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const query = new URLSearchParams();
+
+  if (params?.role) query.set("role", params.role);
+  if (params?.search) query.set("search", params.search);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
+
+  const queryString = query.toString();
+
   return request<{
     workspaces: {
       id: string;
       name: string;
       role: "ADMIN" | "MEMBER";
     }[];
-  }>("/workspace", {
+  }>(`/workspace${queryString ? `?${queryString}` : ""}`, {
     method: "GET",
   });
 };

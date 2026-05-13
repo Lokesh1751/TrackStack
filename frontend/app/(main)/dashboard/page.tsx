@@ -16,7 +16,9 @@ import { DataTable } from "@/components/columns/data-table";
 import { getColumns } from "@/components/columns/workspace-columns";
 import { useToast } from "@/hooks/useToast";
 import { DashboardPageSkeleton } from "@/components/skeleton/dashboard";
-import {ImageWithFallback} from "@/components/image-fallback"
+import { ImageWithFallback } from "@/components/image-fallback";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
+import { FilterBar } from "@/components/filters/FilterBar";
 
 type WorkspaceRole = "ADMIN" | "MEMBER";
 
@@ -24,6 +26,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { get, set } = useQueryFilters();
+
+  const role = get("role");
+  const search = get("search");
 
   // ✅ GLOBAL ACCESS
   const isSuperAdmin =
@@ -49,10 +55,12 @@ export default function DashboardPage() {
   // WORKSPACES
   // =========================
   const { data, isLoading } = useQuery({
-    queryKey: ["workspaces"],
-    queryFn: getWorkspaces,
-    staleTime: 0,
-    refetchOnMount: true,
+    queryKey: ["workspaces", role, search],
+    queryFn: () =>
+      getWorkspaces({
+        role: role || undefined,
+        search: search || undefined,
+      }),
   });
 
   const workspaces = data?.workspaces ?? [];
@@ -79,7 +87,7 @@ export default function DashboardPage() {
   }, [name]);
 
   useEffect(() => {
-    setSlug(generatedSlug );
+    setSlug(generatedSlug);
   }, [generatedSlug]);
 
   // =========================
@@ -193,20 +201,45 @@ export default function DashboardPage() {
             </p>
           </div>
 
-
           <div className="flex items-center gap-2 flex-wrap">
             {isSuperAdmin && (
               <>
-
                 <Button onClick={() => setOpen(true)}>+ New Workspace</Button>
               </>
             )}
           </div>
         </div>
 
+        <div className="flex justify-between bg-white rounded-lg p-3  border-gray-200 border-2 flex-wrap items-center">
+          {!isSuperAdmin && (
+            <FilterBar
+              values={{
+                role: role || "",
+              }}
+              onChange={(key, value) => set(key, value)}
+              filters={[
+                {
+                  key: "role",
+                  label: "Role",
+                  options: [
+                    { label: "Admin", value: "ADMIN" },
+                    { label: "Member", value: "MEMBER" },
+                  ],
+                },
+              ]}
+            />
+          )}
+          <input
+            value={search}
+            onChange={(e) => set("search", e.target.value)}
+            placeholder="Search workspaces..."
+            className="w-full md:w-72 border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+          />
+        </div>
+
         {/* LOADING */}
         {!data && isLoading ? (
-           <DashboardPageSkeleton />
+          <DashboardPageSkeleton />
         ) : workspaces.length === 0 ? (
           // EMPTY
           <div className="bg-white border rounded-2xl p-12 text-center shadow-sm">
@@ -218,7 +251,6 @@ export default function DashboardPage() {
                   ? "Create your first workspace to start managing projects"
                   : "You are not added to any workspace yet. Contact your administrator."}
               </p>
-
             </div>
           </div>
         ) : (

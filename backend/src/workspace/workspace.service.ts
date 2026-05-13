@@ -79,11 +79,13 @@ export class WorkspaceService {
     const page = Number(query.page ?? 1);
     const limit = Number(query.limit ?? 10);
 
+    const role = query.role?.toUpperCase() as 'ADMIN' | 'MEMBER' | undefined;
+
     const memberships = await this.db.membership.findMany({
       where: {
         userId,
 
-        ...(query.role && { role: query.role }),
+        ...(role && { role }),
 
         workspace: query.search
           ? {
@@ -96,6 +98,12 @@ export class WorkspaceService {
                 },
                 {
                   slug: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  description: {
                     contains: query.search,
                     mode: 'insensitive',
                   },
