@@ -24,6 +24,7 @@ import {
 } from "@/lib/api";
 import { SprintPageSkeleton } from "@/components/skeleton/sprint";
 import { CreateTaskModal } from "@/components/modals/createTask";
+import { SprintFilter } from "@/components/filters/SprintFilter";
 
 export default function SprintPage() {
   const { id } = useParams();
@@ -45,13 +46,27 @@ export default function SprintPage() {
     endDate: "",
   });
 
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "",
+    startDate: "",
+    endDate: "",
+  });
+
   // =========================
   // GET SPRINTS
   // =========================
 
   const { data, isLoading } = useQuery({
-    queryKey: ["sprints", projectId],
-    queryFn: () => getProjectSprints(projectId),
+    queryKey: ["sprints", projectId, filters],
+
+    queryFn: () =>
+      getProjectSprints(projectId, {
+        search: filters.search || undefined,
+        status: filters.status || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+      }),
     enabled: !!projectId,
   });
 
@@ -298,24 +313,38 @@ export default function SprintPage() {
       {/* ========================= */}
       {/* SPRINT LIST */}
       {/* ========================= */}
+<div className="flex flex-col gap-2 justify-between bg-white p-4 rounded-lg mb-3">
+<h1 className="text-4xl font-bold tracking-tight mb-2">
+              Sprints
+            </h1>
+      <SprintFilter filters={filters} setFilters={setFilters} />
+</div>
 
-      {isLoading ? (
-        <SprintPageSkeleton />
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {sprints.map((sprint: any) => (
+{isLoading ? (
+  <SprintPageSkeleton />
+) : (
+  <div className="space-y-6">
+    {sprints.length > 0 ? (
+      <div className="grid gap-6 xl:grid-cols-2">
+        {sprints.map((sprint: any) => {
+          const isActive = sprint.status === "ACTIVE";
+          const isCompleted = sprint.status === "COMPLETED";
+          const isPlanned = sprint.status === "PLANNED";
+
+          return (
             <div
               key={sprint.id}
-              className="group rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-black hover:shadow-xl"
+              className="group relative overflow-hidden rounded-[28px] border border-neutral-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
-              {/* TOP */}
+
+              {/* HEADER */}
               <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
+                <div className="flex-1">
                   <div
-                    className={`mb-3 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
-                      sprint.status === "ACTIVE"
+                    className={`mb-4 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.15em] ${
+                      isActive
                         ? "bg-green-100 text-green-700"
-                        : sprint.status === "COMPLETED"
+                        : isCompleted
                           ? "bg-blue-100 text-blue-700"
                           : "bg-yellow-100 text-yellow-700"
                     }`}
@@ -323,11 +352,11 @@ export default function SprintPage() {
                     {sprint.status}
                   </div>
 
-                  <h2 className="text-2xl font-bold text-neutral-900">
+                  <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
                     {sprint.name}
                   </h2>
 
-                  <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-neutral-500">
                     {sprint.goal || "No sprint goal added"}
                   </p>
                 </div>
@@ -335,116 +364,161 @@ export default function SprintPage() {
                 <button
                   onClick={() => deleteSprintMutation.mutate(sprint.id)}
                   disabled={deleteSprintMutation.isPending}
-                  className="rounded-2xl bg-red-50 p-3 text-red-500 transition hover:bg-red-100"
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100 disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* INFO */}
+              {/* STATS */}
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-neutral-50 p-4">
-                  <div className="mb-2 flex items-center gap-2 text-neutral-500">
-                    <CalendarDays className="h-4 w-4" />
-                    <span className="text-xs font-semibold uppercase">
+                {/* TIMELINE */}
+                <div className="rounded-3xl border border-neutral-100 bg-neutral-50 p-5">
+                  <div className="mb-4 flex items-center gap-2 text-neutral-500">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
+                      <CalendarDays className="h-4 w-4" />
+                    </div>
+
+                    <span className="text-xs font-bold uppercase tracking-wide">
                       Timeline
                     </span>
                   </div>
 
-                  <div className="text-sm font-medium text-neutral-800">
-                    {sprint.startDate
-                      ? new Date(sprint.startDate).toLocaleDateString("en-IN")
-                      : "--"}
-                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold text-neutral-900">
+                      {sprint.startDate
+                        ? new Date(sprint.startDate).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )
+                        : "--"}
+                    </div>
 
-                  <div className="mt-1 text-xs text-neutral-400">
-                    to{" "}
-                    {sprint.endDate
-                      ? new Date(sprint.endDate).toLocaleDateString("en-IN")
-                      : "--"}
+                    <div className="text-xs text-neutral-400">
+                      to{" "}
+                      {sprint.endDate
+                        ? new Date(sprint.endDate).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )
+                        : "--"}
+                    </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-neutral-50 p-4">
-                  <div className="mb-2 flex items-center gap-2 text-neutral-500">
-                    <Target className="h-4 w-4" />
+                {/* TASK COUNT */}
+                <div className="rounded-3xl border border-neutral-100 bg-neutral-50 p-5">
+                  <div className="mb-4 flex items-center gap-2 text-neutral-500">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm">
+                      <Target className="h-4 w-4" />
+                    </div>
 
-                    <span className="text-xs font-semibold uppercase">
+                    <span className="text-xs font-bold uppercase tracking-wide">
                       Tasks
                     </span>
                   </div>
 
-                  <div className="text-2xl font-bold text-neutral-900">
+                  <div className="text-3xl font-bold tracking-tight text-neutral-900">
                     {sprint.tasks.length || 0}
                   </div>
 
-                  <div className="text-xs text-neutral-400">Tasks Assigned</div>
+                  <div className="mt-1 text-xs text-neutral-400">
+                    Tasks assigned in sprint
+                  </div>
                 </div>
               </div>
 
-              {/* ACTIONS */}
-              <div className="mt-6 flex flex-wrap gap-3">
-                {sprint.status === "PLANNED" && (
+              {/* FOOTER */}
+              <div className="mt-7 border-t border-neutral-100 pt-6">
+                <div className="flex flex-wrap gap-3">
+                  {isPlanned && (
+                    <button
+                      onClick={() => startSprintMutation.mutate(sprint.id)}
+                      disabled={startSprintMutation.isPending}
+                      className="flex items-center gap-2 rounded-2xl bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {startSprintMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+
+                      Start Sprint
+                    </button>
+                  )}
+
+                  {isActive && (
+                    <button
+                      onClick={() => completeSprintMutation.mutate(sprint.id)}
+                      disabled={completeSprintMutation.isPending}
+                      className="flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {completeSprintMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+
+                      Complete Sprint
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => startSprintMutation.mutate(sprint.id)}
-                    disabled={startSprintMutation.isPending}
-                    className="flex items-center gap-2 rounded-2xl bg-green-600 px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+                    onClick={() =>
+                      router.push(`/tasks/${projectId}?sprint=${sprint.id}`)
+                    }
+                    className="rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium transition hover:border-black hover:bg-neutral-50"
                   >
-                    {startSprintMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                    Start Sprint
+                    Open Board
                   </button>
-                )}
 
-                {sprint.status === "ACTIVE" && (
-                  <button
-                    onClick={() => completeSprintMutation.mutate(sprint.id)}
-                    disabled={completeSprintMutation.isPending}
-                    className="flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
-                  >
-                    {completeSprintMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" />
-                    )}
-                    Complete Sprint
-                  </button>
-                )}
-
-                <button
-                  onClick={() =>
-                    router.push(`/tasks/${projectId}?sprint=${sprint.id}`)
-                  }
-                  className="rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium transition hover:border-black"
-                >
-                  Open Board
-                </button>
-
-                <CreateTaskModal projectId={projectId} sprintId={sprint.id} />
+                  <CreateTaskModal
+                    projectId={projectId}
+                    sprintId={sprint.id}
+                  />
+                </div>
               </div>
             </div>
-          ))}
+          );
+        })}
+      </div>
+    ) : (
+      <div className="flex flex-col items-center justify-center rounded-[32px] border border-dashed border-neutral-300 bg-white py-28 text-center shadow-sm">
+        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-neutral-100">
+          <CalendarDays className="h-11 w-11 text-neutral-400" />
         </div>
-      )}
 
-      {/* EMPTY */}
-      {!isLoading && sprints.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-300 bg-white py-24 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-100">
-            <CalendarDays className="h-10 w-10 text-neutral-400" />
-          </div>
+        <h2 className="mt-7 text-3xl font-bold tracking-tight text-neutral-900">
+          No Sprints Yet
+        </h2>
 
-          <h2 className="mt-6 text-2xl font-bold">No Sprints Yet</h2>
+        <p className="mt-3 max-w-lg text-sm leading-7 text-neutral-500">
+          Create your first sprint to start planning, tracking and managing
+          tasks efficiently across your agile workflow.
+        </p>
 
-          <p className="mt-2 max-w-md text-sm leading-6 text-neutral-500">
-            Create your first sprint to start planning and managing tasks
-            efficiently.
-          </p>
-        </div>
-      )}
+        <button
+          onClick={() =>
+            document
+              .querySelector("input")
+              ?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="mt-8 rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          Create First Sprint
+        </button>
+      </div>
+    )}
+  </div>
+)}
     </div>
   );
 }

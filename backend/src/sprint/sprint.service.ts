@@ -150,7 +150,16 @@ export class SprintService {
   // GET PROJECT SPRINTS
   // ======================================================
 
-  async getProjectSprints(projectId: string, userId: string) {
+  async getProjectSprints(
+    projectId: string,
+    userId: string,
+    filters?: {
+      status?: SprintStatus;
+      search?: string;
+      startDate?: string;
+      endDate?: string;
+    },
+  ) {
     const project = await this.db.project.findUnique({
       where: {
         id: projectId,
@@ -177,6 +186,40 @@ export class SprintService {
     const sprints = await this.db.sprint.findMany({
       where: {
         projectId,
+
+        ...(filters?.status && {
+          status: filters.status,
+        }),
+
+        ...(filters?.search && {
+          OR: [
+            {
+              name: {
+                contains: filters.search,
+                mode: 'insensitive',
+              },
+            },
+
+            {
+              goal: {
+                contains: filters.search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
+
+        ...((filters?.startDate || filters?.endDate) && {
+          startDate: {
+            ...(filters?.startDate && {
+              gte: new Date(filters.startDate),
+            }),
+
+            ...(filters?.endDate && {
+              lte: new Date(filters.endDate),
+            }),
+          },
+        }),
       },
 
       include: {

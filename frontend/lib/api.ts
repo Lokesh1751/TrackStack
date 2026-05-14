@@ -560,8 +560,36 @@ export const createSprint = async (
 // GET PROJECT SPRINTS
 // =====================================
 
-export const getProjectSprints = async (projectId: string) => {
-  return request<{ sprints: any[] }>(`/projects/${projectId}/sprints`);
+export const getProjectSprints = async (
+  projectId: string,
+  params?: {
+    search?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  },
+) => {
+  const query = new URLSearchParams();
+
+  if (params?.search) {
+    query.set("search", params.search);
+  }
+
+  if (params?.status) {
+    query.set("status", params.status);
+  }
+
+  if (params?.startDate) {
+    query.set("startDate", params.startDate);
+  }
+
+  if (params?.endDate) {
+    query.set("endDate", params.endDate);
+  }
+
+  return request<{ sprints: any[] }>(
+    `/projects/${projectId}/sprints?${query.toString()}`,
+  );
 };
 
 // =====================================

@@ -10,6 +10,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -21,6 +22,7 @@ import { SessionAuthGuard } from 'src/database/session-auth.guard';
 
 import { SprintService } from './sprint.service';
 import { CreateSprintDto } from './dto/create-sprint.dto';
+import { SprintStatus } from '@prisma/client';
 
 @UseGuards(SessionAuthGuard)
 @Controller()
@@ -53,7 +55,16 @@ export class SprintController {
   @Get('projects/:projectId/sprints')
   getProjectSprints(
     @Param('projectId') projectId: string,
+
     @Req() req: Request,
+
+    @Query('status') status?: SprintStatus,
+
+    @Query('search') search?: string,
+
+    @Query('startDate') startDate?: string,
+
+    @Query('endDate') endDate?: string,
   ) {
     const userId = req.session.userId;
 
@@ -61,7 +72,12 @@ export class SprintController {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return this.sprintService.getProjectSprints(projectId, userId);
+    return this.sprintService.getProjectSprints(projectId, userId, {
+      status,
+      search,
+      startDate,
+      endDate,
+    });
   }
 
   // ======================================================
