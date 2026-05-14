@@ -68,7 +68,7 @@ export class ProjectService {
   // =========================
   // GET ALL PROJECTS
   // =========================
-  async getProjects(workspaceId: string, userId: string) {
+  async getProjects(workspaceId: string, userId: string, search?: string) {
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -92,6 +92,23 @@ export class ProjectService {
       projects = await this.db.project.findMany({
         where: {
           workspaceId,
+
+          ...(search && {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          }),
         },
 
         include: {
@@ -99,7 +116,6 @@ export class ProjectService {
             where: {
               status: 'ACTIVE',
             },
-
             select: {
               id: true,
               name: true,
@@ -107,7 +123,6 @@ export class ProjectService {
               startDate: true,
               endDate: true,
             },
-
             take: 1,
           },
         },
@@ -130,6 +145,23 @@ export class ProjectService {
               userId,
             },
           },
+
+          ...(search && {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          }),
         },
 
         include: {
@@ -139,7 +171,6 @@ export class ProjectService {
             where: {
               status: 'ACTIVE',
             },
-
             select: {
               id: true,
               name: true,
@@ -147,7 +178,6 @@ export class ProjectService {
               startDate: true,
               endDate: true,
             },
-
             take: 1,
           },
         },
@@ -387,10 +417,19 @@ export class ProjectService {
     };
   }
 
-  async getProjectMembers(projectId: string) {
+  async getProjectMembers(projectId: string, search?: string) {
     const members = await this.db.projectMember.findMany({
       where: {
         projectId,
+
+        ...(search && {
+          user: {
+            email: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        }),
       },
 
       include: {

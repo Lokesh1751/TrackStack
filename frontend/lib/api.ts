@@ -251,8 +251,26 @@ export const createProject = async (
 // =========================
 // GET PROJECTS
 // =========================
-export const getProjects = async (workspaceId: string) => {
-  return request<{ projects: any[] }>(`/workspace/${workspaceId}/projects`);
+export const getProjects = async (
+  workspaceId: string,
+  params?: {
+    search?: string;
+  },
+) => {
+  const query = new URLSearchParams();
+
+  if (params?.search) {
+    query.append("search", params.search);
+  }
+
+  const queryString = query.toString();
+
+  return request<{ projects: any[] }>(
+    `/workspace/${workspaceId}/projects${queryString ? `?${queryString}` : ""}`,
+    {
+      method: "GET",
+    },
+  );
 };
 
 // =========================
@@ -290,8 +308,17 @@ export const deleteProject = async (projectId: string) => {
 // =========================
 // GET PROJECT MEMBERS
 // =========================
-export const getProjectMembers = async (projectId: string) => {
-  return request<{ members: any[] }>(`/${projectId}/members`);
+export const getProjectMembers = async (
+  projectId: string,
+  params?: { search?: string },
+) => {
+  const query = params?.search
+    ? `?searchMember=${encodeURIComponent(params.search)}`
+    : "";
+
+  return request<{ members: any[] }>(`/${projectId}/members${query}`, {
+    method: "GET",
+  });
 };
 
 // =========================

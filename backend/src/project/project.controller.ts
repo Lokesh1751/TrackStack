@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -49,14 +50,18 @@ export class ProjectController {
   // GET ALL PROJECTS
   // =========================
   @Get('workspace/:workspaceId/projects')
-  getProjects(@Param('workspaceId') workspaceId: string, @Req() req: Request) {
+  getProjects(
+    @Param('workspaceId') workspaceId: string,
+    @Req() req: Request,
+    @Query('search') search?: string,
+  ) {
     const userId = req.session.userId;
 
     if (!userId) {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return this.projectService.getProjects(workspaceId, userId);
+    return this.projectService.getProjects(workspaceId, userId, search);
   }
 
   // =========================
@@ -119,8 +124,11 @@ export class ProjectController {
   }
 
   @Get(':projectId/members')
-  getMembers(@Param('projectId') projectId: string) {
-    return this.projectService.getProjectMembers(projectId);
+  getMembers(
+    @Param('projectId') projectId: string,
+    @Query('searchMember') search?: string,
+  ) {
+    return this.projectService.getProjectMembers(projectId, search);
   }
 
   @Delete(':projectId/members/:userId')

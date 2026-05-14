@@ -19,6 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ProjectsPageSkeleton } from "@/components/skeleton/projects";
 import { useToast } from "@/hooks/useToast";
+import { useQueryFilters } from "@/hooks/useQueryFilters";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function Projects() {
   const { id: workspaceId } = useParams();
@@ -36,6 +38,14 @@ export default function Projects() {
   const [selectedProjectId, setSelectedProjectId] = useState("");
 
   const [selectedMemberEmail, setSelectedMemberEmail] = useState("");
+  const { get, set } = useQueryFilters();
+
+  const urlSearch = get("search");
+  const memberUrlSearch = get("searchMember");
+  const [searchInput, setSearchInput] = useState(urlSearch);
+  const [searchMemberInput, setSearchMemberInput] = useState(memberUrlSearch);
+  const debouncedSearch = useDebounce(searchInput, 500);
+  const debouncedSearchMember = useDebounce(searchMemberInput, 500);
 
   // =========================
   // GET WORKSPACE
@@ -63,9 +73,11 @@ export default function Projects() {
   // GET PROJECTS
   // =========================
   const { data: projectsData, isLoading } = useQuery({
-    queryKey: ["projects", workspaceId],
-
-    queryFn: () => getProjects(workspaceId as string),
+    queryKey: ["projects", workspaceId, debouncedSearch],
+    queryFn: () =>
+      getProjects(workspaceId as string, {
+        search: debouncedSearch || undefined,
+      }),
   });
 
   const projects = projectsData?.projects || [];
@@ -73,10 +85,13 @@ export default function Projects() {
   // =========================
   // GET PROJECT MEMBERS
   // =========================
-  const { data: membersData } = useQuery({
-    queryKey: ["project-members", selectedProjectId],
+  const { data: membersData, isLoading: isMembersLoading } = useQuery({
+    queryKey: ["project-members", selectedProjectId, debouncedSearchMember],
 
-    queryFn: () => getProjectMembers(selectedProjectId),
+    queryFn: () =>
+      getProjectMembers(selectedProjectId, {
+        search: debouncedSearchMember,
+      }),
 
     enabled: !!selectedProjectId,
   });
@@ -265,16 +280,25 @@ export default function Projects() {
 
         {/* Projects Table */}
         <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-          <div className="border-b px-6 py-5">
-            <h2 className="text-xl font-semibold">Projects</h2>
+          <div className="border-b px-6 py-5 flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold">Projects</h2>
 
-            <p className="text-sm text-slate-500 mt-1">
-              All projects inside this workspace
-            </p>
+              <p className="text-sm text-slate-500 mt-1">
+                All projects inside this workspace
+              </p>
+            </div>
+
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search projects..."
+              className="w-full md:w-72 border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+            />
           </div>
 
           {isLoading ? (
-    <ProjectsPageSkeleton/>
+            <ProjectsPageSkeleton />
           ) : projects.length === 0 ? (
             <div className="p-6 text-sm text-slate-500">No projects found</div>
           ) : (
@@ -313,21 +337,33 @@ export default function Projects() {
                     >
                       <td
                         className="px-6 py-4 font-medium"
-                        onClick={() => router.push(`/tasks/${project.id}?sprint=${project?.activeSprint?.id}`)}
+                        onClick={() =>
+                          router.push(
+                            `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                          )
+                        }
                       >
                         {project.name}
                       </td>
 
                       <td
                         className="px-6 py-4 text-sm text-slate-600"
-                        onClick={() => router.push(`/tasks/${project.id}?sprint=${project?.activeSprint?.id}`)}
+                        onClick={() =>
+                          router.push(
+                            `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                          )
+                        }
                       >
                         {project.description || "No description"}
                       </td>
 
                       <td
                         className="px-6 py-4 text-sm text-slate-500"
-                        onClick={() => router.push(`/tasks/${project.id}?sprint=${project?.activeSprint?.id}`)}
+                        onClick={() =>
+                          router.push(
+                            `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                          )
+                        }
                       >
                         {new Date(project.createdAt).toLocaleDateString()}
                       </td>
@@ -375,12 +411,21 @@ export default function Projects() {
         {/* Project Members */}
         {selectedProjectId && (
           <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <div className="border-b px-6 py-5">
-              <h2 className="text-xl font-semibold">Project Members</h2>
+            <div className="border-b px-6 py-5 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold">Project Members</h2>
 
-              <p className="text-sm text-slate-500 mt-1">
-                Invite and manage project members
-              </p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Invite and manage project members
+                </p>
+              </div>
+
+              <input
+                value={searchMemberInput}
+                onChange={(e) => setSearchMemberInput(e.target.value)}
+                placeholder="Search project members..."
+                className="w-full md:w-72 border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+              />
             </div>
 
             {/* Invite Form */}
@@ -417,7 +462,26 @@ export default function Projects() {
             )}
 
             {/* Members List */}
-            {projectMembers.length === 0 ? (
+            {isMembersLoading ? (
+              <div className="divide-y">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-6 py-4 animate-pulse"
+                  >
+                    {/* LEFT */}
+                    <div className="space-y-2">
+                      <div className="h-4 w-44 rounded bg-slate-200" />
+
+                      <div className="h-3 w-20 rounded bg-slate-100" />
+                    </div>
+
+                    {/* BUTTON */}
+                    <div className="h-8 w-20 rounded-lg bg-slate-200" />
+                  </div>
+                ))}
+              </div>
+            ) : projectMembers.length === 0 ? (
               <div className="p-6 text-sm text-slate-500">
                 No project members found
               </div>
