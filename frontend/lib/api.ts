@@ -383,24 +383,43 @@ export const createTask = async (
 
 export const getProjectTasks = async (
   projectId: string,
-  userId?: string,
+  filterUserId?: string,
   sprintId?: string,
+  filters?: {
+    search?: string;
+    status?: string;
+    priority?: string;
+    type?: string;
+  },
 ) => {
   const params = new URLSearchParams();
 
-  if (userId) {
-    params.append("userId", userId);
+  if (filterUserId) {
+    params.set("filterUserId", filterUserId);
   }
 
-  // ✅ NEW
   if (sprintId) {
-    params.append("sprintId", sprintId);
+    params.set("sprintId", sprintId);
   }
 
-  const query = params.toString();
+  if (filters?.search) {
+    params.set("search", filters.search);
+  }
+
+  if (filters?.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters?.priority) {
+    params.set("priority", filters.priority);
+  }
+
+  if (filters?.type) {
+    params.set("type", filters.type);
+  }
 
   return request<{ tasks: any[] }>(
-    `/projects/${projectId}/tasks${query ? `?${query}` : ""}`,
+    `/project/${projectId}/tasks?${params.toString()}`,
   );
 };
 
@@ -640,8 +659,41 @@ export const removeTaskFromSprint = async (taskId: string) => {
 // Tasks with sprintId = null
 // =====================================
 
-export const getBacklogTasks = async (projectId: string) => {
-  return request<{ tasks: any[] }>(`/projects/${projectId}/backlog`);
+export const getBacklogTasks = async (
+  projectId: string,
+  params?: {
+    search?: string;
+    status?: string;
+    priority?: string;
+    type?: string;
+    filterUserId?: string;
+  },
+) => {
+  const searchParams = new URLSearchParams();
+
+  if (params?.search) {
+    searchParams.set("search", params.search);
+  }
+
+  if (params?.status) {
+    searchParams.set("status", params.status);
+  }
+
+  if (params?.priority) {
+    searchParams.set("priority", params.priority);
+  }
+
+  if (params?.type) {
+    searchParams.set("type", params.type);
+  }
+
+  if (params?.filterUserId) {
+    searchParams.set("filterUserId", params.filterUserId);
+  }
+
+  return request<{ tasks: any[] }>(
+    `/projects/${projectId}/backlog?${searchParams.toString()}`,
+  );
 };
 
 // =====================================

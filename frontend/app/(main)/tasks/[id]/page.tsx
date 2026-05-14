@@ -20,6 +20,8 @@ import { TaskBoardSkeleton } from "@/components/skeleton/taskBoard";
 import { TaskModalSkeleton } from "@/components/skeleton/task-edit-modal";
 import { CreateTaskModal } from "@/components/modals/createTask";
 import { TaskModal } from "@/components/modals/taskModal";
+import { useDebounce } from "@/hooks/useDebounce";
+import { TaskFilter } from "@/components/filters/TaskFilter";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 
@@ -35,6 +37,16 @@ export default function Page() {
   const queryClient = useQueryClient();
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  // =========================
+  // QUERY FILTERS
+  // =========================
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+
+  const debouncedSearch = useDebounce(search, 500);
 
   const [form, setForm] = useState({
     title: "",
@@ -77,14 +89,35 @@ export default function Page() {
   // GET TASKS
   // =========================
 
+  // =========================
+  // GET TASKS
+  // =========================
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["tasks", projectId, selectedUserId, sprintId],
+    queryKey: [
+      "tasks",
+      projectId,
+      selectedUserId,
+      sprintId,
+      debouncedSearch,
+      statusFilter,
+      priorityFilter,
+      typeFilter,
+    ],
+
     queryFn: () =>
       getProjectTasks(
         projectId,
         selectedUserId ? selectedUserId : undefined,
         sprintId || undefined,
+        {
+          search: debouncedSearch || undefined,
+          status: statusFilter || undefined,
+          priority: priorityFilter || undefined,
+          type: typeFilter || undefined,
+        },
       ),
+
     enabled: !!currentUser?.id,
   });
 
@@ -259,60 +292,23 @@ export default function Page() {
           </div>
         </div>
 
-        {/* USER FILTER */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm backdrop-blur">
-          {/* LEFT */}
-          <div className="flex items-center gap-3">
-            {/* FILTER SELECT */}
-            <div className="relative">
-              <select
-                value={selectedUserId || "ALL"}
-                onChange={(e) =>
-                  setSelectedUserId(
-                    e.target.value === "ALL" ? null : e.target.value,
-                  )
-                }
-                className="min-w-[240px] appearance-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 pr-10 text-sm font-medium text-neutral-700 outline-none transition focus:border-black focus:bg-white"
-              >
-                <option value="ALL">All Tasks</option>
-
-                <option value={currentUser ? currentUser.id : undefined}>
-                  My Tasks
-                </option>
-
-                {members
-                  .filter((m: any) => m.userId !== currentUser?.id)
-                  .map((m: any) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.email}
-                    </option>
-                  ))}
-              </select>
-
-              {/* ICON */}
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
-                ▼
-              </div>
-            </div>
-
-            {/* ACTIVE FILTER */}
-            <div className="hidden rounded-xl bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-600 sm:flex">
-              {selectedUserId
-                ? members.find((m: any) => m.userId === selectedUserId)
-                    ?.email || currentUser?.email
-                : "All Project Tasks"}
-            </div>
-          </div>
-
-          {/* RIGHT */}
-          <div className="flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm">
-            <div className="h-2 w-2 rounded-full bg-green-400" />
-
-            <span>
-              {tasks.length} Task{tasks.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-        </div>
+        {/* FILTERS */}
+        <TaskFilter
+          search={search}
+          setSearch={setSearch}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          priorityFilter={priorityFilter}
+          setPriorityFilter={setPriorityFilter}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          selectedUserId={selectedUserId}
+          setSelectedUserId={setSelectedUserId}
+          currentUser={currentUser}
+          members={members}
+          statuses={statuses}
+          tasksCount={tasks.length}
+        />
       </div>
 
       {/* TASK BOARD (UNCHANGED) */}

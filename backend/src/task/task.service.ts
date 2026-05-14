@@ -13,6 +13,7 @@ import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
 import { randomUUID } from 'crypto';
+import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
@@ -147,6 +148,10 @@ export class TasksService {
     userId: string,
     filterUserId?: string,
     sprintId?: string,
+    status?: TaskStatus,
+    priority?: TaskPriority,
+    type?: TaskType,
+    search?: string,
   ) {
     const project = await this.db.project.findUnique({
       where: {
@@ -175,16 +180,66 @@ export class TasksService {
       projectId,
     };
 
+    // =========================
+    // FILTER USER
+    // =========================
+
     if (filterUserId) {
       whereClause.assigneeId = filterUserId;
     }
 
-    // =====================================
-    // FILTER BY SPRINT
-    // =====================================
+    // =========================
+    // FILTER SPRINT
+    // =========================
 
     if (sprintId) {
       whereClause.sprintId = sprintId;
+    }
+
+    // =========================
+    // FILTER STATUS
+    // =========================
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // =========================
+    // FILTER PRIORITY
+    // =========================
+
+    if (priority) {
+      whereClause.priority = priority;
+    }
+
+    // =========================
+    // FILTER TYPE
+    // =========================
+
+    if (type) {
+      whereClause.type = type;
+    }
+
+    // =========================
+    // SEARCH
+    // =========================
+
+    if (search) {
+      whereClause.OR = [
+        {
+          title: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+
+        {
+          description: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ];
     }
 
     const tasks = await this.db.task.findMany({
@@ -864,9 +919,21 @@ export class TasksService {
   // GET BACKLOG TASKS
   // =====================================
 
-  async getBacklogTasks(projectId: string, userId: string) {
+  async getBacklogTasks(
+    projectId: string,
+    userId: string,
+    filters?: {
+      search?: string;
+      status?: TaskStatus;
+      priority?: TaskPriority;
+      type?: TaskType;
+      filterUserId?: string;
+    },
+  ) {
     const project = await this.db.project.findUnique({
-      where: { id: projectId },
+      where: {
+        id: projectId,
+      },
     });
 
     if (!project) {
@@ -889,19 +956,66 @@ export class TasksService {
     const tasks = await this.db.task.findMany({
       where: {
         projectId,
+
         sprintId: null,
+
+        ...(filters?.status && {
+          status: filters.status,
+        }),
+
+        ...(filters?.priority && {
+          priority: filters.priority,
+        }),
+
+        ...(filters?.type && {
+          type: filters.type,
+        }),
+
+        ...(filters?.filterUserId && {
+          assigneeId: filters.filterUserId,
+        }),
+
+        ...(filters?.search && {
+          OR: [
+            {
+              title: {
+                contains: filters.search,
+                mode: 'insensitive',
+              },
+            },
+
+            {
+              description: {
+                contains: filters.search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }),
       },
+
       include: {
         assignee: {
-          select: { id: true, email: true },
+          select: {
+            id: true,
+            email: true,
+          },
         },
+
         reporter: {
-          select: { id: true, email: true },
+          select: {
+            id: true,
+            email: true,
+          },
         },
+
         _count: {
-          select: { comments: true },
+          select: {
+            comments: true,
+          },
         },
       },
+
       orderBy: {
         createdAt: 'desc',
       },

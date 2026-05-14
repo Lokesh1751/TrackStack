@@ -102,7 +102,7 @@ export function TaskModal({
   });
 
   const currentUser = userData?.data;
-console.log('currentUser',currentUser)
+  console.log("currentUser", currentUser);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
     currentUser?.id,
   );
@@ -178,6 +178,9 @@ console.log('currentUser',currentUser)
 
       queryClient.invalidateQueries({
         queryKey: ["comments", task.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
       });
 
       toast.success("Comment added");
@@ -409,9 +412,12 @@ console.log('currentUser',currentUser)
             {task.sprint && (
               <button
                 onClick={() => removeFromSprintMutation.mutate()}
+                disabled={removeFromSprintMutation.isPending}
                 className="rounded-xl bg-black px-4 py-2 text-sm text-white"
               >
-                Move to Backlog
+                {!removeFromSprintMutation.isPending
+                  ? "Move to Backlog"
+                  : "Moving...."}
               </button>
             )}
           </div>
@@ -947,9 +953,10 @@ console.log('currentUser',currentUser)
 
             <button
               onClick={() => addCommentMutation.mutate()}
+              disabled={addCommentMutation.isPending}
               className="rounded-2xl bg-black px-5 py-3 text-white"
             >
-              Send
+              {addCommentMutation.isPending ? "Sending.." : "Send"}
             </button>
           </div>
         </div>

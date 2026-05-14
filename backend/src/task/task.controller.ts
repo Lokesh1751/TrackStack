@@ -23,6 +23,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
 
 @UseGuards(SessionAuthGuard)
 @Controller()
@@ -53,29 +54,29 @@ export class TasksController {
   // GET PROJECT TASKS
   // =====================================
 
-  @Get('projects/:projectId/tasks')
-  getProjectTasks(
+  @Get('project/:projectId/tasks') getProjectTasks(
     @Param('projectId') projectId: string,
-
-    // FILTER BY USER
-    @Query('userId') filterUserId: string,
-
-    // FILTER BY SPRINT
-    @Query('sprintId') sprintId: string,
-
     @Req() req: Request,
+    @Query('filterUserId') filterUserId?: string,
+    @Query('sprintId') sprintId?: string,
+    @Query('status') status?: TaskStatus,
+    @Query('priority') priority?: TaskPriority,
+    @Query('type') type?: TaskType,
+    @Query('search') search?: string,
   ) {
     const userId = req.session.userId;
-
     if (!userId) {
       throw new UnauthorizedException('Unauthorized');
     }
-
     return this.tasksService.getProjectTasks(
       projectId,
       userId,
       filterUserId,
       sprintId,
+      status,
+      priority,
+      type,
+      search,
     );
   }
 
@@ -84,14 +85,34 @@ export class TasksController {
   // =====================================
 
   @Get('projects/:projectId/backlog')
-  getBacklogTasks(@Param('projectId') projectId: string, @Req() req: Request) {
+  getBacklogTasks(
+    @Param('projectId') projectId: string,
+
+    @Req() req: Request,
+
+    @Query('search') search?: string,
+
+    @Query('status') status?: TaskStatus,
+
+    @Query('priority') priority?: TaskPriority,
+
+    @Query('type') type?: TaskType,
+
+    @Query('filterUserId') filterUserId?: string,
+  ) {
     const userId = req.session.userId;
 
     if (!userId) {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return this.tasksService.getBacklogTasks(projectId, userId);
+    return this.tasksService.getBacklogTasks(projectId, userId, {
+      search,
+      status,
+      priority,
+      type,
+      filterUserId,
+    });
   }
 
   // =====================================
