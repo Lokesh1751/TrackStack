@@ -179,4 +179,15 @@ export class SprintController {
   removeTaskFromSprint(@Param('taskId') taskId: string) {
     return this.sprintService.removeTaskFromSprint(taskId);
   }
+
+  @Get('sprints/:sprintId/dashboard')
+  getSprintDashboard(@Param('sprintId') sprintId: string, @Req() req: Request) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return this.sprintService.getSprintDashboard(sprintId, userId);
+  }
 }

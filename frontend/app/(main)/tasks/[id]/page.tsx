@@ -331,6 +331,13 @@ export default function Page() {
           </div>
 
           <div className="flex items-center gap-3">
+
+          <button
+              onClick={() => router.push(`/sprint/${sprintId}/dashboard`)}
+              className="rounded-xl border px-4 py-2 text-sm cursor-pointer"
+            >
+              Analysis
+            </button>
             <button
               onClick={() => router.push(`/sprint/${projectId}/backlog`)}
               className="rounded-xl border px-4 py-2 text-sm"

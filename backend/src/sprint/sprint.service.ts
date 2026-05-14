@@ -563,4 +563,227 @@ export class SprintService {
       task: updatedTask,
     };
   }
+
+  async getSprintDashboard(sprintId: string, userId: string) {
+    const sprint = await this.db.sprint.findUnique({
+      where: {
+        id: sprintId,
+      },
+
+      include: {
+        project: true,
+
+        tasks: {
+          include: {
+            assignee: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
+
+        snapshots: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!sprint) {
+      throw new BadRequestException('Sprint not found');
+    }
+
+    // =========================
+    // MEMBERSHIP CHECK
+    // =========================
+
+    const membership = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: sprint.project.workspaceId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const tasks = sprint.tasks || [];
+
+    // =========================
+    // TASK COUNTS
+    // =========================
+
+    const totalTasks = tasks.length;
+
+    const completedTasks = tasks.filter(
+      (task) => task.status === 'DONE',
+    ).length;
+
+    const pendingTasks = tasks.filter((task) => task.status !== 'DONE').length;
+
+    // =========================
+    // ESTIMATES
+    // =========================
+
+    const totalEstimate = tasks.reduce(
+      (acc, task) => acc + (task.estimateMinutes || 0),
+      0,
+    );
+
+    const completedEstimate = tasks
+      .filter((task) => task.status === 'DONE')
+      .reduce((acc, task) => acc + (task.estimateMinutes || 0), 0);
+
+    const remainingEstimate = tasks
+      .filter((task) => task.status !== 'DONE')
+      .reduce((acc, task) => acc + (task.estimateMinutes || 0), 0);
+
+    // =========================
+    // STATUS DISTRIBUTION
+    // =========================
+
+    const statusDistribution = [
+      {
+        status: 'TODO',
+        count: tasks.filter((task) => task.status === 'TODO').length,
+      },
+
+      {
+        status: 'IN_PROGRESS',
+        count: tasks.filter((task) => task.status === 'IN_PROGRESS').length,
+      },
+
+      {
+        status: 'IN_REVIEW',
+        count: tasks.filter((task) => task.status === 'IN_REVIEW').length,
+      },
+
+      {
+        status: 'DONE',
+        count: tasks.filter((task) => task.status === 'DONE').length,
+      },
+    ];
+
+    // =========================
+    // TEAM VELOCITY
+    // =========================
+
+    const velocityMap = new Map();
+
+    tasks.forEach((task) => {
+      if (task.status === 'DONE' && task.assignee) {
+        const email = task.assignee.email;
+
+        const current = velocityMap.get(email) || 0;
+
+        velocityMap.set(email, current + (task.estimateMinutes || 0));
+      }
+    });
+
+    const velocityData = Array.from(velocityMap.entries()).map(
+      ([email, estimate]) => ({
+        email,
+        estimate,
+      }),
+    );
+
+    // =========================
+    // DAYS
+    // =========================
+
+    const now = new Date();
+
+    const startDate = sprint.startDate ? new Date(sprint.startDate) : null;
+
+    const endDate = sprint.endDate ? new Date(sprint.endDate) : null;
+
+    let totalDays = 0;
+    let daysLeft = 0;
+    let daysPassed = 0;
+
+    if (startDate && endDate) {
+      totalDays = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      daysLeft = Math.max(
+        0,
+        Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+      );
+
+      daysPassed = Math.max(0, totalDays - daysLeft);
+    }
+
+    // =========================
+    // PROGRESS
+    // =========================
+
+    const sprintProgress =
+      totalEstimate > 0
+        ? Math.round((completedEstimate / totalEstimate) * 100)
+        : 0;
+
+    // =========================
+    // HEALTH
+    // =========================
+
+    let health = 'HEALTHY';
+
+    const timeProgress = totalDays > 0 ? (daysPassed / totalDays) * 100 : 0;
+
+    if (sprintProgress + 10 < timeProgress) {
+      health = 'DELAYED';
+    } else if (Math.abs(sprintProgress - timeProgress) <= 10) {
+      health = 'AT_RISK';
+    }
+
+    // =========================
+    // BURNDOWN
+    // =========================
+
+    const burndownData = sprint.snapshots.map((snapshot) => ({
+      date: snapshot.createdAt,
+      remainingEstimate: snapshot.remainingEstimate,
+    }));
+
+    return {
+      sprint: {
+        id: sprint.id,
+        name: sprint.name,
+        status: sprint.status,
+        startDate: sprint.startDate,
+        endDate: sprint.endDate,
+      },
+
+      stats: {
+        totalTasks,
+        completedTasks,
+        pendingTasks,
+
+        totalEstimate,
+        completedEstimate,
+        remainingEstimate,
+
+        sprintProgress,
+
+        totalDays,
+        daysLeft,
+        daysPassed,
+
+        health,
+      },
+
+      statusDistribution,
+
+      velocityData,
+
+      burndownData,
+    };
+  }
 }

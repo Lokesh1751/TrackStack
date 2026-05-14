@@ -785,3 +785,48 @@ export const deleteTaskLink = async (linkId: string) => {
     method: "DELETE",
   });
 };
+
+export const getSprintDashboard = async (sprintId: string) => {
+  return request<{
+    sprint: {
+      id: string;
+      name: string;
+      status: string;
+      startDate: string;
+      endDate: string;
+    };
+
+    stats: {
+      totalTasks: number;
+      completedTasks: number;
+      pendingTasks: number;
+
+      totalEstimate: number;
+      completedEstimate: number;
+      remainingEstimate: number;
+
+      sprintProgress: number;
+
+      totalDays: number;
+      daysLeft: number;
+      daysPassed: number;
+
+      health: string;
+    };
+
+    statusDistribution: {
+      status: string;
+      count: number;
+    }[];
+
+    velocityData: {
+      email: string;
+      estimate: number;
+    }[];
+
+    burndownData: {
+      date: string;
+      remainingEstimate: number;
+    }[];
+  }>(`/sprints/${sprintId}/dashboard`);
+};
