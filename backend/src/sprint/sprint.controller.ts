@@ -141,7 +141,7 @@ export class SprintController {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return this.sprintService.startSprint(sprintId);
+    return this.sprintService.startSprint(sprintId, userId);
   }
 
   // ======================================================
@@ -156,7 +156,7 @@ export class SprintController {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return this.sprintService.completeSprint(sprintId);
+    return this.sprintService.completeSprint(sprintId, userId);
   }
 
   // ======================================================
@@ -167,8 +167,14 @@ export class SprintController {
   addTaskToSprint(
     @Param('sprintId') sprintId: string,
     @Param('taskId') taskId: string,
+    @Req() req: Request,
   ) {
-    return this.sprintService.addTaskToSprint(sprintId, taskId);
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    return this.sprintService.addTaskToSprint(sprintId, taskId, userId);
   }
 
   // ======================================================
@@ -176,8 +182,13 @@ export class SprintController {
   // ======================================================
 
   @Patch('tasks/:taskId/remove-sprint')
-  removeTaskFromSprint(@Param('taskId') taskId: string) {
-    return this.sprintService.removeTaskFromSprint(taskId);
+  removeTaskFromSprint(@Param('taskId') taskId: string, @Req() req: Request) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    return this.sprintService.removeTaskFromSprint(taskId, userId);
   }
 
   @Get('sprints/:sprintId/dashboard')

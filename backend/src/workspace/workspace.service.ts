@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 
 import { DatabaseService } from 'src/database/database.service';
@@ -17,6 +18,17 @@ import { WorkspaceQueryDto } from './dto/workspace-query.dto';
 @Injectable()
 export class WorkspaceService {
   constructor(private readonly db: DatabaseService) {}
+
+  private async isSuperAdmin(userId: string) {
+    const membership = await this.db.membership.findFirst({
+      where: {
+        userId,
+        role: 'SUPER_ADMIN',
+      },
+    });
+
+    return !!membership;
+  }
 
   // =========================
   // CREATE WORKSPACE
@@ -225,17 +237,19 @@ export class WorkspaceService {
       throw new BadRequestException('Workspace not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
           userId,
-          workspaceId,
+          workspaceId: workspaceId,
         },
       },
     });
 
-    if (!membership) {
-      throw new BadRequestException('Access denied');
+    if (!membership && !isSuperAdmin) {
+      throw new UnauthorizedException('Access denied');
     }
 
     const user = await this.db.user.findUnique({
@@ -251,7 +265,7 @@ export class WorkspaceService {
     return {
       workspace: {
         ...workspace,
-        role: membership.role,
+        role: membership?.role,
         isSuperAdmin: user?.isSuperAdmin || false,
       },
     };
@@ -265,17 +279,19 @@ export class WorkspaceService {
     dto: UpdateWorkspaceDto,
     userId: string,
   ) {
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
           userId,
-          workspaceId,
+          workspaceId: workspaceId,
         },
       },
     });
 
-    if (!membership) {
-      throw new BadRequestException('Access denied');
+    if (!membership && !isSuperAdmin) {
+      throw new UnauthorizedException('Access denied');
     }
 
     const user = await this.db.user.findUnique({
@@ -289,7 +305,7 @@ export class WorkspaceService {
     });
 
     // ✅ ADMIN of workspace OR SUPER_ADMIN
-    if (membership.role !== 'ADMIN' && !user?.isSuperAdmin) {
+    if (membership?.role !== 'ADMIN' && !user?.isSuperAdmin) {
       throw new BadRequestException('Only admin can edit workspace');
     }
 

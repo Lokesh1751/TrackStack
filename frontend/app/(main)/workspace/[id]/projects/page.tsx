@@ -56,7 +56,10 @@ export default function Projects() {
     queryFn: () => getWorkspaceById(workspaceId as string),
   });
 
-  const currentRole = workspaceData?.workspace?.role;
+  const currentRole =
+    workspaceData?.workspace?.role === "ADMIN" ||
+    workspaceData?.workspace?.isSuperAdmin;
+  console.log("currentRole", currentRole);
 
   // =========================
   // GET WORKSPACE MEMBERS
@@ -208,8 +211,7 @@ export default function Projects() {
     },
   });
 
-  const canManageProjects =
-    currentRole === "SUPER_ADMIN" || currentRole === "ADMIN";
+  const canManageProjects = currentRole;
 
   return (
     <div className="min-h-screen bg-slate-100">
