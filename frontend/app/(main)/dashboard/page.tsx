@@ -86,8 +86,12 @@ export default function DashboardPage() {
       .replace(/[^a-z0-9-]/g, "");
   }, [name]);
 
+  const slugg = useMemo(() => slugify(name), [name]);
   useEffect(() => {
-    setSlug(generatedSlug);
+    setSlug((prev) => {
+      if (prev === generatedSlug) return prev;
+      return generatedSlug;
+    });
   }, [generatedSlug]);
 
   // =========================
@@ -116,7 +120,7 @@ export default function DashboardPage() {
   // =========================
   // CREATE WORKSPACE
   // =========================
-  const createMutation = useMutation({
+  const createMutation = useMutation<any>({
     mutationFn: createWorkspace,
 
     onSuccess: (data: { message: string }) => {

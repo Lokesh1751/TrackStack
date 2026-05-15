@@ -104,7 +104,7 @@ export default function SprintDashboardPage() {
 
         <Card
           title="Remaining Estimate"
-          value={`${(stats?.remainingEstimate / 60).toFixed(1)}h`}
+          value={`${(stats?.remainingEstimate ? stats?.remainingEstimate : 0 / 60).toFixed(1)}h`}
           icon={<Clock3 className="h-5 w-5" />}
         />
 
@@ -235,12 +235,12 @@ export default function SprintDashboardPage() {
 
             <SummaryCard
               label="Total Estimate"
-              value={`${(stats?.totalEstimate / 60).toFixed(1)}h`}
+              value={`${(stats?.totalEstimate ? stats?.totalEstimate : 0 / 60).toFixed(1)}h`}
             />
 
             <SummaryCard
               label="Completed Estimate"
-              value={`${(stats?.completedEstimate / 60).toFixed(1)}h`}
+              value={`${(stats?.completedEstimate ? stats?.completedEstimate : 0 / 60).toFixed(1)}h`}
             />
 
             <div

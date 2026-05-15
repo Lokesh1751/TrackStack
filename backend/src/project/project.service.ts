@@ -100,7 +100,15 @@ export class ProjectService {
   async getProjects(workspaceId: string, userId: string, search?: string) {
     const membership = await this.validateWorkspaceAccess(workspaceId, userId);
 
-    let projects: any[] = [];
+    let projects: {
+      sprints?: {
+        id: string;
+        name: string;
+        status: string;
+        startDate: Date | null;
+        endDate: Date | null;
+      }[];
+    }[] = [];
 
     // =========================
     // SUPER ADMIN
@@ -260,7 +268,7 @@ export class ProjectService {
     }
 
     return {
-      projects: projects.map((project: any) => ({
+      projects: projects.map((project) => ({
         ...project,
         activeSprint: project.sprints?.[0] || null,
         sprints: undefined,

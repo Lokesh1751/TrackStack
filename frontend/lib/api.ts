@@ -60,7 +60,7 @@ export async function login(payload: LoginInput) {
 }
 
 export async function getCurrentUser() {
-  return request<{ user: AuthUser }>("/auth/me");
+  return request<any>("/auth/me");
 }
 
 export async function logout() {
@@ -169,6 +169,8 @@ export const getWorkspaceById = async (id: string) => {
       logoUrl?: string;
       isSuperAdmin?: boolean;
       role: string;
+      createdAt: Date,
+      updatedAt: Date
     };
   }>(`/workspace/${id}`);
 };
@@ -189,7 +191,7 @@ export const updateWorkspace = async (
 };
 
 export const getWorkspaceMembers = (id: string) =>
-  request(`/workspace/${id}/members`);
+  request<any>(`/workspace/${id}/members`);
 
 export const addMember = (id: string, data: any) =>
   request(`/workspace/${id}/add-member`, {

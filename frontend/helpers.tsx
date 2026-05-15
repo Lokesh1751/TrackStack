@@ -25,3 +25,12 @@ export const getTaskTypeIcon = (type: string) => {
       return <CheckSquare className="h-3.5 w-3.5 text-neutral-500" />;
   }
 };
+
+export const slugify = (text: string) =>
+  text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "")
+    .replace(/\-+/g, "-");

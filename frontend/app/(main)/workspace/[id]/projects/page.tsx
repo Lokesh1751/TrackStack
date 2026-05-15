@@ -59,7 +59,6 @@ export default function Projects() {
   const currentRole =
     workspaceData?.workspace?.role === "ADMIN" ||
     workspaceData?.workspace?.isSuperAdmin;
-  console.log("currentRole", currentRole);
 
   // =========================
   // GET WORKSPACE MEMBERS
