@@ -104,7 +104,6 @@ export default function Projects() {
     (member: any) =>
       !projectMemberEmails.includes(member.email) && !member.isSuperAdmin,
   );
-  console.log("availablemembers", availableMembers);
 
   // =========================
   // CREATE PROJECT

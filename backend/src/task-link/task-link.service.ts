@@ -13,6 +13,17 @@ import { TaskLinkType } from '@prisma/client';
 export class TaskLinksService {
   constructor(private readonly db: DatabaseService) {}
 
+  private async isSuperAdmin(userId: string) {
+    const membership = await this.db.membership.findFirst({
+      where: {
+        userId,
+        role: 'SUPER_ADMIN',
+      },
+    });
+
+    return !!membership;
+  }
+
   // =====================================
   // LINK TASK
   // =====================================
@@ -75,6 +86,8 @@ export class TaskLinksService {
     // ACCESS CHECK
     // =====================================
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -84,7 +97,7 @@ export class TaskLinksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -163,6 +176,8 @@ export class TaskLinksService {
     // ACCESS CHECK
     // =====================================
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -172,7 +187,7 @@ export class TaskLinksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -253,6 +268,8 @@ export class TaskLinksService {
     // ACCESS CHECK
     // =====================================
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -262,12 +279,11 @@ export class TaskLinksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
-    const canDelete =
-      membership.role === 'ADMIN' || membership.role === 'SUPER_ADMIN';
+    const canDelete = membership?.role === 'ADMIN';
 
     if (!canDelete) {
       throw new ForbiddenException('Only admins can remove task links');
@@ -306,6 +322,7 @@ export class TaskLinksService {
     if (!link) {
       throw new BadRequestException('Task link not found');
     }
+    const isSuperAdmin = await this.isSuperAdmin(userId);
 
     const membership = await this.db.membership.findUnique({
       where: {
@@ -316,7 +333,7 @@ export class TaskLinksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 

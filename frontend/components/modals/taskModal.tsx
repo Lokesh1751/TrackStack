@@ -102,7 +102,6 @@ export function TaskModal({
   });
 
   const currentUser = userData?.data;
-  console.log("currentUser", currentUser);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
     currentUser?.id,
   );

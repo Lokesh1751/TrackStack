@@ -33,7 +33,6 @@ export default function Page() {
   const router = useRouter();
 
   const sprintId = searchParams.get("sprint");
-  console.log("sprintId", sprintId);
   const queryClient = useQueryClient();
 
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -48,15 +47,6 @@ export default function Page() {
 
   const debouncedSearch = useDebounce(search, 500);
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    priority: "MEDIUM",
-    type: "TASK",
-    estimateMinutes: 60,
-    dueDate: "",
-  });
-
   // =========================
   // CURRENT USER
   // =========================
@@ -67,11 +57,9 @@ export default function Page() {
   });
 
   const currentUser = currentUserData?.data;
-  console.log("currentUser", currentUser);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
     currentUser?.id,
   );
-  console.log("selectedUserId", currentUser);
 
   // =========================
   // MEMBERS

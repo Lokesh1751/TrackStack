@@ -18,6 +18,24 @@ export class SprintService {
   constructor(private readonly db: DatabaseService) {}
 
   // ======================================================
+  // HELPER -> SUPER ADMIN CHECK
+  // ======================================================
+
+  private async isSuperAdmin(userId: string) {
+    const user = await this.db.user.findUnique({
+      where: {
+        id: userId,
+      },
+
+      select: {
+        isSuperAdmin: true,
+      },
+    });
+
+    return user?.isSuperAdmin === true;
+  }
+
+  // ======================================================
   // CREATE SPRINT
   // ======================================================
 
@@ -32,34 +50,28 @@ export class SprintService {
       throw new BadRequestException('Project not found');
     }
 
-    // =====================================
-    // WORKSPACE MEMBERSHIP
-    // =====================================
+    const superAdmin = await this.isSuperAdmin(userId);
 
-    const membership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: project.workspaceId,
+    let membership: any = null;
+
+    if (!superAdmin) {
+      membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: project.workspaceId,
+          },
         },
-      },
-    });
+      });
 
-    if (!membership) {
-      throw new UnauthorizedException('Access denied');
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
+
+      if (membership.role !== 'ADMIN' && membership.role !== 'SUPER_ADMIN') {
+        throw new BadRequestException('Only admin can create sprint');
+      }
     }
-
-    // =====================================
-    // ONLY ADMIN / SUPER ADMIN
-    // =====================================
-
-    if (membership.role !== 'ADMIN' && membership.role !== 'SUPER_ADMIN') {
-      throw new BadRequestException('Only admin can create sprint');
-    }
-
-    // =====================================
-    // VALIDATE DATE RANGE
-    // =====================================
 
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
@@ -69,18 +81,6 @@ export class SprintService {
         'Sprint end date must be greater than start date',
       );
     }
-
-    // =====================================
-    // CHECK OVERLAPPING SPRINTS
-    // =====================================
-
-    /**
-     * overlap conditions:
-     *
-     * existing.start <= new.end
-     * AND
-     * existing.end >= new.start
-     */
 
     const overlappingSprint = await this.db.sprint.findFirst({
       where: {
@@ -107,10 +107,6 @@ export class SprintService {
       );
     }
 
-    // =====================================
-    // ONLY ONE ACTIVE SPRINT
-    // =====================================
-
     if (dto.status === SprintStatus.ACTIVE) {
       const activeSprint = await this.db.sprint.findFirst({
         where: {
@@ -123,10 +119,6 @@ export class SprintService {
         throw new BadRequestException('Only one active sprint allowed');
       }
     }
-
-    // =====================================
-    // CREATE SPRINT
-    // =====================================
 
     const sprint = await this.db.sprint.create({
       data: {
@@ -170,17 +162,21 @@ export class SprintService {
       throw new BadRequestException('Project not found');
     }
 
-    const membership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: project.workspaceId,
-        },
-      },
-    });
+    const superAdmin = await this.isSuperAdmin(userId);
 
-    if (!membership) {
-      throw new UnauthorizedException('Access denied');
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
     }
 
     const sprints = await this.db.sprint.findMany({
@@ -266,17 +262,21 @@ export class SprintService {
       throw new BadRequestException('Sprint not found');
     }
 
-    const membership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: sprint.project.workspaceId,
-        },
-      },
-    });
+    const superAdmin = await this.isSuperAdmin(userId);
 
-    if (!membership) {
-      throw new UnauthorizedException('Access denied');
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: sprint.project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
     }
 
     return {
@@ -303,20 +303,27 @@ export class SprintService {
       throw new BadRequestException('Sprint not found');
     }
 
-    const membership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: sprint.project.workspaceId,
-        },
-      },
-    });
+    const superAdmin = await this.isSuperAdmin(userId);
 
-    if (!membership) {
-      throw new UnauthorizedException('Access denied');
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: sprint.project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
+
+      if (membership.role !== 'ADMIN' && membership.role !== 'SUPER_ADMIN') {
+        throw new BadRequestException('Only admin can update sprint');
+      }
     }
 
-    // active sprint check
     if (dto.status === SprintStatus.ACTIVE) {
       const existingActiveSprint = await this.db.sprint.findFirst({
         where: {
@@ -373,17 +380,25 @@ export class SprintService {
       throw new BadRequestException('Sprint not found');
     }
 
-    const membership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: sprint.project.workspaceId,
-        },
-      },
-    });
+    const superAdmin = await this.isSuperAdmin(userId);
 
-    if (!membership) {
-      throw new UnauthorizedException('Access denied');
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: sprint.project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
+
+      if (membership.role !== 'ADMIN' && membership.role !== 'SUPER_ADMIN') {
+        throw new BadRequestException('Only admin can delete sprint');
+      }
     }
 
     await this.db.sprint.delete({
@@ -401,7 +416,7 @@ export class SprintService {
   // START SPRINT
   // ======================================================
 
-  async startSprint(sprintId: string) {
+  async startSprint(sprintId: string, userId: string) {
     const sprint = await this.db.sprint.findUnique({
       where: {
         id: sprintId,
@@ -414,6 +429,27 @@ export class SprintService {
 
     if (!sprint) {
       throw new BadRequestException('Sprint not found');
+    }
+
+    const superAdmin = await this.isSuperAdmin(userId);
+
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: sprint.project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
+
+      if (membership.role !== 'ADMIN' && membership.role !== 'SUPER_ADMIN') {
+        throw new BadRequestException('Only admin can start sprint');
+      }
     }
 
     const existingActiveSprint = await this.db.sprint.findFirst({
@@ -451,10 +487,14 @@ export class SprintService {
   // COMPLETE SPRINT
   // ======================================================
 
-  async completeSprint(sprintId: string) {
+  async completeSprint(sprintId: string, userId: string) {
     const sprint = await this.db.sprint.findUnique({
       where: {
         id: sprintId,
+      },
+
+      include: {
+        project: true,
       },
     });
 
@@ -462,7 +502,27 @@ export class SprintService {
       throw new BadRequestException('Sprint not found');
     }
 
-    // close unfinished tasks
+    const superAdmin = await this.isSuperAdmin(userId);
+
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: sprint.project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
+
+      if (membership.role !== 'ADMIN' && membership.role !== 'SUPER_ADMIN') {
+        throw new BadRequestException('Only admin can complete sprint');
+      }
+    }
+
     await this.db.task.updateMany({
       where: {
         sprintId,
@@ -496,15 +556,36 @@ export class SprintService {
   // ADD TASK TO SPRINT
   // ======================================================
 
-  async addTaskToSprint(sprintId: string, taskId: string) {
+  async addTaskToSprint(sprintId: string, taskId: string, userId: string) {
     const sprint = await this.db.sprint.findUnique({
       where: {
         id: sprintId,
+      },
+
+      include: {
+        project: true,
       },
     });
 
     if (!sprint) {
       throw new BadRequestException('Sprint not found');
+    }
+
+    const superAdmin = await this.isSuperAdmin(userId);
+
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: sprint.project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
     }
 
     const task = await this.db.task.findUnique({
@@ -537,15 +618,40 @@ export class SprintService {
   // REMOVE TASK FROM SPRINT
   // ======================================================
 
-  async removeTaskFromSprint(taskId: string) {
+  async removeTaskFromSprint(taskId: string, userId: string) {
     const task = await this.db.task.findUnique({
       where: {
         id: taskId,
+      },
+
+      include: {
+        sprint: {
+          include: {
+            project: true,
+          },
+        },
       },
     });
 
     if (!task) {
       throw new BadRequestException('Task not found');
+    }
+
+    const superAdmin = await this.isSuperAdmin(userId);
+
+    if (!superAdmin && task.sprint) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: task.sprint.project.workspaceId,
+          },
+        },
+      });
+
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
     }
 
     const updatedTask = await this.db.task.update({
@@ -563,6 +669,10 @@ export class SprintService {
       task: updatedTask,
     };
   }
+
+  // ======================================================
+  // SPRINT DASHBOARD
+  // ======================================================
 
   async getSprintDashboard(sprintId: string, userId: string) {
     const sprint = await this.db.sprint.findUnique({
@@ -596,28 +706,24 @@ export class SprintService {
       throw new BadRequestException('Sprint not found');
     }
 
-    // =========================
-    // MEMBERSHIP CHECK
-    // =========================
+    const superAdmin = await this.isSuperAdmin(userId);
 
-    const membership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: sprint.project.workspaceId,
+    if (!superAdmin) {
+      const membership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: sprint.project.workspaceId,
+          },
         },
-      },
-    });
+      });
 
-    if (!membership) {
-      throw new UnauthorizedException('Access denied');
+      if (!membership) {
+        throw new UnauthorizedException('Access denied');
+      }
     }
 
     const tasks = sprint.tasks || [];
-
-    // =========================
-    // TASK COUNTS
-    // =========================
 
     const totalTasks = tasks.length;
 
@@ -626,10 +732,6 @@ export class SprintService {
     ).length;
 
     const pendingTasks = tasks.filter((task) => task.status !== 'DONE').length;
-
-    // =========================
-    // ESTIMATES
-    // =========================
 
     const totalEstimate = tasks.reduce(
       (acc, task) => acc + (task.estimateMinutes || 0),
@@ -643,10 +745,6 @@ export class SprintService {
     const remainingEstimate = tasks
       .filter((task) => task.status !== 'DONE')
       .reduce((acc, task) => acc + (task.estimateMinutes || 0), 0);
-
-    // =========================
-    // STATUS DISTRIBUTION
-    // =========================
 
     const statusDistribution = [
       {
@@ -670,10 +768,6 @@ export class SprintService {
       },
     ];
 
-    // =========================
-    // TEAM VELOCITY
-    // =========================
-
     const velocityMap = new Map();
 
     tasks.forEach((task) => {
@@ -692,10 +786,6 @@ export class SprintService {
         estimate,
       }),
     );
-
-    // =========================
-    // DAYS
-    // =========================
 
     const now = new Date();
 
@@ -720,18 +810,10 @@ export class SprintService {
       daysPassed = Math.max(0, totalDays - daysLeft);
     }
 
-    // =========================
-    // PROGRESS
-    // =========================
-
     const sprintProgress =
       totalEstimate > 0
         ? Math.round((completedEstimate / totalEstimate) * 100)
         : 0;
-
-    // =========================
-    // HEALTH
-    // =========================
 
     let health = 'HEALTHY';
 
@@ -742,10 +824,6 @@ export class SprintService {
     } else if (Math.abs(sprintProgress - timeProgress) <= 10) {
       health = 'AT_RISK';
     }
-
-    // =========================
-    // BURNDOWN
-    // =========================
 
     const burndownData = sprint.snapshots.map((snapshot) => ({
       date: snapshot.createdAt,

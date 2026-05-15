@@ -79,7 +79,82 @@ export class WorkspaceService {
     const page = Number(query.page ?? 1);
     const limit = Number(query.limit ?? 10);
 
-    const role = query.role?.toUpperCase() as 'ADMIN' | 'MEMBER' | undefined;
+    const role = query.role?.toUpperCase() as
+      | 'ADMIN'
+      | 'MEMBER'
+      | 'SUPER_ADMIN'
+      | undefined;
+
+    // =========================
+    // CHECK SUPER ADMIN
+    // =========================
+
+    const superAdminMembership = await this.db.membership.findFirst({
+      where: {
+        userId,
+        role: 'SUPER_ADMIN',
+      },
+    });
+
+    const isSuperAdmin = !!superAdminMembership;
+
+    // =========================
+    // SUPER ADMIN -> ALL WORKSPACES
+    // =========================
+
+    if (isSuperAdmin) {
+      const workspaces = await this.db.workspace.findMany({
+        where: query.search
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  slug: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  description: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              ],
+            }
+          : undefined,
+
+        orderBy: {
+          createdAt: 'desc',
+        },
+
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      return {
+        workspaces: workspaces.map((workspace) => ({
+          id: workspace.id,
+          name: workspace.name,
+          slug: workspace.slug,
+          description: workspace.description,
+          logoUrl: workspace.logoUrl,
+          ownerId: workspace.ownerId,
+          createdAt: workspace.createdAt,
+          updatedAt: workspace.updatedAt,
+          role: 'SUPER_ADMIN',
+        })),
+      };
+    }
+
+    // =========================
+    // NORMAL MEMBERSHIP FLOW
+    // =========================
 
     const memberships = await this.db.membership.findMany({
       where: {

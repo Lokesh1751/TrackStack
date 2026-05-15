@@ -58,7 +58,7 @@ export default function DashboardPage() {
     queryKey: ["workspaces", role, search],
     queryFn: () =>
       getWorkspaces({
-        role: role || undefined,
+        role: role === "ADMIN" || role === "MEMBER" ? role : undefined,
         search: search || undefined,
       }),
   });

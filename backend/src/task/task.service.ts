@@ -19,6 +19,17 @@ import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
 export class TasksService {
   constructor(private readonly db: DatabaseService) {}
 
+  private async isSuperAdmin(userId: string) {
+    const membership = await this.db.membership.findFirst({
+      where: {
+        userId,
+        role: 'SUPER_ADMIN',
+      },
+    });
+
+    return !!membership;
+  }
+
   // =====================================
   // CREATE TASK
   // =====================================
@@ -34,6 +45,8 @@ export class TasksService {
       throw new BadRequestException('Project not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -43,7 +56,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -56,10 +69,7 @@ export class TasksService {
       },
     });
 
-    const canCreateTask =
-      !!projectMember ||
-      membership.role === 'ADMIN' ||
-      membership.role === 'SUPER_ADMIN';
+    const canCreateTask = !!projectMember || membership?.role === 'ADMIN';
 
     if (!canCreateTask) {
       throw new ForbiddenException(
@@ -163,6 +173,8 @@ export class TasksService {
       throw new BadRequestException('Project not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -172,7 +184,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -358,6 +370,8 @@ export class TasksService {
       throw new BadRequestException('Task not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -367,7 +381,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -395,6 +409,8 @@ export class TasksService {
       throw new BadRequestException('Task not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -404,7 +420,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -516,6 +532,8 @@ export class TasksService {
       throw new BadRequestException('Task not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -525,7 +543,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -568,6 +586,8 @@ export class TasksService {
       throw new BadRequestException('Task not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -577,14 +597,12 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
     const canDelete =
-      task.reporterId === userId ||
-      membership.role === 'ADMIN' ||
-      membership.role === 'SUPER_ADMIN';
+      task.reporterId === userId || membership?.role === 'ADMIN';
 
     if (!canDelete) {
       throw new ForbiddenException('You cannot delete this task');
@@ -619,6 +637,7 @@ export class TasksService {
     if (!task) {
       throw new BadRequestException('Task not found');
     }
+    const isSuperAdmin = await this.isSuperAdmin(userId);
 
     const membership = await this.db.membership.findUnique({
       where: {
@@ -629,7 +648,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -675,6 +694,8 @@ export class TasksService {
       throw new BadRequestException('Task not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -684,7 +705,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -735,6 +756,8 @@ export class TasksService {
       throw new BadRequestException('Comment not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -744,14 +767,11 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
-    const canDelete =
-      comment.userId === userId ||
-      membership.role === 'ADMIN' ||
-      membership.role === 'SUPER_ADMIN';
+    const canDelete = comment.userId === userId || membership?.role === 'ADMIN';
 
     if (!canDelete) {
       throw new ForbiddenException('You cannot delete this comment');
@@ -787,6 +807,8 @@ export class TasksService {
       throw new BadRequestException('Task not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -796,7 +818,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -862,6 +884,8 @@ export class TasksService {
       throw new BadRequestException('Task not found');
     }
 
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
     const membership = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
@@ -871,7 +895,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
@@ -939,6 +963,7 @@ export class TasksService {
     if (!project) {
       throw new BadRequestException('Project not found');
     }
+    const isSuperAdmin = await this.isSuperAdmin(userId);
 
     const membership = await this.db.membership.findUnique({
       where: {
@@ -949,7 +974,7 @@ export class TasksService {
       },
     });
 
-    if (!membership) {
+    if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
 
