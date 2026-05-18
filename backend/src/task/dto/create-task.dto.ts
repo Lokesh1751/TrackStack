@@ -42,6 +42,11 @@ export class CreateTaskDto {
   // SPRINT SUPPORT
   // =========================
 
+  @IsOptional()
   @IsString()
-  sprintId?: string;
+  sprintId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  assigneeId?: string | null;
 }

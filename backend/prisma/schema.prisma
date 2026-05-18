@@ -122,6 +122,12 @@ model User {
   email        String @unique
   passwordHash String
 
+  name        String?
+  avatarUrl   String?
+  bio         String?
+  designation String?
+  timezone    String?
+
   isSuperAdmin Boolean @default(false)
 
   createdAt DateTime @default(now())

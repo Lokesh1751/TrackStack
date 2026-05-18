@@ -9,6 +9,7 @@ import {
   UseGuards,
   ValidationPipe,
   Session,
+  Patch,
 } from '@nestjs/common';
 
 import type { Request, Response } from 'express';
@@ -22,6 +23,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
 
 import { SessionAuthGuard } from '../database/session-auth.guard';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -73,6 +75,17 @@ export class AuthController {
     }
 
     return this.authService.me(userId);
+  }
+
+  @Patch('me')
+  async updateProfile(@Req() req: Request, @Body() dto: UpdateProfileDto) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    return this.authService.updateProfile(userId, dto);
   }
 
   // =========================

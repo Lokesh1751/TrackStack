@@ -17,6 +17,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
 import { otpEmailTemplate } from 'src/mail/templates/otp-email.template';
 import { Resend } from 'resend';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -132,19 +133,326 @@ export class AuthService {
 
   async me(userId: string) {
     const user = await this.databaseService.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
 
       select: {
         id: true,
         email: true,
         isSuperAdmin: true,
+
+        // PROFILE
+        name: true,
+        bio: true,
+        avatarUrl: true,
+        designation: true,
+        timezone: true,
+
+        createdAt: true,
+
+        // WORKSPACES
+        memberships: {
+          select: {
+            id: true,
+            role: true,
+
+            workspace: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                logoUrl: true,
+              },
+            },
+          },
+        },
+
+        // PROJECT MEMBERS
+        projectMembers: {
+          select: {
+            id: true,
+            role: true,
+
+            project: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                createdAt: true,
+
+                workspace: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+
+                sprints: {
+                  where: {
+                    status: 'ACTIVE',
+                  },
+
+                  select: {
+                    id: true,
+                    name: true,
+                    status: true,
+                    startDate: true,
+                    endDate: true,
+                  },
+
+                  take: 1,
+                },
+
+                tasks: {
+                  select: {
+                    id: true,
+                    status: true,
+                    assigneeId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        // ASSIGNED TASKS
+        assignedTasks: {
+          take: 10,
+
+          orderBy: {
+            createdAt: 'desc',
+          },
+
+          select: {
+            id: true,
+            title: true,
+            taskKey: true,
+            status: true,
+            priority: true,
+            type: true,
+            dueDate: true,
+            estimateMinutes: true,
+
+            project: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+
+            sprint: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+              },
+            },
+          },
+        },
+
+        // REPORTED TASKS
+        reportedTasks: {
+          take: 10,
+
+          orderBy: {
+            createdAt: 'desc',
+          },
+
+          select: {
+            id: true,
+            title: true,
+            status: true,
+
+            project: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+
+        // COMMENTS
+        taskComments: {
+          take: 5,
+
+          orderBy: {
+            createdAt: 'desc',
+          },
+
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+
+            task: {
+              select: {
+                id: true,
+                title: true,
+                taskKey: true,
+              },
+            },
+          },
+        },
+
+        // CREATED SPRINTS
+        sprints: {
+          take: 5,
+
+          orderBy: {
+            createdAt: 'desc',
+          },
+
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+
+            project: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        data: null,
+      };
+    }
+
+    // =========================
+    // PROJECTS
+    // =========================
+
+    const projects = user.projectMembers.map((member) => {
+      const totalTasks = member.project.tasks.length;
+
+      const completedTasks = member.project.tasks.filter(
+        (task) => task.status === 'DONE',
+      ).length;
+
+      const userTasks = member.project.tasks.filter(
+        (task) => task.assigneeId === userId,
+      );
+
+      const totalTaskss = userTasks.length;
+
+      const completedTaskss = userTasks.filter(
+        (task) => task.status === 'DONE',
+      ).length;
+      return {
+        id: member.project.id,
+        name: member.project.name,
+        description: member.project.description,
+        createdAt: member.project.createdAt,
+
+        role: member.role,
+
+        workspace: member.project.workspace,
+
+        activeSprint: member.project.sprints[0] || null,
+      };
+    });
+
+    // =========================
+    // STATS
+    // =========================
+
+    const totalProjects = user.projectMembers.length;
+
+    const totalTasks = user.assignedTasks.length;
+
+    const completedTasks = user.assignedTasks.filter(
+      (task) => task.status === 'DONE',
+    ).length;
+
+    const activeSprints = user.projectMembers.filter(
+      (member) => member.project.sprints.length > 0,
+    ).length;
+
+    const totalWorkspaces = user.memberships.length;
+
+    return {
+      success: true,
+
+      data: {
+        id: user.id,
+        email: user.email,
+        isSuperAdmin: user.isSuperAdmin,
+
+        name: user.name,
+        bio: user.bio,
+        avatarUrl: user.avatarUrl,
+        designation: user.designation,
+        timezone: user.timezone,
+
+        createdAt: user.createdAt,
+
+        memberships: user.memberships,
+
+        projects,
+
+        assignedTasks: user.assignedTasks,
+
+        reportedTasks: user.reportedTasks,
+
+        taskComments: user.taskComments,
+
+        sprints: user.sprints,
+
+        stats: {
+          totalProjects,
+          totalTasks,
+          completedTasks,
+          activeSprints,
+          totalWorkspaces,
+        },
+      },
+    };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const updatedUser = await this.databaseService.user.update({
+      where: {
+        id: userId,
+      },
+
+      data: {
+        name: dto.name,
+        bio: dto.bio,
+        avatarUrl: dto.avatarUrl,
+        designation: dto.designation,
+        timezone: dto.timezone,
+      },
+
+      select: {
+        id: true,
+        email: true,
+        isSuperAdmin: true,
+
+        name: true,
+        bio: true,
+        avatarUrl: true,
+        designation: true,
+        timezone: true,
+
         createdAt: true,
       },
     });
 
     return {
       success: true,
-      data: user,
+      message: 'Profile updated successfully',
+      data: updatedUser,
     };
   }
 

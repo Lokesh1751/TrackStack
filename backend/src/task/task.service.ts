@@ -114,7 +114,7 @@ export class TasksService {
 
         reporterId: userId,
 
-        assigneeId: null,
+        assigneeId: dto.assigneeId,
 
         type: dto.type,
         priority: dto.priority,
