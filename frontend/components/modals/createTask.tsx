@@ -14,7 +14,7 @@ import { createTask, getProjectMembers } from "@/lib/api";
 
 type Props = {
   projectId: string;
-  sprintId?: string;
+  sprintId?: string | null;
 };
 
 export function CreateTaskModal({ projectId, sprintId }: Props) {
@@ -52,7 +52,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
     mutationFn: () =>
       createTask(projectId, {
         ...form,
-        sprintId: sprintId || undefined,
+        sprintId: sprintId || null,
         assigneeId: form.assigneeId || undefined,
         dueDate: form.dueDate
           ? new Date(form.dueDate).toISOString()

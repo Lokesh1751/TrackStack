@@ -36,6 +36,7 @@ export default function Projects() {
   const [description, setDescription] = useState("");
 
   const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedProjectName, setSelectedProjectName] = useState("");
 
   const [selectedMemberEmail, setSelectedMemberEmail] = useState("");
   const { get, set } = useQueryFilters();
@@ -374,7 +375,10 @@ export default function Projects() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              setSelectedProjectId(project.id);
+                              setSelectedProjectId(
+                                selectedProjectId ? "" : project.id,
+                              );
+                              setSelectedProjectName(project.name);
                             }}
                           >
                             Members
@@ -413,7 +417,9 @@ export default function Projects() {
           <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
             <div className="border-b px-6 py-5 flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-semibold">Project Members</h2>
+                <h2 className="text-xl font-semibold">
+                  Project Members for {selectedProjectName}
+                </h2>
 
                 <p className="text-sm text-slate-500 mt-1">
                   Invite and manage project members

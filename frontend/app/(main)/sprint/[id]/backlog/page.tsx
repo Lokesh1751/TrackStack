@@ -20,6 +20,7 @@ import { CreateTaskModal } from "@/components/modals/createTask";
 import { TaskFilter } from "@/components/filters/TaskFilter";
 
 import { useDebounce } from "@/hooks/useDebounce";
+import { TaskCard } from "@/components/task-card";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 
@@ -122,7 +123,7 @@ export default function BacklogPage() {
           </p>
         </div>
 
-        <CreateTaskModal projectId={projectId} sprintId={undefined} />
+        <CreateTaskModal projectId={projectId} sprintId={null} />
       </div>
 
       {/* FILTERS */}
@@ -153,9 +154,7 @@ export default function BacklogPage() {
             <div className="py-20 text-center">
               <div className="text-5xl">📦</div>
 
-              <h2 className="mt-4 text-xl font-semibold">
-                Backlog is empty
-              </h2>
+              <h2 className="mt-4 text-xl font-semibold">Backlog is empty</h2>
 
               <p className="text-sm text-neutral-500">
                 No unplanned tasks available
@@ -166,44 +165,85 @@ export default function BacklogPage() {
               {tasks.map((task: any) => (
                 <div
                   key={task.id}
-                  className="group flex justify-between rounded-2xl border bg-white p-5 transition hover:border-black"
+                  className="group flex items-start justify-between rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-black hover:shadow-md"
                 >
                   {/* LEFT */}
-                  <div>
-                    <div className="text-xs text-neutral-400">
-                      {task.taskKey}
+                  <div className="flex-1">
+                    {/* TASK KEY + TYPE */}
+                    <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-neutral-400">
+                      <span>{task.taskKey}</span>
+
+                      <span className="rounded-full bg-neutral-100 px-2 py-1 text-[10px] text-neutral-600">
+                        {task.type}
+                      </span>
                     </div>
 
-                    <h3 className="text-lg font-semibold">{task.title}</h3>
+                    {/* TITLE */}
+                    <h3 className="text-lg font-bold text-neutral-900">
+                      {task.title}
+                    </h3>
 
-                    <p className="text-sm text-neutral-500">
-                      {task.description || "No description"}
+                    {/* DESCRIPTION */}
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-500">
+                      {task.description || "No description added"}
                     </p>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs">
+                    {/* TAGS */}
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700">
                         {task.status}
                       </div>
 
-                      <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs">
+                      <div
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                          task.priority === "LOW"
+                            ? "bg-green-100 text-green-700"
+                            : task.priority === "MEDIUM"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : task.priority === "HIGH"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-red-100 text-red-700"
+                        }`}
+                      >
                         {task.priority}
                       </div>
 
-                      <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs">
-                        {task.type}
-                      </div>
+                      {task.sprint && (
+                        <div className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                          {task.sprint.name}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="mt-3 text-xs text-neutral-500">
-                      👤 {task.assignee?.email || "Unassigned"}
+                    {/* ASSIGNEE */}
+                    <div className="mt-5 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
+                        {task.assignee?.email?.charAt(0)?.toUpperCase() || "U"}
+                      </div>
+
+                      <div>
+                        <div className="text-sm font-medium text-neutral-900">
+                          {task.assignee?.email || "Unassigned"}
+                        </div>
+
+                        <div className="text-xs text-neutral-400">
+                          Assigned User
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* ACTION */}
-                  <div className="opacity-0 transition group-hover:opacity-100">
+                  {/* RIGHT ACTIONS */}
+                  <div className="ml-6 flex flex-col items-end gap-3">
+                    {/* DATE */}
+                    <div className="text-xs text-neutral-400">
+                      {new Date(task.createdAt).toLocaleDateString("en-IN")}
+                    </div>
+
+                    {/* MANAGE BUTTON */}
                     <button
                       onClick={() => setSelectedTask(task)}
-                      className="rounded-xl bg-black px-3 py-2 text-xs text-white"
+                      className="rounded-2xl bg-black cursor-pointer px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
                     >
                       Manage
                     </button>
@@ -286,9 +326,7 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
 
         {/* ASSIGN USER */}
         <div className="mb-6">
-          <label className="mb-2 block text-sm font-medium">
-            Assign User
-          </label>
+          <label className="mb-2 block text-sm font-medium">Assign User</label>
 
           <select
             value={task?.assignee?.id || selectedUser}

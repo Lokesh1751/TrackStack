@@ -63,6 +63,33 @@ export async function getCurrentUser() {
   return request<any>("/auth/me");
 }
 
+export const updateProfile = async (data: {
+  name?: string;
+  bio?: string;
+  avatarUrl?: string;
+  designation?: string;
+  timezone?: string;
+}) => {
+  return request<{
+    success: boolean;
+    message: string;
+    data: {
+      id: string;
+      email: string;
+      name?: string;
+      bio?: string;
+      avatarUrl?: string;
+      designation?: string;
+      timezone?: string;
+      isSuperAdmin: boolean;
+      createdAt: string;
+    };
+  }>("/auth/me", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
 export async function logout() {
   return request<{ success: boolean }>("/auth/logout", {
     method: "POST",
@@ -169,8 +196,8 @@ export const getWorkspaceById = async (id: string) => {
       logoUrl?: string;
       isSuperAdmin?: boolean;
       role: string;
-      createdAt: Date,
-      updatedAt: Date
+      createdAt: Date;
+      updatedAt: Date;
     };
   }>(`/workspace/${id}`);
 };

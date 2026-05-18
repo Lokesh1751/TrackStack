@@ -86,7 +86,6 @@ export default function DashboardPage() {
       .replace(/[^a-z0-9-]/g, "");
   }, [name]);
 
-  const slugg = useMemo(() => slugify(name), [name]);
   useEffect(() => {
     setSlug((prev) => {
       if (prev === generatedSlug) return prev;

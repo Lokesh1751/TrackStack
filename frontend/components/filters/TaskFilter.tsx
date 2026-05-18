@@ -69,7 +69,6 @@ export function TaskFilter({
 
           {/* ASSIGNEE */}
           <select
-            value={currentUser?.id || selectedUserId || 'ALL'}
             onChange={(e) =>
               setSelectedUserId(
                 e.target.value === "ALL" ? null : e.target.value,

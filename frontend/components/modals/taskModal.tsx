@@ -24,15 +24,18 @@ import { Loader2, MessageSquare, Link2 } from "lucide-react";
 import { getTaskTypeIcon } from "@/helpers";
 
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function TaskModal({
   task,
   projectId,
+  sprintId,
   onClose,
   refetch,
   setSelectedTask,
 }: any) {
   const queryClient = useQueryClient();
+  const router = useRouter()
 
   const [comment, setComment] = useState("");
 
@@ -382,8 +385,11 @@ export function TaskModal({
           <div>
             <div className="mb-2 text-sm text-neutral-500">
               {" "}
-              <span className="flex gap-2 items-center">
-                {task.taskKey} {getTaskTypeIcon(task.type)}
+              <span className="flex gap-2 items-center justify-between">
+                <span className="flex gap-2 items-center">{task.taskKey} {getTaskTypeIcon(task.type)}</span> 
+                <span className="flex gap-2 items-center">
+                {task.status}
+              </span>
               </span>
             </div>
 
@@ -631,7 +637,8 @@ export function TaskModal({
                 {taskData?.linkedTasks?.map((link: any) => (
                   <div
                     key={link.id}
-                    className="rounded-2xl border border-neutral-200 bg-white p-5"
+                    className="rounded-2xl border border-neutral-200 bg-white p-5 cursor-pointer"
+                    onClick={()=> router.push(`/tasks/${projectId}?sprint=${sprintId}&taskId=${link.id}`) }
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       {/* LEFT */}
