@@ -405,7 +405,7 @@ export default function Page() {
                               index={index}
                               statuses={statuses}
                               onOpen={openTask}
-                              onStatusChange={(taskId, status) =>
+                              onStatusChange={(taskId:any, status:any) =>
                                 updateStatusMutation.mutate({
                                   taskId,
                                   status,
