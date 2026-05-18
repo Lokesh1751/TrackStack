@@ -334,21 +334,6 @@ export class AuthService {
     // =========================
 
     const projects = user.projectMembers.map((member) => {
-      const totalTasks = member.project.tasks.length;
-
-      const completedTasks = member.project.tasks.filter(
-        (task) => task.status === 'DONE',
-      ).length;
-
-      const userTasks = member.project.tasks.filter(
-        (task) => task.assigneeId === userId,
-      );
-
-      const totalTaskss = userTasks.length;
-
-      const completedTaskss = userTasks.filter(
-        (task) => task.status === 'DONE',
-      ).length;
       return {
         id: member.project.id,
         name: member.project.name,

@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [designation, setDesignation] = useState("");
   const [timezone, setTimezone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -48,6 +49,7 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({
         queryKey: ["profile"],
       });
+      setIsEditing(false)
     },
   });
 
@@ -117,87 +119,144 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="text-sm"
-                />
+                {isEditing && (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="text-sm"
+                  />
+                )}
               </div>
 
               {/* USER INFO */}
-
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 mt-20">
+                {/* NAME */}
                 <div>
                   <label className="text-sm font-medium">Full Name</label>
 
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
-                    className="mt-2 w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-                  />
+                  {isEditing ? (
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="John Doe"
+                      className="mt-2 w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-700">{name || "-"}</p>
+                  )}
                 </div>
 
+                {/* EMAIL */}
                 <div>
                   <label className="text-sm font-medium">Email</label>
 
-                  <input
-                    value={user?.email || ""}
-                    disabled
-                    className="mt-2 w-full border rounded-xl p-3 text-sm bg-slate-50"
-                  />
+                  <p className="mt-2 text-sm text-slate-700">
+                    {user?.email || "-"}
+                  </p>
                 </div>
 
+                {/* DESIGNATION */}
                 <div>
                   <label className="text-sm font-medium">Designation</label>
 
-                  <input
-                    value={designation}
-                    onChange={(e) => setDesignation(e.target.value)}
-                    placeholder="Frontend Developer"
-                    className="mt-2 w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-                  />
+                  {isEditing ? (
+                    <input
+                      value={designation}
+                      onChange={(e) => setDesignation(e.target.value)}
+                      placeholder="Frontend Developer"
+                      className="mt-2 w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-700">
+                      {designation || "-"}
+                    </p>
+                  )}
                 </div>
 
+                {/* TIMEZONE */}
                 <div>
                   <label className="text-sm font-medium">Timezone</label>
 
-                  <input
-                    value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
-                    placeholder="Asia/Kolkata"
-                    className="mt-2 w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-                  />
+                  {isEditing ? (
+                    <input
+                      value={timezone}
+                      onChange={(e) => setTimezone(e.target.value)}
+                      placeholder="Asia/Kolkata"
+                      className="mt-2 w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-700">
+                      {timezone || "-"}
+                    </p>
+                  )}
                 </div>
 
+                {/* BIO */}
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium">Bio</label>
 
-                  <textarea
-                    rows={5}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Write something about yourself..."
-                    className="mt-2 w-full border rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 focus:ring-black/10"
-                  />
+                  {isEditing ? (
+                    <textarea
+                      rows={5}
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Write something about yourself..."
+                      className="mt-2 w-full border rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 focus:ring-black/10"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-700">{bio || "-"}</p>
+                  )}
                 </div>
 
-                <div className="md:col-span-2 flex justify-end">
-                  <Button
-                    disabled={updateMutation.isPending}
-                    onClick={() =>
-                      updateMutation.mutate({
-                        name,
-                        bio,
-                        designation,
-                        timezone,
-                        avatarUrl,
-                      })
-                    }
-                  >
-                    {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                  </Button>
+                {/* BUTTONS */}
+                <div className="md:col-span-2 flex justify-end gap-3">
+                  {!isEditing ? (
+                    <Button onClick={() => setIsEditing(true)}>
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(false);
+
+                          setName(user?.name || "");
+                          setBio(user?.bio || "");
+                          setDesignation(user?.designation || "");
+                          setTimezone(user?.timezone || "");
+                          setAvatarUrl(user?.avatarUrl || "");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+
+                      <Button
+                        disabled={updateMutation.isPending}
+                        onClick={() =>
+                          updateMutation.mutate(
+                            {
+                              name,
+                              bio,
+                              designation,
+                              timezone,
+                              avatarUrl,
+                            },
+                            {
+                              onSuccess: () => {
+                                setIsEditing(false);
+                              },
+                            },
+                          )
+                        }
+                      >
+                        {updateMutation.isPending
+                          ? "Saving..."
+                          : "Save Changes"}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -266,7 +325,11 @@ export default function ProfilePage() {
                   <div
                     key={task.id}
                     className="border rounded-2xl p-4 flex items-center justify-between cursor-pointer"
-                    onClick={()=> router.push(`/tasks/${task?.project?.id}?sprint=${task?.sprint?.id}&taskId=${task?.id}`)}
+                    onClick={() =>
+                      router.push(
+                        `/tasks/${task?.project?.id}?sprint=${task?.sprint?.id}&taskId=${task?.id}`,
+                      )
+                    }
                   >
                     <div>
                       <p className="font-medium">{task.title}</p>
@@ -310,7 +373,11 @@ export default function ProfilePage() {
                   <div
                     key={project.id}
                     className="border rounded-2xl p-5 hover:border-slate-300 transition-all cursor-pointer"
-                    onClick={() => router.push(`/tasks/${project?.id}?sprint=${project?.activeSprint?.id}`)}
+                    onClick={() =>
+                      router.push(
+                        `/tasks/${project?.id}?sprint=${project?.activeSprint?.id}`,
+                      )
+                    }
                   >
                     {/* HEADER */}
                     <div className="flex items-start justify-between gap-4">
