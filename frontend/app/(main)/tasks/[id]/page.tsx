@@ -11,8 +11,6 @@ import {
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { MessageSquare } from "lucide-react";
-import { getTaskTypeIcon } from "@/helpers";
 
 import { toast } from "sonner";
 import { TaskBoardSkeleton } from "@/components/skeleton/taskBoard";

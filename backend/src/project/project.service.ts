@@ -3,17 +3,48 @@ import {
   Injectable,
   ForbiddenException,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
+
+import { randomUUID } from 'crypto';
 
 import { DatabaseService } from 'src/database/database.service';
 
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddProjectMemberDto } from './dto/add-project-member.dto';
+import { Resend } from 'resend';
+import { inviteMemberTemplate } from '@/mail/templates/invite-member.template';
 
 @Injectable()
 export class ProjectService {
   constructor(private readonly db: DatabaseService) {}
+
+  private async sendProjectInvitationEmail(
+    email: string,
+    projectName: string,
+    inviteLink: string,
+    invitedBy: string,
+  ) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+      throw new InternalServerErrorException('Email service is not configured');
+    }
+
+    const resend = new Resend(resendApiKey);
+
+    const { error } = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: email,
+      subject: `Invitation to join ${projectName}`,
+      html: inviteMemberTemplate(invitedBy, projectName, inviteLink),
+    });
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to send invitation email');
+    }
+  }
 
   // =========================
   // COMMON ACCESS CHECK
@@ -399,6 +430,10 @@ export class ProjectService {
   // ADD PROJECT MEMBER
   // =========================
 
+  // =========================
+  // ADD PROJECT MEMBER
+  // =========================
+
   async addProjectMember(
     projectId: string,
     dto: AddProjectMemberDto,
@@ -457,15 +492,61 @@ export class ProjectService {
       throw new BadRequestException('User already added to project');
     }
 
-    await this.db.projectMember.create({
-      data: {
+    // =========================
+    // CHECK EXISTING INVITE
+    // =========================
+
+    const existingInvite = await this.db.projectInvite.findFirst({
+      where: {
         projectId,
-        userId: user.id,
+        email: dto.email,
+        status: 'PENDING',
       },
     });
 
+    if (existingInvite) {
+      throw new BadRequestException('Invitation already sent');
+    }
+
+    // =========================
+    // CREATE INVITATION
+    // =========================
+
+    const token = randomUUID();
+
+    const invitation = await this.db.projectInvite.create({
+      data: {
+        email: dto.email,
+        token,
+        invitedById: currentUserId,
+        projectId,
+        status: 'PENDING',
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
+      },
+    });
+
+    // =========================
+    // SEND EMAIL
+    // =========================
+
+    const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}?projectName=${project.name}`;
+
+    const inviter = await this.db.user.findUnique({
+      where: {
+        id: currentUserId,
+      },
+    });
+
+    await this.sendProjectInvitationEmail(
+      dto.email,
+      project.name,
+      inviteLink,
+      inviter?.email || 'TrackStack Admin',
+    );
+
     return {
-      message: 'Project member added successfully',
+      message: 'Invitation sent successfully',
+      invitation,
     };
   }
 
@@ -554,6 +635,81 @@ export class ProjectService {
 
     return {
       message: 'Project member removed',
+    };
+  }
+
+  async acceptInvite(token: string) {
+    const invite = await this.db.projectInvite.findUnique({
+      where: { token },
+    });
+
+    if (!invite) {
+      throw new BadRequestException('Invalid invite');
+    }
+
+    if (invite.status !== 'PENDING') {
+      throw new BadRequestException('Invite already processed');
+    }
+
+    const user = await this.db.user.findUnique({
+      where: {
+        email: invite.email,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    await this.db.projectMember.create({
+      data: {
+        projectId: invite.projectId,
+        userId: user.id,
+      },
+    });
+
+    await this.db.projectInvite.update({
+      where: {
+        id: invite.id,
+      },
+      data: {
+        status: 'ACCEPTED',
+      },
+    });
+
+    return {
+      message: 'Member Added Successfully to project',
+    };
+  }
+
+  async declineInvite(token: string) {
+    const invite = await this.db.projectInvite.findUnique({
+      where: {
+        token,
+      },
+    });
+
+    if (!invite) {
+      throw new BadRequestException('Invalid invitation');
+    }
+
+    if (invite.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Invitation already ${invite.status.toLowerCase()}`,
+      );
+    }
+
+    await this.db.projectInvite.update({
+      where: {
+        id: invite.id,
+      },
+      data: {
+        status: 'DECLINED',
+      },
+    });
+
+    return {
+      message: 'Invitation declined successfully',
     };
   }
 }

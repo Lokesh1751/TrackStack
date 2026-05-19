@@ -22,6 +22,7 @@ import { ProjectService } from './project.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddProjectMemberDto } from './dto/add-project-member.dto';
+import type { Response } from 'express';
 
 @UseGuards(SessionAuthGuard)
 @Controller()
@@ -142,5 +143,19 @@ export class ProjectController {
       userId,
       req.session.userId,
     );
+  }
+
+  @Post('accept-invite')
+  async acceptInvite(@Query('token') token: string) {
+    return this.projectService.acceptInvite(token);
+  }
+
+  // =========================
+  // DECLINE INVITE
+  // =========================
+
+  @Post('decline-invite')
+  async declineInvite(@Query('token') token: string) {
+    return this.projectService.declineInvite(token);
   }
 }

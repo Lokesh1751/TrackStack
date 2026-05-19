@@ -47,6 +47,12 @@ enum TaskLinkType {
   CAUSED_BY
 }
 
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 model Membership {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -111,10 +117,31 @@ model Project {
 
   members ProjectMember[]
 
-  tasks   Task[]
-  sprints Sprint[]
+  tasks          Task[]
+  sprints        Sprint[]
+  projectInvites ProjectInvite[]
 
   @@index([workspaceId])
+}
+
+model ProjectInvite {
+  id String @id @default(uuid()) @db.Uuid
+
+  email String
+  token String @unique()
+
+  status InviteStatus @default(PENDING)
+
+  projectId String @db.Uuid
+  invitedById String @db.Uuid
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  invitedBy User @relation( "ProjectInviteSender", fields: [invitedById], references: [id] )
 }
 
 model User {
@@ -147,6 +174,8 @@ model User {
   sprints       Sprint[] @relation("SprintCreatedBy")
 
   taskComments TaskComment[]
+
+  sentProjectInvites ProjectInvite[] @relation("ProjectInviteSender")
 }
 
 model Task {
@@ -210,14 +239,14 @@ model TaskComment {
 }
 
 model SprintSnapshot {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  sprintId          String
-  sprint            Sprint   @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  sprintId String
+  sprint   Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
 
   remainingEstimate Int
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([sprintId])
 }
@@ -244,7 +273,7 @@ model Sprint {
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  tasks Task[]
+  tasks     Task[]
   snapshots SprintSnapshot[]
 
   createdAt DateTime @default(now())
@@ -259,7 +288,7 @@ model TaskLink {
 
   type TaskLinkType
 
-  sourceTask Task @relation( "SourceTask", fields: [sourceTaskId], references: [id] )
+  sourceTask Task @relation("SourceTask", fields: [sourceTaskId], references: [id])
 
-  targetTask Task @relation( "TargetTask", fields: [targetTaskId], references: [id] )
+  targetTask Task @relation("TargetTask", fields: [targetTaskId], references: [id])
 }

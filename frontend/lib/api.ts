@@ -859,3 +859,27 @@ export const getSprintDashboard = async (sprintId: string) => {
     }[];
   }>(`/sprints/${sprintId}/dashboard`);
 };
+
+// =========================
+// ACCEPT PROJECT INVITE
+// =========================
+
+export const acceptProjectInvite = async (token: string) => {
+  return request<{
+    message: string;
+  }>(`/accept-invite?token=${token}`, {
+    method: "POST",
+  });
+};
+
+// =========================
+// DECLINE PROJECT INVITE
+// =========================
+
+export const declineProjectInvite = async (token: string) => {
+  return request<{
+    message: string;
+  }>(`/decline-invite?token=${token}`, {
+    method: "POST",
+  });
+};
