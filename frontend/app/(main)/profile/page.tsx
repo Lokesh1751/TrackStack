@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/image-fallback";
 import { ProfilePageSkeleton } from "@/components/skeleton/profile";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/useToast";
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
@@ -27,6 +28,7 @@ export default function ProfilePage() {
   const [timezone, setTimezone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const toast  = useToast();
 
   useEffect(() => {
     if (!user) return;
@@ -49,7 +51,8 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({
         queryKey: ["profile"],
       });
-      setIsEditing(false)
+      toast.success(data.message || "");
+      setIsEditing(false);
     },
   });
 
@@ -90,7 +93,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-6">
+      <div className="mx-auto px-4 md:px-6 py-8 space-y-6">
         {/* ========================= */}
         {/* PROFILE HEADER */}
         {/* ========================= */}

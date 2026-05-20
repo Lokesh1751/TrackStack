@@ -1,7 +1,7 @@
 export function DashboardPageSkeleton() {
     return (
       <div className="bg-slate-100 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-6 animate-pulse">
+        <div className=" mx-auto px-4 md:px-6 py-8 space-y-6 animate-pulse">
   
           {/* HEADER */}
           <div className="flex justify-between">

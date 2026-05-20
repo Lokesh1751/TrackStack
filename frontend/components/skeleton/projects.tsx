@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function ProjectsPageSkeleton() {
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <div className="mx-auto px-4 py-8 space-y-6">
 
         {/* HEADER */}
         <div className="bg-white rounded-2xl border shadow-sm p-6 space-y-3">

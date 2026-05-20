@@ -18,6 +18,7 @@ import { BacklogSkeleton } from "@/components/skeleton/backlog";
 import { TaskActionModalSkeleton } from "@/components/skeleton/task-modal";
 import { CreateTaskModal } from "@/components/modals/createTask";
 import { TaskFilter } from "@/components/filters/TaskFilter";
+import { useToast } from "@/hooks/useToast";
 
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -45,6 +46,8 @@ export default function BacklogPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(search, 500);
+
+
 
   // =========================
   // CURRENT USER
@@ -281,6 +284,8 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
 
   const [selectedSprint, setSelectedSprint] = useState("");
 
+  const toast = useToast();
+
   // =========================
   // ASSIGN USER
   // =========================
@@ -288,10 +293,11 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
   const assignMutation = useMutation({
     mutationFn: (assigneeId: string) => assignTask(task.id, assigneeId),
 
-    onSuccess: () => {
+    onSuccess: (data:any) => {
       queryClient.invalidateQueries({
         queryKey: ["backlog"],
       });
+      toast.success(data.message || "");
 
       onClose();
     },

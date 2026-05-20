@@ -25,70 +25,68 @@ import {
 
 export default function LandingPage() {
   const isLoggedIn =
-    typeof window !== "undefined"
-      ? localStorage?.getItem("userId")
-      : null;
+    typeof window !== "undefined" ? localStorage?.getItem("userId") : null;
 
   const features = [
     {
       icon: BriefcaseBusiness,
       title: "Workspace Management",
-      desc: "Create multiple workspaces and organize projects for different teams and organizations.",
+      desc: "Super Admins and Workspace Admins can create and manage collaborative workspaces for different teams and organizations.",
     },
     {
       icon: Users,
-      title: "Team Collaboration",
-      desc: "Invite members, manage workspace roles and collaborate seamlessly across teams.",
+      title: "Team Invitations",
+      desc: "Invite members directly into workspaces and projects with controlled role-based access permissions.",
     },
     {
       icon: ShieldCheck,
-      title: "Role Based Access",
-      desc: "Secure access control with Admin and Member level permissions across the platform.",
+      title: "Role Based Permissions",
+      desc: "Secure workspace access using Super Admin, Workspace Admin and Member level permission controls.",
     },
     {
       icon: FolderKanban,
       title: "Project Management",
-      desc: "Create projects, manage timelines and organize all project resources efficiently.",
+      desc: "Workspace Admins can create and organize multiple projects with dedicated agile workflows.",
     },
     {
       icon: KanbanSquare,
-      title: "Kanban Task Boards",
-      desc: "Visualize workflow with modern drag-and-drop task boards inspired by agile systems.",
+      title: "Task Boards",
+      desc: "Manage project tasks visually using modern kanban-style boards with organized workflow stages.",
     },
     {
       icon: ListTodo,
-      title: "Task Tracking",
-      desc: "Create, assign and manage tasks with priorities, status and sprint mapping.",
+      title: "Task Collaboration",
+      desc: "Collaborate efficiently through task comments, discussions and doubt resolution directly inside tasks.",
     },
     {
       icon: Clock3,
       title: "Sprint Planning",
-      desc: "Plan agile sprints with start and end dates, sprint goals and task allocation.",
+      desc: "Create and manage sprint cycles with sprint goals, timelines and assigned project tasks.",
     },
     {
       icon: Rocket,
       title: "Sprint Lifecycle",
-      desc: "Start, complete and manage sprint progress with real-time workflow tracking.",
+      desc: "Start, monitor and complete agile sprints with structured workflow management.",
     },
     {
       icon: Activity,
       title: "Sprint Analytics",
-      desc: "Monitor sprint performance, active progress and project delivery metrics.",
+      desc: "Track sprint performance with analytics dashboards, charts and productivity insights.",
     },
     {
       icon: LayoutDashboard,
       title: "Modern Dashboards",
-      desc: "Beautiful dashboards with workspace summaries, progress indicators and insights.",
+      desc: "Beautiful dashboards providing workspace summaries, sprint status and project visibility.",
     },
     {
       icon: UserCog,
-      title: "User Management",
-      desc: "Manage users, memberships and workspace access from a centralized interface.",
+      title: "Project Member Access",
+      desc: "Add and manage project members through invitation-based collaboration workflows.",
     },
     {
-      icon: Layers3,
-      title: "Agile Workflow System",
-      desc: "Streamline agile delivery with backlog management, sprint boards and workflow states.",
+      icon: BarChart3,
+      title: "Agile Productivity Tracking",
+      desc: "Monitor team productivity, sprint execution and task completion progress in real time.",
     },
   ];
 
@@ -124,9 +122,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-neutral-500">
-              TrackStack helps teams manage projects, tasks, sprints,
-              workspaces and agile workflows with a modern collaborative
-              experience designed for productivity and scale.
+              TrackStack helps teams manage projects, tasks, sprints, workspaces
+              and agile workflows with a modern collaborative experience
+              designed for productivity and scale.
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -201,9 +199,7 @@ export default function LandingPage() {
                   <div className="mb-6 flex items-center gap-3">
                     <Users className="h-5 w-5 text-[#7189D0]" />
 
-                    <h3 className="font-semibold text-black">
-                      Team Members
-                    </h3>
+                    <h3 className="font-semibold text-black">Team Members</h3>
                   </div>
 
                   <div className="flex -space-x-3">

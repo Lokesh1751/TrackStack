@@ -193,7 +193,7 @@ export default function DashboardPage() {
 
   return (
     <div className=" bg-slate-100">
-      <div className="mx-auto max-w-7xl px-4 md:px-6 py-8 space-y-6">
+      <div className="mx-auto px-4 md:px-6 py-8 space-y-6">
         {/* HEADER */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>

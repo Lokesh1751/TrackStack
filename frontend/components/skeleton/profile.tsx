@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function ProfilePageSkeleton() {
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-6">
+      <div className="mx-auto px-4 md:px-6 py-8 space-y-6">
         {/* HEADER */}
         <div className="bg-white rounded-3xl border shadow-sm p-6">
           <div className="flex flex-col md:flex-row md:items-center gap-6">

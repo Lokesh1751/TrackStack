@@ -1,7 +1,7 @@
 export function EditWorkspacePageSkeleton() {
     return (
       <div className="min-h-screen bg-slate-100">
-        <div className="max-w-4xl mx-auto px-4 py-8 space-y-6 animate-pulse">
+        <div className="mx-auto px-4 py-8 space-y-6 animate-pulse">
   
           {/* ========================= */}
           {/* WORKSPACE CARD */}

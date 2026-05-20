@@ -4,15 +4,11 @@
 
 import Link from "next/link";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter} from "next/navigation";
 
 import { useMutation } from "@tanstack/react-query";
 
-import {
-  User,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { User, LogOut, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -23,10 +19,12 @@ import { logout } from "@/lib/api";
 export default function Header() {
   const router = useRouter();
 
-  const pathname = usePathname();
 
   const toast = useToast();
-  const isLoggedIn = localStorage?.getItem("userId");
+  const isLoggedIn =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem("userId")
+      : null;
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -42,7 +40,6 @@ export default function Header() {
       });
     },
   });
-
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#dfe5f1] bg-white/85 backdrop-blur-xl">

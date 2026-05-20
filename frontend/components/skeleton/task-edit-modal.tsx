@@ -1,7 +1,7 @@
 export function TaskModalSkeleton() {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="w-full max-w-4xl rounded-3xl bg-white p-6 shadow-2xl animate-pulse">
+        <div className="w-full  rounded-3xl bg-white p-6 shadow-2xl animate-pulse">
           
           {/* HEADER */}
           <div className="mb-8 flex justify-between">

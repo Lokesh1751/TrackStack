@@ -215,7 +215,7 @@ export default function Projects() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <div className=" mx-auto px-4 py-8 space-y-6">
         {/* Header */}
         <div className="bg-white rounded-2xl border shadow-sm p-6">
           <h1 className="text-3xl font-semibold">Workspace Projects</h1>
