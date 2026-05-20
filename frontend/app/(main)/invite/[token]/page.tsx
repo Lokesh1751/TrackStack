@@ -28,7 +28,7 @@ export default function InvitationPage() {
       toast.success(data.message || "Invitation accepted");
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/");
       }, 1500);
     },
 

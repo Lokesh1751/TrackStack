@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
                 <div className="text-right">
                   <button
                     type="button"
-                    className="text-xs text-[#7189D0] cursor-pointer"
+                    className="text-xs text-black cursor-pointer"
                     onClick={() =>
                       resendOtpMutation.mutate(otpForm.getValues("email"))
                     }

@@ -100,7 +100,8 @@ export function AuthShell() {
     mutationFn: login,
     onSuccess: (data: any) => {
       localStorage.setItem("isSuperAdmin", data.data.isSuperAdmin);
-      router.push("/dashboard");
+      localStorage.setItem("userId", data.data.id);
+      router.push("/");
       router.refresh();
     },
     onError: (error: Error) => {
@@ -226,7 +227,7 @@ export function AuthShell() {
                 <button
                   type="button"
                   onClick={() => setView("auth")}
-                  className="text-sm cursor-pointer text-[#7189D0]"
+                  className="text-sm cursor-pointer text-black"
                 >
                   Back to login
                 </button>
@@ -300,7 +301,7 @@ export function AuthShell() {
                       <button
                         type="button"
                         onClick={() => setView("forgot")}
-                        className="text-[#7189D0] cursor-pointer"
+                        className="text-black cursor-pointer"
                       >
                         Forgot password?
                       </button>

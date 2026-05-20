@@ -19,7 +19,7 @@ import { CreateTaskModal } from "@/components/modals/createTask";
 import { TaskModal } from "@/components/modals/taskModal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { TaskFilter } from "@/components/filters/TaskFilter";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { TaskCard } from "@/components/task-card";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];

@@ -20,7 +20,6 @@ import { CreateTaskModal } from "@/components/modals/createTask";
 import { TaskFilter } from "@/components/filters/TaskFilter";
 
 import { useDebounce } from "@/hooks/useDebounce";
-import { TaskCard } from "@/components/task-card";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 
