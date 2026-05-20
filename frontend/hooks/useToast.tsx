@@ -18,7 +18,7 @@ export const useToast = () => {
     error: (title: string, options?: ToastOptions) =>
       toast.error(title, {
         description: options?.description,
-        duration: options?.duration ?? 4000,
+        duration: options?.duration ?? 1000,
       }),
 
     warning: (title: string, options?: ToastOptions) =>

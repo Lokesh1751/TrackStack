@@ -32,6 +32,7 @@ export default function Header() {
     onSuccess: () => {
       toast.success("Logged out successfully");
       localStorage.clear();
+      window.location.reload()
     },
 
     onError: (error: Error) => {

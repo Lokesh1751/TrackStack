@@ -17,7 +17,6 @@ import {
   Activity,
   UserCog,
   Sparkles,
-  Layers3,
   Rocket,
   Target,
   CheckSquare,
@@ -144,13 +143,6 @@ export default function LandingPage() {
                   >
                     Get Started
                     <ArrowRight className="h-4 w-4" />
-                  </Link>
-
-                  <Link
-                    href="/register"
-                    className="rounded-2xl border border-[#dbe2f1] bg-white px-7 py-4 font-medium text-black transition hover:bg-neutral-100"
-                  >
-                    Create Account
                   </Link>
                 </>
               )}
