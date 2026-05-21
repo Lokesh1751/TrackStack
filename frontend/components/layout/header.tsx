@@ -5,6 +5,7 @@
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 import { useMutation } from "@tanstack/react-query";
 
@@ -18,17 +19,14 @@ import { logout } from "@/lib/api";
 
 export default function Header() {
   const router = useRouter();
-  const isSuperAdmin =
-    typeof window !== "undefined"
-      ? localStorage.getItem("isSuperAdmin") === "true"
-      : false;
-  console.log("isSuperAdmin", isSuperAdmin);
-
+  const [isLoggedIn, setIsLoggedIn] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  
+  useEffect(() => {
+    setIsLoggedIn(localStorage.getItem("userId"));
+    setIsSuperAdmin(localStorage.getItem("isSuperAdmin") === "true");
+  }, []);
   const toast = useToast();
-  const isLoggedIn =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem("userId")
-      : null;
 
   const logoutMutation = useMutation({
     mutationFn: logout,

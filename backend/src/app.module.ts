@@ -9,6 +9,7 @@ import { TaskModule } from './task/task.module';
 import { SprintModule } from './sprint/sprint.module';
 import { TaskLinkModule } from './task-link/task-link.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationsModule } from './notifications/notifications.module';
 
 ScheduleModule.forRoot();
 
@@ -21,6 +22,7 @@ ScheduleModule.forRoot();
     TaskModule,
     SprintModule,
     TaskLinkModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

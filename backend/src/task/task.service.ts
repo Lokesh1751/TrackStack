@@ -14,10 +14,14 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 
 import { randomUUID } from 'crypto';
 import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private async isSuperAdmin(userId: string) {
     const membership = await this.db.membership.findFirst({
@@ -142,7 +146,23 @@ export class TasksService {
         sprint: true,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Task Created',
 
+      message: `${task.title} task created`,
+
+      type: 'TASK_CREATED',
+
+      triggeredById: userId,
+
+      workspaceId: project.workspaceId,
+
+      projectId,
+
+      taskId: task.id,
+
+      userId: task.assigneeId || undefined,
+    });
     return {
       message: 'Task created successfully',
       task,
@@ -503,6 +523,24 @@ export class TasksService {
       },
     });
 
+    await this.notificationsService.createNotification({
+      title: 'Task Updated',
+
+      message: `${updatedTask.title} task updated`,
+
+      type: 'TASK_UPDATED',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+
+      userId: updatedTask.assigneeId || undefined,
+    });
+
     return {
       message: 'Task updated successfully',
       task: updatedTask,
@@ -560,7 +598,23 @@ export class TasksService {
         sprint: true,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Task Status Updated',
 
+      message: `${task.title} moved to ${dto.status}`,
+
+      type: 'TASK_STATUS_UPDATED',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+
+      userId: task.assigneeId || undefined,
+    });
     return {
       message: 'Task status updated successfully',
       task: updatedTask,
@@ -613,7 +667,23 @@ export class TasksService {
         id: taskId,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Task Deleted',
 
+      message: `${task.title} task deleted`,
+
+      type: 'TASK_DELETED',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+
+      userId: task.assigneeId || undefined,
+    });
     return {
       message: 'Task deleted successfully',
     };
@@ -667,6 +737,23 @@ export class TasksService {
           },
         },
       },
+    });
+    await this.notificationsService.createNotification({
+      title: 'New Comment Added',
+
+      message: `New comment added on ${task.title}`,
+
+      type: 'TASK_COMMENT_ADDED',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+
+      userId: task.assigneeId || undefined,
     });
 
     return {
@@ -782,7 +869,23 @@ export class TasksService {
         id: commentId,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Comment Deleted',
 
+      message: `Comment removed from ${comment.task.title}`,
+
+      type: 'TASK_COMMENT_DELETED',
+
+      triggeredById: userId,
+
+      workspaceId: comment.task.project.workspaceId,
+
+      projectId: comment.task.projectId,
+
+      taskId: comment.task.id,
+
+      userId: comment.task.assigneeId || undefined,
+    });
     return {
       message: 'Comment deleted successfully',
     };
@@ -854,7 +957,23 @@ export class TasksService {
         sprint: true,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Task Assigned',
 
+      message: `${updatedTask.title} assigned to ${updatedTask.assignee?.email}`,
+
+      type: 'TASK_ASSIGNED',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+
+      userId: assigneeId,
+    });
     return {
       message: 'Task assigned successfully',
       task: updatedTask,
@@ -929,7 +1048,25 @@ export class TasksService {
         sprint: true,
       },
     });
+    await this.notificationsService.createNotification({
+      title: sprintId ? 'Task Added To Sprint' : 'Task Removed From Sprint',
 
+      message: sprintId
+        ? `${task.title} moved to sprint`
+        : `${task.title} moved to backlog`,
+
+      type: sprintId ? 'TASK_MOVED_TO_SPRINT' : 'TASK_MOVED_TO_BACKLOG',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+
+      userId: task.assigneeId || undefined,
+    });
     return {
       message: sprintId
         ? 'Task moved to sprint successfully'

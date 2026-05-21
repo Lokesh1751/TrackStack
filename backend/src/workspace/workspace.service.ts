@@ -18,10 +18,14 @@ import { WorkspaceQueryDto } from './dto/workspace-query.dto';
 import { Resend } from 'resend';
 import { randomUUID } from 'crypto';
 import { workspaceInviteTemplate } from '@/mail/templates/workspace-invite.template';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 @Injectable()
 export class WorkspaceService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private async sendWorkspaceInvitationEmail(
     email: string,
@@ -106,7 +110,17 @@ export class WorkspaceService {
         },
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Workspace Created',
 
+      message: `${workspace.name} workspace created`,
+
+      type: 'WORKSPACE_CREATED',
+
+      triggeredById: userId,
+
+      workspaceId: workspace.id,
+    });
     return {
       message: 'Workspace created successfully',
       workspace,
@@ -363,7 +377,17 @@ export class WorkspaceService {
         logoUrl: dto.logoUrl,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Workspace Updated',
 
+      message: `${dto.name || 'Workspace'} updated`,
+
+      type: 'WORKSPACE_UPDATED',
+
+      triggeredById: userId,
+
+      workspaceId,
+    });
     return {
       message: 'Workspace updated',
     };
@@ -427,7 +451,17 @@ export class WorkspaceService {
         id: workspaceId,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Workspace Deleted',
 
+      message: `${workspace.name} workspace deleted`,
+
+      type: 'WORKSPACE_DELETED',
+
+      triggeredById: userId,
+
+      workspaceId,
+    });
     return {
       message: 'Workspace deleted successfully',
     };
@@ -595,7 +629,19 @@ export class WorkspaceService {
       inviteLink,
       currentUser.email || 'TrackStack Admin',
     );
+    await this.notificationsService.createNotification({
+      title: 'Workspace Invitation Sent',
 
+      message: `${dto.email} invited to workspace`,
+
+      type: 'WORKSPACE_MEMBER_INVITED',
+
+      triggeredById: currentUserId,
+
+      workspaceId,
+
+      userId: user.id,
+    });
     return {
       message: 'Workspace invitation sent successfully',
       invitation,
@@ -684,6 +730,12 @@ export class WorkspaceService {
       },
     });
 
+    const memberUser = await this.db.user.findUnique({
+      where: {
+        id: memberUserId,
+      },
+    });
+
     // ✅ SUPER_ADMIN bypass
     if (!currentUser?.isSuperAdmin) {
       if (!currentMembership) {
@@ -720,7 +772,19 @@ export class WorkspaceService {
         },
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Workspace Member Removed',
 
+      message: `${memberUser?.email || 'Member'} removed from workspace`,
+
+      type: 'WORKSPACE_MEMBER_REMOVED',
+
+      triggeredById: currentUserId,
+
+      workspaceId,
+
+      userId: memberUserId,
+    });
     return {
       message: 'Member removed',
     };
@@ -793,11 +857,34 @@ export class WorkspaceService {
         );
       }
     }
-    // 4. Execution
-    return this.db.membership.update({
-      where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
-      data: { role: newRole },
+    const updatedMembership = await this.db.membership.update({
+      where: {
+        userId_workspaceId: {
+          userId: targetUserId,
+          workspaceId,
+        },
+      },
+
+      data: {
+        role: newRole,
+      },
     });
+
+    await this.notificationsService.createNotification({
+      title: 'Workspace Role Updated',
+
+      message: `Your workspace role changed to ${newRole}`,
+
+      type: 'WORKSPACE_ROLE_UPDATED',
+
+      triggeredById: currentUserId,
+
+      workspaceId,
+
+      userId: targetUserId,
+    });
+
+    return updatedMembership;
   }
 
   // =========================
@@ -875,7 +962,19 @@ export class WorkspaceService {
         status: 'ACCEPTED',
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Workspace Invitation Accepted',
 
+      message: `${user.email} joined workspace`,
+
+      type: 'WORKSPACE_INVITE_ACCEPTED',
+
+      triggeredById: user.id,
+
+      workspaceId: invite.workspaceId,
+
+      userId: user.id,
+    });
     return {
       message: 'Member added successfully to workspace',
     };
@@ -910,7 +1009,24 @@ export class WorkspaceService {
         status: 'DECLINED',
       },
     });
+    const user = await this.db.user.findUnique({
+      where: {
+        email: invite.email,
+      },
+    });
+    await this.notificationsService.createNotification({
+      title: 'Workspace Invitation Declined',
 
+      message: `${invite.email} declined workspace invitation`,
+
+      type: 'WORKSPACE_INVITE_DECLINED',
+
+      triggeredById: user?.id,
+
+      workspaceId: invite.workspaceId,
+
+      userId: user?.id,
+    });
     return {
       message: 'Workspace invitation declined successfully',
     };

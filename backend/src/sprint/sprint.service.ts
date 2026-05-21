@@ -12,10 +12,14 @@ import { SprintStatus } from '@prisma/client';
 
 import { DatabaseService } from 'src/database/database.service';
 import { CreateSprintDto } from './dto/create-sprint.dto';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 @Injectable()
 export class SprintService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // ======================================================
   // HELPER -> SUPER ADMIN CHECK
@@ -130,6 +134,20 @@ export class SprintService {
         projectId,
         createdById: userId,
       },
+    });
+
+    await this.notificationsService.createNotification({
+      title: 'Sprint Created',
+
+      message: `${sprint.name} sprint created in project`,
+
+      type: 'SPRINT_CREATED',
+
+      triggeredById: userId,
+
+      workspaceId: project.workspaceId,
+
+      projectId,
     });
 
     return {
@@ -355,6 +373,20 @@ export class SprintService {
       },
     });
 
+    await this.notificationsService.createNotification({
+      title: 'Sprint Updated',
+
+      message: `${updatedSprint.name} sprint updated`,
+
+      type: 'SPRINT_UPDATED',
+
+      triggeredById: userId,
+
+      workspaceId: sprint.project.workspaceId,
+
+      projectId: sprint.projectId,
+    });
+
     return {
       message: 'Sprint updated successfully',
       sprint: updatedSprint,
@@ -405,6 +437,19 @@ export class SprintService {
       where: {
         id: sprintId,
       },
+    });
+    await this.notificationsService.createNotification({
+      title: 'Sprint Deleted',
+
+      message: `${sprint.name} sprint deleted`,
+
+      type: 'SPRINT_DELETED',
+
+      triggeredById: userId,
+
+      workspaceId: sprint.project.workspaceId,
+
+      projectId: sprint.projectId,
     });
 
     return {
@@ -477,6 +522,20 @@ export class SprintService {
       },
     });
 
+    await this.notificationsService.createNotification({
+      title: 'Sprint Started',
+
+      message: `${updatedSprint.name} sprint started`,
+
+      type: 'SPRINT_STARTED',
+
+      triggeredById: userId,
+
+      workspaceId: sprint.project.workspaceId,
+
+      projectId: sprint.projectId,
+    });
+
     return {
       message: 'Sprint started',
       sprint: updatedSprint,
@@ -545,7 +604,19 @@ export class SprintService {
         status: SprintStatus.COMPLETED,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Sprint Completed',
 
+      message: `${updatedSprint.name} sprint completed`,
+
+      type: 'SPRINT_COMPLETED',
+
+      triggeredById: userId,
+
+      workspaceId: sprint.project.workspaceId,
+
+      projectId: sprint.projectId,
+    });
     return {
       message: 'Sprint completed',
       sprint: updatedSprint,
@@ -608,6 +679,26 @@ export class SprintService {
       },
     });
 
+    await this.notificationsService.createNotification({
+      title: 'Task Added To Sprint',
+
+      message: `${task.title} added to ${sprint.name}`,
+
+      type: 'TASK_ADDED_TO_SPRINT',
+
+      triggeredById: userId,
+
+      workspaceId: sprint.project.workspaceId,
+
+      projectId: sprint.projectId,
+
+      taskId: task.id,
+
+      sprintId: sprint.id,
+
+      userId: task.assigneeId || undefined,
+    });
+
     return {
       message: 'Task added to sprint',
       task: updatedTask,
@@ -663,7 +754,25 @@ export class SprintService {
         sprintId: null,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Task Removed From Sprint',
 
+      message: `${task.title} removed from sprint`,
+
+      type: 'TASK_REMOVED_FROM_SPRINT',
+
+      triggeredById: userId,
+
+      workspaceId: task.sprint?.project.workspaceId,
+
+      projectId: task.sprint?.projectId,
+
+      taskId: task.id,
+
+      sprintId: task.sprintId || undefined,
+
+      userId: task.assigneeId || undefined,
+    });
     return {
       message: 'Task removed from sprint',
       task: updatedTask,

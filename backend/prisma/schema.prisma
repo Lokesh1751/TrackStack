@@ -53,6 +53,59 @@ enum InviteStatus {
   DECLINED
 }
 
+enum NotificationType {
+
+  WORKSPACE_CREATED
+  WORKSPACE_UPDATED
+  WORKSPACE_DELETED
+
+  WORKSPACE_MEMBER_INVITED
+  WORKSPACE_MEMBER_REMOVED
+
+  WORKSPACE_ROLE_UPDATED
+
+  WORKSPACE_INVITE_ACCEPTED
+  WORKSPACE_INVITE_DECLINED
+
+  PROJECT_CREATED
+  PROJECT_MEMBER_ADDED
+  PROJECT_DELETED
+  PROJECT_UPDATED
+  PROJECT_MEMBER_JOINED
+  PROJECT_MEMBER_REMOVED
+  PROJECT_MEMBER_INVITED
+
+  SPRINT_CREATED
+  SPRINT_UPDATED
+  SPRINT_DELETED
+  SPRINT_STARTED
+  SPRINT_COMPLETED
+
+  TASK_ADDED_TO_SPRINT
+  TASK_REMOVED_FROM_SPRINT
+
+
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_DELETED
+
+  TASK_ASSIGNED
+  TASK_STATUS_UPDATED
+
+  TASK_MOVED_TO_SPRINT
+  TASK_MOVED_TO_BACKLOG
+
+
+  TASK_COMMENT_ADDED
+  TASK_COMMENT_DELETED
+
+  TASK_LINKED
+  TASK_LINK_REMOVED
+  TASK_LINK_UPDATED
+
+  SYSTEM
+}
+
 model Membership {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -178,6 +231,8 @@ model User {
 
   sentProjectInvites   ProjectInvite[]   @relation("ProjectInviteSender")
   sentWorkspaceInvites WorkspaceInvite[] @relation("WorkspaceInviteSender")
+  notifications Notification[]
+  triggeredNotifications Notification[] @relation("NotificationTriggeredBy")
 }
 
 model Task {
@@ -321,4 +376,39 @@ model WorkspaceInvite {
   invitedBy User @relation("WorkspaceInviteSender", fields: [invitedById], references: [id])
 
   @@index([workspaceId])
+}
+
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+
+  title   String
+  message String
+
+  type NotificationType
+
+  isRead Boolean @default(false)
+
+  // receiver
+  userId String? @db.Uuid
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // who triggered event
+  triggeredById String? @db.Uuid
+
+  triggeredBy User? @relation( "NotificationTriggeredBy", fields: [triggeredById], references: [id])
+
+  workspaceId String? @db.Uuid
+  projectId   String? @db.Uuid
+  sprintId    String?
+  taskId      String? @db.Uuid
+
+  redirectUrl String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([taskId])
+  @@index([createdAt])
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Header from "@/components/layout/header";
+import { useEffect, useState } from "react";
 
 import {
   ArrowRight,
@@ -23,8 +24,11 @@ import {
 } from "lucide-react";
 
 export default function LandingPage() {
-  const isLoggedIn =
-    typeof window !== "undefined" ? localStorage?.getItem("userId") : null;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(localStorage.getItem("userId"));
+  });
 
   const features = [
     {

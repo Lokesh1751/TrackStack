@@ -15,10 +15,14 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddProjectMemberDto } from './dto/add-project-member.dto';
 import { Resend } from 'resend';
 import { inviteMemberTemplate } from '@/mail/templates/invite-member.template';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 @Injectable()
 export class ProjectService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private async sendProjectInvitationEmail(
     email: string,
@@ -136,6 +140,19 @@ export class ProjectService {
         },
       });
     }
+    await this.notificationsService.createNotification({
+      title: 'New Project Created',
+
+      message: `${project.name} project has been created`,
+
+      type: 'PROJECT_CREATED',
+
+      triggeredById: userId,
+
+      workspaceId,
+
+      projectId: project.id,
+    });
 
     return {
       message: 'Project created successfully',
@@ -402,6 +419,19 @@ export class ProjectService {
         description: dto.description,
       },
     });
+    await this.notificationsService.createNotification({
+      title: 'Project Updated',
+
+      message: `${updatedProject.name} project updated`,
+
+      type: 'PROJECT_UPDATED',
+
+      triggeredById: userId,
+
+      workspaceId: project.workspaceId,
+
+      projectId,
+    });
 
     return {
       message: 'Project updated successfully',
@@ -432,6 +462,28 @@ export class ProjectService {
     if (membership.role !== 'ADMIN' && membership.role !== 'SUPER_ADMIN') {
       throw new BadRequestException('Only admin can delete project');
     }
+
+    // =====================================================
+    // NOTIFICATION
+    // =====================================================
+
+    await this.notificationsService.createNotification({
+      title: 'Project Deleted',
+
+      message: `${project.name} project deleted`,
+
+      type: 'PROJECT_DELETED',
+
+      triggeredById: userId,
+
+      workspaceId: project.workspaceId,
+
+      projectId: project.id,
+    });
+
+    // =====================================================
+    // DELETE PROJECT
+    // =====================================================
 
     await this.db.project.delete({
       where: {
@@ -561,6 +613,21 @@ export class ProjectService {
       inviteLink,
       inviter?.email || 'TrackStack Admin',
     );
+    await this.notificationsService.createNotification({
+      title: 'Project Invitation Sent',
+
+      message: `${dto.email} invited to ${project.name}`,
+
+      type: 'PROJECT_MEMBER_INVITED',
+
+      triggeredById: currentUserId,
+
+      userId: user.id,
+
+      workspaceId: project.workspaceId,
+
+      projectId: project.id,
+    });
 
     return {
       message: 'Invitation sent successfully',
@@ -675,6 +742,12 @@ export class ProjectService {
       },
     });
 
+    const project = await this.db.project.findUnique({
+      where: {
+        id: invite.projectId,
+      },
+    });
+
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -693,6 +766,19 @@ export class ProjectService {
       data: {
         status: 'ACCEPTED',
       },
+    });
+    await this.notificationsService.createNotification({
+      title: 'Project Invitation Accepted',
+
+      message: `${user.email} joined ${project?.name}`,
+
+      type: 'PROJECT_MEMBER_JOINED',
+
+      triggeredById: user.id,
+
+      userId: user.id,
+
+      projectId: invite.projectId,
     });
 
     return {
@@ -724,6 +810,30 @@ export class ProjectService {
       data: {
         status: 'DECLINED',
       },
+    });
+    const user = await this.db.user.findUnique({
+      where: {
+        email: invite.email,
+      },
+    });
+
+    const project = await this.db.project.findUnique({
+      where: {
+        id: invite.projectId,
+      },
+    });
+    await this.notificationsService.createNotification({
+      title: 'Project Invitation Declined',
+
+      message: `${invite.email} declined invitation for ${project?.name}`,
+
+      type: 'PROJECT_MEMBER_REMOVED',
+
+      triggeredById: user?.id,
+
+      userId: user?.id,
+
+      projectId: invite.projectId,
     });
 
     return {

@@ -8,10 +8,14 @@ import {
 import { DatabaseService } from 'src/database/database.service';
 
 import { TaskLinkType } from '@prisma/client';
+import { NotificationsService } from '@/notifications/notifications.service';
 
 @Injectable()
 export class TaskLinksService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private async isSuperAdmin(userId: string) {
     const membership = await this.db.membership.findFirst({
@@ -142,9 +146,32 @@ export class TaskLinksService {
             id: true,
             title: true,
             taskKey: true,
+            assigneeId: true,
           },
         },
       },
+    });
+
+    // =====================================
+    // NOTIFICATION
+    // =====================================
+
+    await this.notificationsService.createNotification({
+      title: 'Task Linked',
+
+      message: `${link.sourceTask.taskKey} linked with ${link.targetTask.taskKey} as ${type}`,
+
+      type: 'TASK_LINKED',
+
+      triggeredById: userId,
+
+      workspaceId: sourceTask.project.workspaceId,
+
+      projectId: sourceTask.projectId,
+
+      taskId: sourceTask.id,
+
+      userId: link.targetTask.assigneeId || undefined,
     });
 
     return {
@@ -257,6 +284,14 @@ export class TaskLinksService {
             project: true,
           },
         },
+
+        targetTask: {
+          select: {
+            id: true,
+            taskKey: true,
+            assigneeId: true,
+          },
+        },
       },
     });
 
@@ -283,11 +318,34 @@ export class TaskLinksService {
       throw new UnauthorizedException('Access denied');
     }
 
-    const canDelete = membership?.role === 'ADMIN';
+    const canDelete =
+      membership?.role === 'ADMIN' || membership?.role === 'SUPER_ADMIN';
 
-    if (!canDelete) {
+    if (!canDelete && !isSuperAdmin) {
       throw new ForbiddenException('Only admins can remove task links');
     }
+
+    // =====================================
+    // NOTIFICATION
+    // =====================================
+
+    await this.notificationsService.createNotification({
+      title: 'Task Link Removed',
+
+      message: `Task link removed between ${link.sourceTask.taskKey} and ${link.targetTask.taskKey}`,
+
+      type: 'TASK_LINK_REMOVED',
+
+      triggeredById: userId,
+
+      workspaceId: link.sourceTask.project.workspaceId,
+
+      projectId: link.sourceTask.projectId,
+
+      taskId: link.sourceTask.id,
+
+      userId: link.targetTask.assigneeId || undefined,
+    });
 
     await this.db.taskLink.delete({
       where: {
@@ -316,12 +374,22 @@ export class TaskLinksService {
             project: true,
           },
         },
+
+        targetTask: {
+          select: {
+            id: true,
+            title: true,
+            taskKey: true,
+            assigneeId: true,
+          },
+        },
       },
     });
 
     if (!link) {
       throw new BadRequestException('Task link not found');
     }
+
     const isSuperAdmin = await this.isSuperAdmin(userId);
 
     const membership = await this.db.membership.findUnique({
@@ -362,9 +430,32 @@ export class TaskLinksService {
             title: true,
             taskKey: true,
             status: true,
+            assigneeId: true,
           },
         },
       },
+    });
+
+    // =====================================
+    // NOTIFICATION
+    // =====================================
+
+    await this.notificationsService.createNotification({
+      title: 'Task Link Updated',
+
+      message: `Task link type updated to ${type} between ${updatedLink.sourceTask.taskKey} and ${updatedLink.targetTask.taskKey}`,
+
+      type: 'TASK_LINK_UPDATED',
+
+      triggeredById: userId,
+
+      workspaceId: link.sourceTask.project.workspaceId,
+
+      projectId: link.sourceTask.projectId,
+
+      taskId: link.sourceTask.id,
+
+      userId: updatedLink.targetTask.assigneeId || undefined,
     });
 
     return {
