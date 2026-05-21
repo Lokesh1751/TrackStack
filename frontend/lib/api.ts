@@ -44,7 +44,42 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   return (await response.json()) as T;
 }
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
 
+  isRead: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+
+  userId?: string;
+
+  workspaceId?: string;
+  projectId?: string;
+  taskId?: string;
+  sprintId?: string;
+
+  triggeredById?: string;
+
+  triggeredBy?: {
+    id: string;
+    email: string;
+  };
+}
+export interface NotificationsResponse {
+  notifications: Notification[];
+
+  total: number;
+
+  page: number;
+
+  limit: number;
+
+  totalPages: number;
+}
 export async function signup(payload: SignupInput) {
   return request<{ user: AuthUser }>("/auth/signup", {
     method: "POST",
@@ -897,5 +932,62 @@ export const declineWorkspaceInvite = async (token: string) => {
     message: string;
   }>(`/workspace/decline-workspace-invite?token=${token}`, {
     method: "POST",
+  });
+};
+
+export const getNotifications = async (page = 1, limit = 20) => {
+  return request<NotificationsResponse>(
+    `/notifications?page=${page}&limit=${limit}`,
+    {
+      method: "GET",
+    },
+  );
+};
+
+// =====================================================
+// GET UNREAD COUNT
+// =====================================================
+
+export const getUnreadNotificationsCount = async () => {
+  return request<{
+    count: number;
+  }>("/notifications/unread-count", {
+    method: "GET",
+  });
+};
+
+// =====================================================
+// MARK SINGLE NOTIFICATION AS READ
+// =====================================================
+
+export const markNotificationAsRead = async (notificationId: string) => {
+  return request<{
+    message: string;
+  }>(`/notifications/${notificationId}/read`, {
+    method: "PATCH",
+  });
+};
+
+// =====================================================
+// MARK ALL NOTIFICATIONS AS READ
+// =====================================================
+
+export const markAllNotificationsAsRead = async () => {
+  return request<{
+    message: string;
+  }>("/notifications/read-all", {
+    method: "PATCH",
+  });
+};
+
+// =====================================================
+// DELETE NOTIFICATION
+// =====================================================
+
+export const deleteNotification = async (notificationId: string) => {
+  return request<{
+    message: string;
+  }>(`/notifications/${notificationId}`, {
+    method: "DELETE",
   });
 };

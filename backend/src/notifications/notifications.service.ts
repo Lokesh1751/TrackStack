@@ -71,37 +71,59 @@ export class NotificationsService {
   // =====================================================
 
   async getNotifications(userId: string, page = 1, limit = 20) {
-    return this.db.notification.findMany({
-      where: await this.getNotificationWhereClause(userId),
+    const whereClause = await this.getNotificationWhereClause(userId);
 
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
+    const [notifications, total] = await Promise.all([
+      this.db.notification.findMany({
+        where: whereClause,
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatarUrl: true,
+            },
+          },
+
+          triggeredBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatarUrl: true,
+            },
           },
         },
 
-        triggeredBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
-          },
+        orderBy: {
+          createdAt: 'desc',
         },
-      },
 
-      orderBy: {
-        createdAt: 'desc',
-      },
+        skip: (page - 1) * limit,
 
-      skip: (page - 1) * limit,
+        take: limit,
+      }),
 
-      take: limit,
-    });
+      this.db.notification.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      notifications,
+
+      page,
+
+      limit,
+
+      total,
+
+      totalPages: Math.ceil(total / limit),
+
+      hasNextPage: page < Math.ceil(total / limit),
+    };
   }
 
   // =====================================================

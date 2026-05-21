@@ -160,6 +160,7 @@ export class TasksService {
       projectId,
 
       taskId: task.id,
+      sprintId: task.sprintId || '',
 
       userId: task.assigneeId || undefined,
     });
@@ -537,6 +538,7 @@ export class TasksService {
       projectId: task.projectId,
 
       taskId: task.id,
+      sprintId: task.sprintId || '',
 
       userId: updatedTask.assigneeId || undefined,
     });
@@ -612,6 +614,7 @@ export class TasksService {
       projectId: task.projectId,
 
       taskId: task.id,
+      sprintId: task.sprintId || '',
 
       userId: task.assigneeId || undefined,
     });
@@ -681,6 +684,7 @@ export class TasksService {
       projectId: task.projectId,
 
       taskId: task.id,
+      sprintId: task.sprintId || '',
 
       userId: task.assigneeId || undefined,
     });
@@ -752,6 +756,7 @@ export class TasksService {
       projectId: task.projectId,
 
       taskId: task.id,
+      sprintId: task.sprintId || '',
 
       userId: task.assigneeId || undefined,
     });
@@ -883,6 +888,7 @@ export class TasksService {
       projectId: comment.task.projectId,
 
       taskId: comment.task.id,
+      sprintId: comment.task.sprintId || '',
 
       userId: comment.task.assigneeId || undefined,
     });
@@ -971,6 +977,7 @@ export class TasksService {
       projectId: task.projectId,
 
       taskId: task.id,
+      sprintId: task.sprintId || '',
 
       userId: assigneeId,
     });
@@ -1064,6 +1071,7 @@ export class TasksService {
       projectId: task.projectId,
 
       taskId: task.id,
+      sprintId: task.sprintId || '',
 
       userId: task.assigneeId || undefined,
     });

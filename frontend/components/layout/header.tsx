@@ -16,12 +16,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/useToast";
 
 import { logout } from "@/lib/api";
+import { NotificationsSheet } from "@/components/notifications/notifications-sheet";
 
 export default function Header() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  
+
   useEffect(() => {
     setIsLoggedIn(localStorage.getItem("userId"));
     setIsSuperAdmin(localStorage.getItem("isSuperAdmin") === "true");
@@ -93,6 +94,7 @@ export default function Header() {
         {/* ================================================= */}
 
         <div className="flex items-center gap-3">
+          <NotificationsSheet />
           {/* PROFILE */}
           <Button
             variant="outline"
