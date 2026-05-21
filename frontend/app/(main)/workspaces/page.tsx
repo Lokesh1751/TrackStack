@@ -1,4 +1,5 @@
 "use client";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -24,41 +25,68 @@ type WorkspaceRole = "ADMIN" | "MEMBER";
 
 export default function DashboardPage() {
   const router = useRouter();
+
   const queryClient = useQueryClient();
+
   const toast = useToast();
+
   const { get, set } = useQueryFilters();
 
   const role = get("role");
+
   const search = get("search");
 
-  // ✅ GLOBAL ACCESS
+  // =========================
+  // GLOBAL ACCESS
+  // =========================
+
   const isSuperAdmin =
     typeof window !== "undefined"
       ? localStorage.getItem("isSuperAdmin") === "true"
       : false;
 
+  // =========================
+  // MODALS
+  // =========================
+
   const [open, setOpen] = useState(false);
 
-  // ✅ invite modal
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedRole, setSelectedRole] = useState<WorkspaceRole>("MEMBER");
 
-  // ✅ create workspace form
+  // =========================
+  // INVITE STATES
+  // =========================
+
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
+
+  const [selectedEmail, setSelectedEmail] = useState("");
+
+  const [selectedRole, setSelectedRole] =
+    useState<WorkspaceRole>("MEMBER");
+
+  // =========================
+  // CREATE WORKSPACE FORM
+  // =========================
+
   const [name, setName] = useState("");
+
   const [slug, setSlug] = useState("");
+
   const [description, setDescription] = useState("");
+
   const [logoUrl, setLogoUrl] = useState("");
 
   // =========================
-  // WORKSPACES
+  // GET WORKSPACES
   // =========================
+
   const { data, isLoading } = useQuery({
     queryKey: ["workspaces", role, search],
+
     queryFn: () =>
       getWorkspaces({
         role: role === "ADMIN" || role === "MEMBER" ? role : undefined,
+
         search: search || undefined,
       }),
   });
@@ -66,11 +94,14 @@ export default function DashboardPage() {
   const workspaces = data?.workspaces ?? [];
 
   // =========================
-  // USERS
+  // GET USERS
   // =========================
+
   const { data: usersData } = useQuery({
     queryKey: ["users"],
+
     queryFn: getAllUsers,
+
     enabled: inviteOpen,
   });
 
@@ -79,6 +110,7 @@ export default function DashboardPage() {
   // =========================
   // AUTO SLUG
   // =========================
+
   const generatedSlug = useMemo(() => {
     return name
       .toLowerCase()
@@ -89,6 +121,7 @@ export default function DashboardPage() {
   useEffect(() => {
     setSlug((prev) => {
       if (prev === generatedSlug) return prev;
+
       return generatedSlug;
     });
   }, [generatedSlug]);
@@ -96,6 +129,7 @@ export default function DashboardPage() {
   // =========================
   // DELETE WORKSPACE
   // =========================
+
   const deleteMutation = useMutation({
     mutationFn: deleteWorkspace,
 
@@ -119,6 +153,7 @@ export default function DashboardPage() {
   // =========================
   // CREATE WORKSPACE
   // =========================
+
   const createMutation = useMutation<any>({
     mutationFn: createWorkspace,
 
@@ -149,14 +184,16 @@ export default function DashboardPage() {
   // =========================
   // INVITE MEMBER
   // =========================
+
   const inviteMutation = useMutation({
     mutationFn: ({
       workspaceId,
       payload,
     }: {
       workspaceId: string;
+
       payload: {
-        userId: string;
+        email: string;
         role: WorkspaceRole;
       };
     }) => addMember(workspaceId, payload),
@@ -167,7 +204,9 @@ export default function DashboardPage() {
       });
 
       setInviteOpen(false);
-      setSelectedUserId("");
+
+      setSelectedEmail("");
+
       setSelectedRole("MEMBER");
     },
 
@@ -181,6 +220,7 @@ export default function DashboardPage() {
   // =========================
   // LOGO UPLOAD
   // =========================
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
@@ -192,28 +232,37 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className=" bg-slate-100">
-      <div className="mx-auto px-4 md:px-6 py-8 space-y-6">
+    <div className="bg-slate-100">
+      <div className="mx-auto px-4 py-8 space-y-6 md:px-6">
+        {/* ========================= */}
         {/* HEADER */}
+        {/* ========================= */}
+
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Workspaces</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Workspaces
+            </h1>
 
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="mt-1 text-sm text-slate-500">
               Create and manage your organization workspaces
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             {isSuperAdmin && (
-              <>
-                <Button onClick={() => setOpen(true)}>+ New Workspace</Button>
-              </>
+              <Button onClick={() => setOpen(true)}>
+                + New Workspace
+              </Button>
             )}
           </div>
         </div>
 
-        <div className="flex justify-between bg-white rounded-lg p-3  border-gray-200 border-2 flex-wrap items-center">
+        {/* ========================= */}
+        {/* FILTERS */}
+        {/* ========================= */}
+
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-gray-200 bg-white p-3">
           {!isSuperAdmin && (
             <FilterBar
               values={{
@@ -224,30 +273,43 @@ export default function DashboardPage() {
                 {
                   key: "role",
                   label: "Role",
+
                   options: [
-                    { label: "Admin", value: "ADMIN" },
-                    { label: "Member", value: "MEMBER" },
+                    {
+                      label: "Admin",
+                      value: "ADMIN",
+                    },
+
+                    {
+                      label: "Member",
+                      value: "MEMBER",
+                    },
                   ],
                 },
               ]}
             />
           )}
+
           <input
             value={search}
             onChange={(e) => set("search", e.target.value)}
             placeholder="Search workspaces..."
-            className="w-full md:w-72 border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10 md:w-72"
           />
         </div>
 
-        {/* LOADING */}
+        {/* ========================= */}
+        {/* CONTENT */}
+        {/* ========================= */}
+
         {!data && isLoading ? (
           <DashboardPageSkeleton />
         ) : workspaces.length === 0 ? (
-          // EMPTY
-          <div className="bg-white border rounded-2xl p-12 text-center shadow-sm">
+          <div className="rounded-2xl border bg-white p-12 text-center shadow-sm">
             <div className="space-y-3">
-              <h2 className="text-xl font-semibold">No workspaces found</h2>
+              <h2 className="text-xl font-semibold">
+                No workspaces found
+              </h2>
 
               <p className="text-sm text-slate-500">
                 {isSuperAdmin
@@ -257,10 +319,11 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          // TABLE
-          <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
             <div className="border-b px-5 py-4">
-              <h2 className="font-semibold text-lg">Your Workspaces</h2>
+              <h2 className="text-lg font-semibold">
+                Your Workspaces
+              </h2>
             </div>
 
             <div className="overflow-x-auto">
@@ -270,21 +333,27 @@ export default function DashboardPage() {
                   (workspaceId: string | undefined) =>
                     router.push(`/workspace/${workspaceId}/edit`),
 
-                  (workspaceId: string) => deleteMutation.mutate(workspaceId),
+                  (workspaceId: string) =>
+                    deleteMutation.mutate(workspaceId),
 
                   deleteMutation.isPending,
 
                   (workspaceId: string) => {
                     setSelectedWorkspaceId(workspaceId);
+
                     setInviteOpen(true);
                   },
 
                   isSuperAdmin,
+
                   (workspaceId: string) => {
                     router.push(`/workspace/${workspaceId}/projects`);
                   },
                 )}
-                onRowClick={(row: { id: string; role: WorkspaceRole }) => {
+                onRowClick={(row: {
+                  id: string;
+                  role: WorkspaceRole;
+                }) => {
                   router.push(`/workspace/${row.id}`);
                 }}
               />
@@ -293,22 +362,28 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* ========================= */}
       {/* CREATE WORKSPACE MODAL */}
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
-            <div className="border-b px-6 py-4">
-              <h2 className="text-xl font-semibold">Create Workspace</h2>
+      {/* ========================= */}
 
-              <p className="text-sm text-slate-500 mt-1">
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="border-b px-6 py-4">
+              <h2 className="text-xl font-semibold">
+                Create Workspace
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
                 Add workspace details and branding
               </p>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="space-y-5 p-6">
               {/* LOGO */}
+
               <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-2xl border bg-slate-100 flex items-center justify-center overflow-hidden">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border bg-slate-100">
                   {logoUrl ? (
                     <ImageWithFallback
                       src={logoUrl}
@@ -318,7 +393,9 @@ export default function DashboardPage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="text-xs text-slate-400">No Logo</span>
+                    <span className="text-xs text-slate-400">
+                      No Logo
+                    </span>
                   )}
                 </div>
 
@@ -336,11 +413,14 @@ export default function DashboardPage() {
               </div>
 
               {/* NAME */}
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Workspace Name</label>
+                <label className="text-sm font-medium">
+                  Workspace Name
+                </label>
 
                 <input
-                  className="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                  className="w-full rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
                   placeholder="Acme Inc"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -348,11 +428,14 @@ export default function DashboardPage() {
               </div>
 
               {/* SLUG */}
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Workspace Slug</label>
+                <label className="text-sm font-medium">
+                  Workspace Slug
+                </label>
 
                 <input
-                  className="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                  className="w-full rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
                   placeholder="acme-inc"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
@@ -360,12 +443,15 @@ export default function DashboardPage() {
               </div>
 
               {/* DESCRIPTION */}
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
+                <label className="text-sm font-medium">
+                  Description
+                </label>
 
                 <textarea
                   rows={4}
-                  className="w-full border rounded-xl p-3 text-sm outline-none resize-none focus:ring-2 focus:ring-black/10"
+                  className="w-full resize-none rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
                   placeholder="Describe your workspace..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -373,13 +459,18 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="border-t px-6 py-4 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setOpen(false)}>
+            <div className="flex justify-end gap-3 border-t px-6 py-4">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Cancel
               </Button>
 
               <Button
-                disabled={!name || !slug || createMutation.isPending}
+                disabled={
+                  !name || !slug || createMutation.isPending
+                }
                 onClick={() =>
                   createMutation.mutate({
                     name,
@@ -389,81 +480,114 @@ export default function DashboardPage() {
                   })
                 }
               >
-                {createMutation.isPending ? "Creating..." : "Create Workspace"}
+                {createMutation.isPending
+                  ? "Creating..."
+                  : "Create Workspace"}
               </Button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ========================= */}
       {/* INVITE MEMBER MODAL */}
-      {inviteOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
-            <div className="border-b px-6 py-4">
-              <h2 className="text-xl font-semibold">Invite Member</h2>
+      {/* ========================= */}
 
-              <p className="text-sm text-slate-500 mt-1">
-                Add user to workspace
+      {inviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="border-b px-6 py-4">
+              <h2 className="text-xl font-semibold">
+                Invite Member
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Send workspace invitation via email
               </p>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="space-y-5 p-6">
               {/* USER */}
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Select User</label>
+                <label className="text-sm font-medium">
+                  Select User
+                </label>
 
                 <select
-                  className="w-full border rounded-xl p-3 text-sm"
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="w-full rounded-xl border p-3 text-sm"
+                  value={selectedEmail}
+                  onChange={(e) =>
+                    setSelectedEmail(e.target.value)
+                  }
                 >
                   <option value="">Select user</option>
 
-                  {users.map((user: { id: string; email: string }) => (
-                    <option key={user.id} value={user.id}>
-                      {user.email}
-                    </option>
-                  ))}
+                  {users.map(
+                    (user: {
+                      id: string;
+                      email: string;
+                    }) => (
+                      <option
+                        key={user.id}
+                        value={user.email}
+                      >
+                        {user.email}
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
 
               {/* ROLE */}
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Workspace Role</label>
+                <label className="text-sm font-medium">
+                  Workspace Role
+                </label>
 
                 <select
-                  className="w-full border rounded-xl p-3 text-sm"
+                  className="w-full rounded-xl border p-3 text-sm"
                   value={selectedRole}
                   onChange={(e) =>
-                    setSelectedRole(e.target.value as WorkspaceRole)
+                    setSelectedRole(
+                      e.target.value as WorkspaceRole,
+                    )
                   }
                 >
                   <option value="ADMIN">ADMIN</option>
+
                   <option value="MEMBER">MEMBER</option>
                 </select>
               </div>
             </div>
 
-            <div className="border-t px-6 py-4 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setInviteOpen(false)}>
+            <div className="flex justify-end gap-3 border-t px-6 py-4">
+              <Button
+                variant="outline"
+                onClick={() => setInviteOpen(false)}
+              >
                 Cancel
               </Button>
 
               <Button
-                disabled={!selectedUserId || inviteMutation.isPending}
+                disabled={
+                  !selectedEmail || inviteMutation.isPending
+                }
                 onClick={() =>
                   inviteMutation.mutate({
                     workspaceId: selectedWorkspaceId,
 
                     payload: {
-                      userId: selectedUserId,
+                      email: selectedEmail,
                       role: selectedRole,
                     },
                   })
                 }
               >
-                {inviteMutation.isPending ? "Inviting..." : "Invite Member"}
+                {inviteMutation.isPending
+                  ? "Inviting..."
+                  : "Invite Member"}
               </Button>
             </div>
           </div>

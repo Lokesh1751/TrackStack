@@ -883,3 +883,19 @@ export const declineProjectInvite = async (token: string) => {
     method: "POST",
   });
 };
+
+export const acceptWorkspaceInvite = async (token: string) => {
+  return request<{
+    message: string;
+  }>(`/workspace/accept-workspace-invite?token=${token}`, {
+    method: "POST",
+  });
+};
+
+export const declineWorkspaceInvite = async (token: string) => {
+  return request<{
+    message: string;
+  }>(`/workspace/decline-workspace-invite?token=${token}`, {
+    method: "POST",
+  });
+};

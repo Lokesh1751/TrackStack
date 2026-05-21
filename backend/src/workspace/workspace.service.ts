@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 
 import { DatabaseService } from 'src/database/database.service';
@@ -14,11 +15,39 @@ import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { WorkspaceQueryDto } from './dto/workspace-query.dto';
+import { Resend } from 'resend';
+import { randomUUID } from 'crypto';
+import { workspaceInviteTemplate } from '@/mail/templates/workspace-invite.template';
 
 @Injectable()
 export class WorkspaceService {
   constructor(private readonly db: DatabaseService) {}
 
+  private async sendWorkspaceInvitationEmail(
+    email: string,
+    workspaceName: string,
+    inviteLink: string,
+    invitedBy: string,
+  ) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+      throw new InternalServerErrorException('Email service is not configured');
+    }
+
+    const resend = new Resend(resendApiKey);
+
+    const { error } = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: email,
+      subject: `Invitation to join ${workspaceName}`,
+      html: workspaceInviteTemplate(invitedBy, workspaceName, inviteLink),
+    });
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to send invitation email');
+    }
+  }
   private async isSuperAdmin(userId: string) {
     const membership = await this.db.membership.findFirst({
       where: {
@@ -412,14 +441,9 @@ export class WorkspaceService {
     dto: AddMemberDto,
     currentUserId: string,
   ) {
-    const currentMembership = await this.db.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId: currentUserId,
-          workspaceId,
-        },
-      },
-    });
+    // =========================
+    // CURRENT USER
+    // =========================
 
     const currentUser = await this.db.user.findUnique({
       where: {
@@ -427,20 +451,19 @@ export class WorkspaceService {
       },
 
       select: {
+        id: true,
+        email: true,
         isSuperAdmin: true,
       },
     });
 
-    // ✅ SUPER_ADMIN bypass
-    if (!currentUser?.isSuperAdmin) {
-      if (!currentMembership) {
-        throw new BadRequestException('Access denied');
-      }
-
-      if (currentMembership.role !== 'ADMIN') {
-        throw new BadRequestException('Only admin can add members');
-      }
+    if (!currentUser) {
+      throw new BadRequestException('User not found');
     }
+
+    // =========================
+    // WORKSPACE
+    // =========================
 
     const workspace = await this.db.workspace.findUnique({
       where: {
@@ -452,9 +475,38 @@ export class WorkspaceService {
       throw new BadRequestException('Workspace not found');
     }
 
+    // =========================
+    // CHECK ACCESS
+    // =========================
+
+    if (!currentUser.isSuperAdmin) {
+      const currentMembership = await this.db.membership.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId: currentUserId,
+            workspaceId,
+          },
+        },
+      });
+
+      if (!currentMembership) {
+        throw new BadRequestException('Access denied');
+      }
+
+      if (currentMembership.role !== 'ADMIN') {
+        throw new BadRequestException(
+          'Only workspace admin can invite members',
+        );
+      }
+    }
+
+    // =========================
+    // FIND USER BY EMAIL
+    // =========================
+
     const user = await this.db.user.findUnique({
       where: {
-        id: dto.userId,
+        email: dto.email,
       },
     });
 
@@ -462,10 +514,14 @@ export class WorkspaceService {
       throw new BadRequestException('User not found');
     }
 
+    // =========================
+    // ALREADY MEMBER
+    // =========================
+
     const exists = await this.db.membership.findUnique({
       where: {
         userId_workspaceId: {
-          userId: dto.userId,
+          userId: user.id,
           workspaceId,
         },
       },
@@ -475,7 +531,10 @@ export class WorkspaceService {
       throw new BadRequestException('User already a member');
     }
 
-    // ✅ only one admin allowed
+    // =========================
+    // ONLY ONE ADMIN
+    // =========================
+
     if (dto.role === 'ADMIN') {
       const existingAdmin = await this.db.membership.findFirst({
         where: {
@@ -489,16 +548,57 @@ export class WorkspaceService {
       }
     }
 
-    await this.db.membership.create({
-      data: {
-        userId: dto.userId,
+    // =========================
+    // CHECK PENDING INVITE
+    // =========================
+
+    const existingInvite = await this.db.workspaceInvite.findFirst({
+      where: {
         workspaceId,
-        role: dto.role,
+        email: dto.email,
+        status: 'PENDING',
       },
     });
 
+    if (existingInvite) {
+      throw new BadRequestException('Invitation already sent');
+    }
+
+    // =========================
+    // CREATE INVITE
+    // =========================
+
+    const token = randomUUID();
+
+    const invitation = await this.db.workspaceInvite.create({
+      data: {
+        workspaceId,
+        email: dto.email,
+        token,
+        invitedById: currentUserId,
+        role: dto.role,
+        status: 'PENDING',
+
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
+      },
+    });
+
+    // =========================
+    // SEND EMAIL
+    // =========================
+
+    const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}?workspaceName=${workspace.name}`;
+
+    await this.sendWorkspaceInvitationEmail(
+      dto.email,
+      workspace.name,
+      inviteLink,
+      currentUser.email || 'TrackStack Admin',
+    );
+
     return {
-      message: 'Member added',
+      message: 'Workspace invitation sent successfully',
+      invitation,
     };
   }
 
@@ -698,5 +798,121 @@ export class WorkspaceService {
       where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
       data: { role: newRole },
     });
+  }
+
+  // =========================
+  // ACCEPT WORKSPACE INVITE
+  // =========================
+
+  async acceptWorkspaceInvite(token: string) {
+    const invite = await this.db.workspaceInvite.findUnique({
+      where: {
+        token,
+      },
+    });
+
+    if (!invite) {
+      throw new BadRequestException('Invalid invite');
+    }
+
+    if (invite.status !== 'PENDING') {
+      throw new BadRequestException('Invite already processed');
+    }
+
+    // OPTIONAL EXPIRY CHECK
+    if (invite.expiresAt < new Date()) {
+      throw new BadRequestException('Invitation expired');
+    }
+
+    const user = await this.db.user.findUnique({
+      where: {
+        email: invite.email,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // =========================
+    // CHECK EXISTING MEMBERSHIP
+    // =========================
+
+    const existingMember = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId: user.id,
+          workspaceId: invite.workspaceId,
+        },
+      },
+    });
+
+    if (existingMember) {
+      throw new BadRequestException('User already member of workspace');
+    }
+
+    // =========================
+    // ADD MEMBER
+    // =========================
+
+    await this.db.membership.create({
+      data: {
+        userId: user.id,
+        workspaceId: invite.workspaceId,
+        role: invite.role,
+      },
+    });
+
+    // =========================
+    // UPDATE INVITE
+    // =========================
+
+    await this.db.workspaceInvite.update({
+      where: {
+        id: invite.id,
+      },
+      data: {
+        status: 'ACCEPTED',
+      },
+    });
+
+    return {
+      message: 'Member added successfully to workspace',
+    };
+  }
+
+  // =========================
+  // DECLINE WORKSPACE INVITE
+  // =========================
+
+  async declineWorkspaceInvite(token: string) {
+    const invite = await this.db.workspaceInvite.findUnique({
+      where: {
+        token,
+      },
+    });
+
+    if (!invite) {
+      throw new BadRequestException('Invalid invitation');
+    }
+
+    if (invite.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Invitation already ${invite.status.toLowerCase()}`,
+      );
+    }
+
+    await this.db.workspaceInvite.update({
+      where: {
+        id: invite.id,
+      },
+      data: {
+        status: 'DECLINED',
+      },
+    });
+
+    return {
+      message: 'Workspace invitation declined successfully',
+    };
   }
 }

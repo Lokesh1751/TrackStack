@@ -159,4 +159,22 @@ export class WorkspaceController {
       currentUserId,
     );
   }
+
+  // =========================
+  // ACCEPT WORKSPACE INVITE
+  // =========================
+
+  @Post('accept-workspace-invite')
+  async acceptWorkspaceInvite(@Query('token') token: string) {
+    return this.workspaceService.acceptWorkspaceInvite(token);
+  }
+
+  // =========================
+  // DECLINE WORKSPACE INVITE
+  // =========================
+
+  @Post('decline-workspace-invite')
+  async declineWorkspaceInvite(@Query('token') token: string) {
+    return this.workspaceService.declineWorkspaceInvite(token);
+  }
 }

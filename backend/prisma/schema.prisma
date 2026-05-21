@@ -82,9 +82,10 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner    User         @relation("UserOwnedWorkspaces", fields: [ownerId], references: [id])
-  members  Membership[]
-  projects Project[]
+  owner            User              @relation("UserOwnedWorkspaces", fields: [ownerId], references: [id])
+  members          Membership[]
+  projects         Project[]
+  workspaceInvites WorkspaceInvite[]
 }
 
 model ProjectMember {
@@ -132,7 +133,7 @@ model ProjectInvite {
 
   status InviteStatus @default(PENDING)
 
-  projectId String @db.Uuid
+  projectId   String @db.Uuid
   invitedById String @db.Uuid
 
   expiresAt DateTime
@@ -141,7 +142,7 @@ model ProjectInvite {
 
   project Project @relation(fields: [projectId], references: [id])
 
-  invitedBy User @relation( "ProjectInviteSender", fields: [invitedById], references: [id] )
+  invitedBy User @relation("ProjectInviteSender", fields: [invitedById], references: [id])
 }
 
 model User {
@@ -175,7 +176,8 @@ model User {
 
   taskComments TaskComment[]
 
-  sentProjectInvites ProjectInvite[] @relation("ProjectInviteSender")
+  sentProjectInvites   ProjectInvite[]   @relation("ProjectInviteSender")
+  sentWorkspaceInvites WorkspaceInvite[] @relation("WorkspaceInviteSender")
 }
 
 model Task {
@@ -291,4 +293,32 @@ model TaskLink {
   sourceTask Task @relation("SourceTask", fields: [sourceTaskId], references: [id])
 
   targetTask Task @relation("TargetTask", fields: [targetTaskId], references: [id])
+}
+
+model WorkspaceInvite {
+  id String @id @default(uuid()) @db.Uuid
+
+  email String
+  token String @unique
+
+  role String @default("MEMBER")
+
+  status InviteStatus @default(PENDING)
+
+  workspaceId String @db.Uuid
+  invitedById String @db.Uuid
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  // =========================
+  // RELATIONS
+  // =========================
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  invitedBy User @relation("WorkspaceInviteSender", fields: [invitedById], references: [id])
+
+  @@index([workspaceId])
 }

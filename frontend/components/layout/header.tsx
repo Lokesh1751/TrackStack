@@ -4,11 +4,11 @@
 
 import Link from "next/link";
 
-import { useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { User, LogOut, Sparkles } from "lucide-react";
+import { User, LogOut, Sparkles, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +18,11 @@ import { logout } from "@/lib/api";
 
 export default function Header() {
   const router = useRouter();
-
+  const isSuperAdmin =
+    typeof window !== "undefined"
+      ? localStorage.getItem("isSuperAdmin") === "true"
+      : false;
+  console.log("isSuperAdmin", isSuperAdmin);
 
   const toast = useToast();
   const isLoggedIn =
@@ -32,7 +36,7 @@ export default function Header() {
     onSuccess: () => {
       toast.success("Logged out successfully");
       localStorage.clear();
-      window.location.reload()
+      window.location.reload();
     },
 
     onError: (error: Error) => {
@@ -69,6 +73,21 @@ export default function Header() {
               </p>
             </div>
           </Link>
+          {isSuperAdmin && (
+            <div className="hidden md:flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-gradient-to-r from-[#eef3ff] to-[#f8faff] px-4 py-2 shadow-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#7189D0] text-white shadow">
+                <ShieldCheck className="h-4 w-4" />
+              </div>
+
+              <div className="leading-tight">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7189D0]">
+                  Logged In As
+                </p>
+
+                <p className="text-sm font-bold text-[#1f2937]">Super Admin</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ================================================= */}

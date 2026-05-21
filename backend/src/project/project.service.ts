@@ -110,6 +110,10 @@ export class ProjectService {
       throw new BadRequestException('Project with same name already exists');
     }
 
+    // =========================
+    // CREATE PROJECT
+    // =========================
+
     const project = await this.db.project.create({
       data: {
         name: dto.name,
@@ -118,12 +122,26 @@ export class ProjectService {
       },
     });
 
+    // =========================
+    // AUTO ADD ONLY WORKSPACE ADMIN
+    // AS PROJECT MEMBER
+    // =========================
+
+    if (membership.role === 'ADMIN') {
+      await this.db.projectMember.create({
+        data: {
+          projectId: project.id,
+          userId,
+          role: 'ADMIN',
+        },
+      });
+    }
+
     return {
       message: 'Project created successfully',
       project,
     };
   }
-
   // =========================
   // GET ALL PROJECTS
   // =========================
