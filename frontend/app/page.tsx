@@ -27,8 +27,8 @@ export default function LandingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    setIsLoggedIn(localStorage.getItem("userId"));
-  });
+    setIsLoggedIn(!!localStorage.getItem("userId"));
+  }, []);
 
   const features = [
     {
