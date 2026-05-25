@@ -86,6 +86,7 @@ export const slugify = (text: string) =>
         case "SPRINT_UPDATED":
         case "SPRINT_STARTED":
         case "SPRINT_DELETED":
+        case "SPRINT_HEALTH":
           return <Rocket className="h-5 w-5" />;
   
         case "TASK_ADDED_TO_SPRINT":
@@ -164,6 +165,10 @@ export const slugify = (text: string) =>
         case "TASK_LINK_REMOVED":
         case "TASK_LINK_UPDATED":
           return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}`;
+
+        case "SPRINT_HEALTH":
+          return `/sprint/${notification?.sprintId}/dashboard`
+          
   
         default:
           return "#";

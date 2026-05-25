@@ -18,12 +18,15 @@ import { ValidateResetOtpDto } from './dto/validate-reset-otp.dto';
 import { otpEmailTemplate } from 'src/mail/templates/otp-email.template';
 import { Resend } from 'resend';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-
+import { NotificationsService } from '@/notifications/notifications.service';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
@@ -127,6 +130,100 @@ export class AuthService {
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    // ======================================================
+    // CHECK DELAYED / AT RISK SPRINTS
+    // ======================================================
+
+    const sprints = await this.databaseService.sprint.findMany({
+      where: {
+        status: 'ACTIVE',
+      },
+
+      include: {
+        project: true,
+
+        tasks: true,
+      },
+    });
+
+    for (const sprint of sprints) {
+      const tasks = sprint.tasks || [];
+
+      const totalEstimate = tasks.reduce(
+        (acc, task) => acc + (task.estimateMinutes || 0),
+        0,
+      );
+
+      const completedEstimate = tasks
+        .filter((task) => task.status === 'DONE')
+        .reduce((acc, task) => acc + (task.estimateMinutes || 0), 0);
+
+      const sprintProgress =
+        totalEstimate > 0
+          ? Math.round((completedEstimate / totalEstimate) * 100)
+          : 0;
+
+      const now = new Date();
+
+      const startDate = sprint.startDate ? new Date(sprint.startDate) : null;
+
+      const endDate = sprint.endDate ? new Date(sprint.endDate) : null;
+
+      let totalDays = 0;
+      let daysLeft = 0;
+      let daysPassed = 0;
+
+      if (startDate && endDate) {
+        totalDays = Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        daysLeft = Math.max(
+          0,
+          Math.ceil(
+            (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+          ),
+        );
+
+        daysPassed = Math.max(0, totalDays - daysLeft);
+      }
+
+      const timeProgress = totalDays > 0 ? (daysPassed / totalDays) * 100 : 0;
+
+      let health = 'HEALTHY';
+
+      if (sprintProgress + 10 < timeProgress) {
+        health = 'DELAYED';
+      } else if (Math.abs(sprintProgress - timeProgress) <= 10) {
+        health = 'AT_RISK';
+      }
+
+      if (health !== 'HEALTHY') {
+        await this.notificationsService.createNotification({
+          title: health === 'DELAYED' ? 'Sprint Delayed' : 'Sprint At Risk',
+
+          message:
+            health === 'DELAYED'
+              ? `Sprint "${sprint.name}" is getting delayed`
+              : `Sprint "${sprint.name}" is at risk`,
+
+          type: 'SPRINT_HEALTH',
+
+          triggeredById: user.id,
+
+          workspaceId: sprint.project.workspaceId,
+
+          projectId: sprint.projectId,
+
+          sprintId: sprint.id,
+
+          userId: user.id,
+        });
+      }
+    }
+
+    return user;
 
     return user;
   }

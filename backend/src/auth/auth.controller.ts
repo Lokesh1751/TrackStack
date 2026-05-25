@@ -43,21 +43,21 @@ export class AuthController {
   @Post('login')
   async login(
     @Body(ValidationPipe) dto: LoginDto,
-    @Session() session: Record<string, string>,
+    @Session() session: Record<string, string | undefined>,
   ) {
     const user = await this.authService.validateUser(dto);
 
-    session.userId = user.id;
+    session.userId = user?.id;
 
     return {
       success: true,
 
       data: {
-        id: user.id,
-        email: user.email,
+        id: user?.id,
+        email: user?.email,
 
         // ✅ global role
-        isSuperAdmin: user.isSuperAdmin,
+        isSuperAdmin: user?.isSuperAdmin,
       },
     };
   }

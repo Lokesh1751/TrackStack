@@ -11,7 +11,6 @@ import {
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-
 import { toast } from "sonner";
 import { TaskBoardSkeleton } from "@/components/skeleton/taskBoard";
 import { TaskModalSkeleton } from "@/components/skeleton/task-edit-modal";
@@ -51,7 +50,7 @@ export default function Page() {
   // CURRENT USER
   // =========================
 
-  const { data: currentUserData } = useQuery({
+  const { data: currentUserData, isLoading: isCurrentUserLoading } = useQuery({
     queryKey: ["me"],
     queryFn: getCurrentUser,
   });
@@ -270,8 +269,9 @@ export default function Page() {
 
     return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
   };
-  const currentSprint = tasks?.find((t: any) => t?.sprint?.id === sprintId)
-    ?.sprint;
+  const currentSprint = tasks?.find(
+    (t: any) => t?.sprint?.id === sprintId,
+  )?.sprint;
 
   if (sprintId === "undefined") {
     return (
@@ -311,7 +311,9 @@ export default function Page() {
       </div>
     );
   }
-
+  if (isLoading || isCurrentUserLoading) {
+    return <TaskBoardSkeleton />;
+  }
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-neutral-100 p-6">
       {/* HEADER */}
@@ -366,64 +368,54 @@ export default function Page() {
           tasksCount={tasks.length}
         />
       </div>
+      {/* TASK BOARD */}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          {statuses.map((status) => (
+            <Droppable droppableId={status} key={status}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`rounded-3xl p-4 shadow-sm transition ${
+                    snapshot.isDraggingOver ? "bg-neutral-200" : "bg-white"
+                  }`}
+                >
+                  {/* HEADER */}
+                  <div className="mb-5 flex items-center justify-between">
+                    <h2 className="font-semibold">{status}</h2>
 
-      {/* TASK BOARD (UNCHANGED) */}
-      <div className="flex-1 overflow-y-auto pb-20">
-        {isLoading ? (
-          <TaskBoardSkeleton />
-        ) : (
-          <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-              {statuses.map((status) => (
-                <Droppable droppableId={status} key={status}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`rounded-3xl p-4 shadow-sm transition ${
-                        snapshot.isDraggingOver ? "bg-neutral-200" : "bg-white"
-                      }`}
-                    >
-                      {/* HEADER */}
-                      <div className="mb-5 flex items-center justify-between">
-                        <h2 className="font-semibold">{status}</h2>
-
-                        <div className="rounded-full bg-neutral-200 px-3 py-1 text-xs">
-                          {groupedTasks[status]?.length || 0}
-                        </div>
-                      </div>
-
-                      {/* TASKS */}
-                      <div className="space-y-4 min-h-[200px]">
-                        {groupedTasks[status]?.map(
-                          (task: any, index: number) => (
-                            <TaskCard
-                              key={task.id}
-                              task={task}
-                              index={index}
-                              statuses={statuses}
-                              onOpen={openTask}
-                              onStatusChange={(taskId:any, status:any) =>
-                                updateStatusMutation.mutate({
-                                  taskId,
-                                  status,
-                                })
-                              }
-                            />
-                          ),
-                        )}
-
-                        {provided.placeholder}
-                      </div>
+                    <div className="rounded-full bg-neutral-200 px-3 py-1 text-xs">
+                      {groupedTasks[status]?.length || 0}
                     </div>
-                  )}
-                </Droppable>
-              ))}
-            </div>
-          </DragDropContext>
-        )}
-      </div>
+                  </div>
 
+                  {/* TASKS */}
+                  <div className="space-y-4 min-h-[200px]">
+                    {groupedTasks[status]?.map((task: any, index: number) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        index={index}
+                        statuses={statuses}
+                        onOpen={openTask}
+                        onStatusChange={(taskId: any, status: any) =>
+                          updateStatusMutation.mutate({
+                            taskId,
+                            status,
+                          })
+                        }
+                      />
+                    ))}
+
+                    {provided.placeholder}
+                  </div>
+                </div>
+              )}
+            </Droppable>
+          ))}
+        </div>
+      </DragDropContext>
       {selectedTask && (
         <>
           {isLoading ? (

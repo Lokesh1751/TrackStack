@@ -4,14 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import {
-  Bell,
-  Check,
-  CheckCheck,
-  Trash2,
-  ArrowRight,
-} from "lucide-react";
-import { getNotificationIcon,getRedirectUrl } from "@/helpers";
+import { Bell, Check, CheckCheck, Trash2, ArrowRight } from "lucide-react";
+
+import { getNotificationIcon, getRedirectUrl } from "@/helpers";
 
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 
@@ -36,10 +31,11 @@ import { Button } from "@/components/ui/button";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { Badge } from "@/components/ui/badge";
-
 import { useToast } from "@/hooks/useToast";
+
 import { NotificationsSkeleton } from "../skeleton/notifications-skeleton";
+
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 const LIMIT = 15;
 
@@ -51,9 +47,7 @@ export function NotificationsSheet() {
   const [open, setOpen] = useState(false);
 
   const userId =
-  typeof window !== "undefined"
-    ? localStorage.getItem("userId")
-    : '';
+    typeof window !== "undefined" ? localStorage.getItem("userId") : "";
 
   // =====================================================
   // GET UNREAD COUNT
@@ -88,14 +82,33 @@ export function NotificationsSheet() {
       return undefined;
     },
   });
-  function formatNotificationMessage(message: string, currentUserEmail: string) {
-    return message.replace(currentUserEmail, "You");
-  }
+
   const notifications = useMemo(() => {
     return notificationsQuery.data?.pages.flatMap(
       (page) => page?.notifications,
     );
   }, [notificationsQuery.data]);
+
+  // =====================================================
+  // INFINITE SCROLL
+  // =====================================================
+
+  const { loadMoreRef } = useInfiniteScroll({
+    hasNextPage: notificationsQuery.hasNextPage,
+    fetchNextPage: notificationsQuery.fetchNextPage,
+    isFetchingNextPage: notificationsQuery.isFetchingNextPage,
+  });
+
+  // =====================================================
+  // FORMAT MESSAGE
+  // =====================================================
+
+  function formatNotificationMessage(
+    message: string,
+    currentUserEmail: string,
+  ) {
+    return message.replace(currentUserEmail, "You");
+  }
 
   // =====================================================
   // MARK SINGLE READ
@@ -117,12 +130,15 @@ export function NotificationsSheet() {
   const markAllReadMutation = useMutation({
     mutationFn: markAllNotificationsAsRead,
 
-    onSuccess: () => {
-      toast.success("All notifications marked as read");
+    onSuccess: (data:any) => {
+      toast.success(data?.message ? data?.message :"All notifications marked as read");
 
       notificationsQuery.refetch();
       unreadQuery.refetch();
     },
+    onError: (error:Error) => {
+      toast.error(error?.message ? error?.message : 'All notifications are already marked as read')
+    }
   });
 
   // =====================================================
@@ -141,7 +157,7 @@ export function NotificationsSheet() {
   });
 
   // =====================================================
-  // AUTO MARK AS READ WHEN OPENED
+  // AUTO MARK READ
   // =====================================================
 
   useEffect(() => {
@@ -150,12 +166,13 @@ export function NotificationsSheet() {
     const unreadNotifications =
       notifications?.filter((notification) => !notification?.isRead) || [];
 
-    if (!unreadNotifications?.length) return;
+    if (!unreadNotifications.length) return;
 
     unreadNotifications.forEach((notification) => {
       markReadMutation.mutate(notification?.id);
     });
   }, [open, notifications]);
+
   // =====================================================
   // CLICK NOTIFICATION
   // =====================================================
@@ -172,9 +189,7 @@ export function NotificationsSheet() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      {/* ===================================================== */}
       {/* TRIGGER */}
-      {/* ===================================================== */}
 
       <SheetTrigger asChild>
         <Button
@@ -192,39 +207,32 @@ export function NotificationsSheet() {
         </Button>
       </SheetTrigger>
 
-      {/* ===================================================== */}
       {/* CONTENT */}
-      {/* ===================================================== */}
 
       <SheetContent className="w-full border-l border-[#e8edf7] p-0 sm:max-w-xl">
         <SheetHeader className="border-b border-[#eef2f7] px-6 py-5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <SheetTitle className="text-left text-xl font-bold text-[#111827]">
-                Notifications
+              <SheetTitle className="text-left text-xl font-bold text-[#111827] flex gap-2 justify-between">
+                Notifications{" "}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={markAllReadMutation.isPending}
+                  onClick={() => markAllReadMutation.mutate()}
+                  className="rounded-xl cursor-pointer"
+                >
+                  <CheckCheck className="mr-2 h-4 w-4" />
+                  Mark all as Read
+                </Button>
               </SheetTitle>
 
               <p className="mt-1 text-sm text-[#6b7280]">
                 Stay updated with workspace activities
               </p>
             </div>
-
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={markAllReadMutation.isPending}
-              onClick={() => markAllReadMutation.mutate()}
-              className="rounded-xl"
-            >
-              <CheckCheck className="mr-2 h-4 w-4" />
-              Read All
-            </Button>
           </div>
         </SheetHeader>
-
-        {/* ===================================================== */}
-        {/* LIST */}
-        {/* ===================================================== */}
 
         {notificationsQuery.isLoading ? (
           <NotificationsSkeleton />
@@ -232,95 +240,117 @@ export function NotificationsSheet() {
           <ScrollArea className="h-[calc(100vh-90px)]">
             <div className="space-y-3 p-4">
               {notifications?.length ? (
-                notifications.map((notification) => (
-                  <div
-                    key={notification?.id}
-                    onClick={() => handleClickNotification(notification)}
-                    className={`group cursor-pointer rounded-3xl border p-4 transition-all ${
-                      notification?.isRead
-                        ? "border-[#edf1f7] bg-white"
-                        : "border-[#dbe7ff] bg-[#f7faff]"
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      {/* ICON */}
+                <>
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification?.id}
+                      onClick={() => handleClickNotification(notification)}
+                      className={`group cursor-pointer rounded-3xl border p-4 transition-all ${
+                        notification?.isRead
+                          ? "border-[#edf1f7] bg-white"
+                          : "border-[#dbe7ff] bg-[#f7faff]"
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* ICON */}
 
-                      <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
-                          notification?.isRead
-                            ? "bg-[#f3f4f6] text-[#6b7280]"
-                            : "bg-[#7189D0] text-white"
-                        }`}
-                      >
-                        {getNotificationIcon(notification?.type)}
-                      </div>
-
-                      {/* CONTENT */}
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="font-semibold text-[#111827]">
-                              {notification?.title}
-                            </h3>
-
-                            <p className="mt-1 text-sm leading-6 text-[#6b7280]">
-                              {notification?.userId === userId ? formatNotificationMessage(notification?.message, notification?.user?.email) : notification?.message}
-                            </p>
-                          </div>
-                          {!notification?.isRead && (
-                            <span className="relative flex h-2.5 w-2.5">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7189D0] opacity-75" />
-                              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#7189D0]" />
-                            </span>
-                          )}
+                        <div
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                            notification?.isRead
+                              ? "bg-[#f3f4f6] text-[#6b7280]"
+                              : "bg-[#7189D0] text-white"
+                          }`}
+                        >
+                          {getNotificationIcon(notification?.type)}
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between">
-                          <p className="text-xs text-[#9ca3af]">
-                            {notification?.createdAt
-                              ? new Date(
-                                  notification?.createdAt,
-                                ).toLocaleString()
-                              : ""}
-                          </p>
+                        {/* CONTENT */}
 
-                          <div className="flex items-center gap-2 opacity-0 transition group-hover:opacity-100">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="font-semibold text-[#111827]">
+                                {notification?.title}
+                              </h3>
+
+                              <p className="mt-1 text-sm leading-6 text-[#6b7280]">
+                                {notification?.userId === userId
+                                  ? formatNotificationMessage(
+                                      notification?.message,
+                                      notification?.user?.email,
+                                    )
+                                  : notification?.message}
+                              </p>
+                            </div>
+
                             {!notification?.isRead && (
+                              <span className="relative flex h-2.5 w-2.5">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7189D0] opacity-75" />
+
+                                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#7189D0]" />
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between">
+                            <p className="text-xs text-[#9ca3af]">
+                              {notification?.createdAt
+                                ? new Date(
+                                    notification?.createdAt,
+                                  ).toLocaleString()
+                                : ""}
+                            </p>
+
+                            <div className="flex items-center gap-2 opacity-0 transition group-hover:opacity-100">
+                              {!notification?.isRead && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 rounded-xl"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    markReadMutation.mutate(notification?.id);
+                                  }}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                              )}
+
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 rounded-xl"
+                                className="h-8 w-8 rounded-xl text-red-500 hover:text-red-600"
                                 onClick={(e) => {
                                   e.stopPropagation();
 
-                                  markReadMutation.mutate(notification?.id);
+                                  deleteMutation.mutate(notification?.id);
                                 }}
                               >
-                                <Check className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
-                            )}
 
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 rounded-xl text-red-500 hover:text-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-
-                                deleteMutation.mutate(notification?.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-
-                            <ArrowRight className="h-4 w-4 text-[#94a3b8]" />
+                              <ArrowRight className="h-4 w-4 text-[#94a3b8]" />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
+                  ))}
+
+                  {/* INFINITE SCROLL TARGET */}
+
+                  <div
+                    ref={loadMoreRef}
+                    className="flex items-center justify-center py-4"
+                  >
+                    {notificationsQuery.isFetchingNextPage && (
+                      <p className="text-sm text-[#6b7280]">
+                        Loading more notifications...
+                      </p>
+                    )}
                   </div>
-                ))
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#f3f6fd]">
@@ -336,23 +366,6 @@ export function NotificationsSheet() {
                     here.
                   </p>
                 </div>
-              )}
-
-              {/* ===================================================== */}
-              {/* LOAD MORE */}
-              {/* ===================================================== */}
-
-              {notificationsQuery.hasNextPage && (
-                <Button
-                  variant="outline"
-                  className="w-full rounded-2xl"
-                  disabled={notificationsQuery.isFetchingNextPage}
-                  onClick={() => notificationsQuery.fetchNextPage()}
-                >
-                  {notificationsQuery.isFetchingNextPage
-                    ? "Loading..."
-                    : "Load More"}
-                </Button>
               )}
             </div>
           </ScrollArea>

@@ -173,12 +173,24 @@ export class NotificationsService {
   // =====================================================
 
   async markAllAsRead(userId: string) {
-    return this.db.notification.updateMany({
-      where: {
-        ...(await this.getNotificationWhereClause(userId)),
+    const whereClause = {
+      ...(await this.getNotificationWhereClause(userId)),
 
-        isRead: false,
-      },
+      isRead: false,
+    };
+
+    const unreadNotificationsCount = await this.db.notification.count({
+      where: whereClause,
+    });
+
+    if (!unreadNotificationsCount) {
+      throw new BadRequestException(
+        'All notifications are already marked as read',
+      );
+    }
+
+    return this.db.notification.updateMany({
+      where: whereClause,
 
       data: {
         isRead: true,
