@@ -94,16 +94,18 @@ export default function Header() {
         {/* ================================================= */}
 
         <div className="flex items-center gap-3">
-          <NotificationsSheet />
+          {isLoggedIn && <NotificationsSheet />}
           {/* PROFILE */}
-          <Button
-            variant="outline"
-            onClick={() => router.push("/profile")}
-            className="hidden h-11 rounded-2xl border-[#dfe5f1] bg-white px-5 text-sm font-medium text-[#4b5563] transition hover:border-[#7189D0] hover:bg-[#f4f7ff] hover:text-[#7189D0] sm:flex"
-          >
-            <User className="mr-2 h-4 w-4" />
-            Profile
-          </Button>
+          {isLoggedIn && (
+            <Button
+              variant="outline"
+              onClick={() => router.push("/profile")}
+              className="hidden h-11 rounded-2xl border-[#dfe5f1] bg-white px-5 text-sm font-medium text-[#4b5563] transition hover:border-[#7189D0] hover:bg-[#f4f7ff] hover:text-[#7189D0] sm:flex"
+            >
+              <User className="mr-2 h-4 w-4" />
+              Profile
+            </Button>
+          )}
 
           {/* LOGOUT */}
           <Button
