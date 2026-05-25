@@ -9,21 +9,9 @@ import {
   Check,
   CheckCheck,
   Trash2,
-  FolderKanban,
-  FolderOpen,
-  Users,
-  UserPlus,
-  UserMinus,
-  Shield,
-  ClipboardList,
-  MessageSquare,
-  Link2,
-  Rocket,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
   ArrowRight,
 } from "lucide-react";
+import { getNotificationIcon,getRedirectUrl } from "@/helpers";
 
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 
@@ -168,131 +156,6 @@ export function NotificationsSheet() {
       markReadMutation.mutate(notification?.id);
     });
   }, [open, notifications]);
-
-  // =====================================================
-  // ICONS
-  // =====================================================
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "WORKSPACE_CREATED":
-      case "WORKSPACE_UPDATED":
-      case "WORKSPACE_DELETED":
-        return <FolderKanban className="h-5 w-5" />;
-
-      case "WORKSPACE_MEMBER_INVITED":
-      case "PROJECT_MEMBER_INVITED":
-        return <UserPlus className="h-5 w-5" />;
-
-      case "WORKSPACE_MEMBER_REMOVED":
-      case "PROJECT_MEMBER_REMOVED":
-        return <UserMinus className="h-5 w-5" />;
-
-      case "WORKSPACE_ROLE_UPDATED":
-        return <Shield className="h-5 w-5" />;
-
-      case "WORKSPACE_INVITE_ACCEPTED":
-      case "SPRINT_COMPLETED":
-        return <CheckCircle2 className="h-5 w-5" />;
-
-      case "WORKSPACE_INVITE_DECLINED":
-        return <AlertCircle className="h-5 w-5" />;
-
-      case "PROJECT_CREATED":
-      case "PROJECT_UPDATED":
-      case "PROJECT_DELETED":
-        return <FolderOpen className="h-5 w-5" />;
-
-      case "PROJECT_MEMBER_ADDED":
-      case "PROJECT_MEMBER_JOINED":
-        return <Users className="h-5 w-5" />;
-
-      case "SPRINT_CREATED":
-      case "SPRINT_UPDATED":
-      case "SPRINT_STARTED":
-      case "SPRINT_DELETED":
-        return <Rocket className="h-5 w-5" />;
-
-      case "TASK_ADDED_TO_SPRINT":
-      case "TASK_REMOVED_FROM_SPRINT":
-      case "TASK_CREATED":
-      case "TASK_UPDATED":
-      case "TASK_DELETED":
-      case "TASK_ASSIGNED":
-      case "TASK_STATUS_UPDATED":
-      case "TASK_MOVED_TO_SPRINT":
-      case "TASK_MOVED_TO_BACKLOG":
-        return <ClipboardList className="h-5 w-5" />;
-
-      case "TASK_COMMENT_ADDED":
-      case "TASK_COMMENT_DELETED":
-        return <MessageSquare className="h-5 w-5" />;
-
-      case "TASK_LINKED":
-      case "TASK_LINK_REMOVED":
-      case "TASK_LINK_UPDATED":
-        return <Link2 className="h-5 w-5" />;
-
-      case "SYSTEM":
-        return <Sparkles className="h-5 w-5" />;
-
-      default:
-        return <Bell className="h-5 w-5" />;
-    }
-  };
-
-  // =====================================================
-  // REDIRECT URL
-  // =====================================================
-
-  const getRedirectUrl = (notification: Notification) => {
-    switch (notification?.type) {
-      case "WORKSPACE_CREATED":
-      case "WORKSPACE_UPDATED":
-      case "WORKSPACE_DELETED":
-      case "WORKSPACE_MEMBER_INVITED":
-      case "PROJECT_MEMBER_INVITED":
-      case "WORKSPACE_ROLE_UPDATED":
-      case "WORKSPACE_INVITE_ACCEPTED":
-      case "WORKSPACE_MEMBER_REMOVED":
-      case "PROJECT_MEMBER_REMOVED":
-        return `/workspace/${notification?.workspaceId}`;
-
-      case "PROJECT_CREATED":
-      case "PROJECT_UPDATED":
-      case "PROJECT_DELETED":
-      case "PROJECT_MEMBER_ADDED":
-      case "PROJECT_MEMBER_JOINED":
-        return `/workspace/${notification?.projectId}/projects`;
-
-      case "SPRINT_CREATED":
-      case "SPRINT_UPDATED":
-      case "SPRINT_STARTED":
-      case "SPRINT_COMPLETED":
-        return `/sprint/${notification?.projectId}?sprintId=${notification?.sprintId}`;
-
-      case "TASK_ADDED_TO_SPRINT":
-      case "TASK_REMOVED_FROM_SPRINT":
-      case "TASK_CREATED":
-      case "TASK_UPDATED":
-      case "TASK_DELETED":
-      case "TASK_ASSIGNED":
-      case "TASK_STATUS_UPDATED":
-      case "TASK_MOVED_TO_SPRINT":
-      case "TASK_MOVED_TO_BACKLOG":
-      case "TASK_COMMENT_ADDED":
-      case "TASK_COMMENT_DELETED":
-
-      case "TASK_LINKED":
-      case "TASK_LINK_REMOVED":
-      case "TASK_LINK_UPDATED":
-        return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}`;
-
-      default:
-        return "#";
-    }
-  };
-
   // =====================================================
   // CLICK NOTIFICATION
   // =====================================================
