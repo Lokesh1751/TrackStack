@@ -40,10 +40,13 @@ export default function DashboardPage() {
   // GLOBAL ACCESS
   // =========================
 
-  const isSuperAdmin =
-    typeof window !== "undefined"
-      ? localStorage.getItem("isSuperAdmin") === "true"
-      : false;
+const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+useEffect(() => {
+  setIsSuperAdmin(
+    localStorage.getItem("isSuperAdmin") === "true"
+  );
+}, []);
 
   // =========================
   // MODALS
@@ -61,8 +64,7 @@ export default function DashboardPage() {
 
   const [selectedEmail, setSelectedEmail] = useState("");
 
-  const [selectedRole, setSelectedRole] =
-    useState<WorkspaceRole>("MEMBER");
+  const [selectedRole, setSelectedRole] = useState<WorkspaceRole>("MEMBER");
 
   // =========================
   // CREATE WORKSPACE FORM
@@ -75,6 +77,8 @@ export default function DashboardPage() {
   const [description, setDescription] = useState("");
 
   const [logoUrl, setLogoUrl] = useState("");
+
+  const [uploading, setUploading] = useState(false);
 
   // =========================
   // GET WORKSPACES
@@ -218,31 +222,71 @@ export default function DashboardPage() {
   });
 
   // =========================
-  // LOGO UPLOAD
+  // CLOUDINARY UPLOAD
   // =========================
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only images are allowed");
+      return;
+    }
 
-    const imageUrl = URL.createObjectURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+    try {
+      setUploading(true);
 
-    setLogoUrl(imageUrl);
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+      );
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+      console.log('ressssss',res)
+
+      // if (!res.ok) {
+      //   throw new Error("Upload failed");
+      // }
+
+      const data = await res.json();
+
+      console.log("CLOUDINARY ERROR =>", data);
+
+      setLogoUrl(data.secure_url);
+      console.log("successsss", data);
+
+      toast.success("Logo uploaded");
+    } catch (error: any) {
+      console.log("errorrrrrrrrrrrrrr", error);
+      toast.error(error?.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <div className="bg-slate-100">
-      <div className="mx-auto px-4 py-8 space-y-6 md:px-6">
-        {/* ========================= */}
+      <div className="mx-auto space-y-6 px-4 py-8 md:px-6">
         {/* HEADER */}
-        {/* ========================= */}
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Workspaces
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Workspaces</h1>
 
             <p className="mt-1 text-sm text-slate-500">
               Create and manage your organization workspaces
@@ -251,16 +295,12 @@ export default function DashboardPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             {isSuperAdmin && (
-              <Button onClick={() => setOpen(true)}>
-                + New Workspace
-              </Button>
+              <Button onClick={() => setOpen(true)}>+ New Workspace</Button>
             )}
           </div>
         </div>
 
-        {/* ========================= */}
         {/* FILTERS */}
-        {/* ========================= */}
 
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-2 border-gray-200 bg-white p-3">
           {!isSuperAdmin && (
@@ -298,18 +338,14 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* ========================= */}
         {/* CONTENT */}
-        {/* ========================= */}
 
         {!data && isLoading ? (
           <DashboardPageSkeleton />
         ) : workspaces.length === 0 ? (
           <div className="rounded-2xl border bg-white p-12 text-center shadow-sm">
             <div className="space-y-3">
-              <h2 className="text-xl font-semibold">
-                No workspaces found
-              </h2>
+              <h2 className="text-xl font-semibold">No workspaces found</h2>
 
               <p className="text-sm text-slate-500">
                 {isSuperAdmin
@@ -321,9 +357,7 @@ export default function DashboardPage() {
         ) : (
           <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
             <div className="border-b px-5 py-4">
-              <h2 className="text-lg font-semibold">
-                Your Workspaces
-              </h2>
+              <h2 className="text-lg font-semibold">Your Workspaces</h2>
             </div>
 
             <div className="overflow-x-auto">
@@ -333,8 +367,7 @@ export default function DashboardPage() {
                   (workspaceId: string | undefined) =>
                     router.push(`/workspace/${workspaceId}/edit`),
 
-                  (workspaceId: string) =>
-                    deleteMutation.mutate(workspaceId),
+                  (workspaceId: string) => deleteMutation.mutate(workspaceId),
 
                   deleteMutation.isPending,
 
@@ -350,10 +383,7 @@ export default function DashboardPage() {
                     router.push(`/workspace/${workspaceId}/projects`);
                   },
                 )}
-                onRowClick={(row: {
-                  id: string;
-                  role: WorkspaceRole;
-                }) => {
+                onRowClick={(row: { id: string; role: WorkspaceRole }) => {
                   router.push(`/workspace/${row.id}`);
                 }}
               />
@@ -362,17 +392,13 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ========================= */}
       {/* CREATE WORKSPACE MODAL */}
-      {/* ========================= */}
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="border-b px-6 py-4">
-              <h2 className="text-xl font-semibold">
-                Create Workspace
-              </h2>
+              <h2 className="text-xl font-semibold">Create Workspace</h2>
 
               <p className="mt-1 text-sm text-slate-500">
                 Add workspace details and branding
@@ -393,9 +419,7 @@ export default function DashboardPage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="text-xs text-slate-400">
-                      No Logo
-                    </span>
+                    <span className="text-xs text-slate-400">No Logo</span>
                   )}
                 </div>
 
@@ -407,7 +431,7 @@ export default function DashboardPage() {
                   />
 
                   <p className="text-xs text-slate-500">
-                    Upload workspace logo
+                    {uploading ? "Uploading..." : "Upload workspace logo"}
                   </p>
                 </div>
               </div>
@@ -415,9 +439,7 @@ export default function DashboardPage() {
               {/* NAME */}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Workspace Name
-                </label>
+                <label className="text-sm font-medium">Workspace Name</label>
 
                 <input
                   className="w-full rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
@@ -430,9 +452,7 @@ export default function DashboardPage() {
               {/* SLUG */}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Workspace Slug
-                </label>
+                <label className="text-sm font-medium">Workspace Slug</label>
 
                 <input
                   className="w-full rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
@@ -445,9 +465,7 @@ export default function DashboardPage() {
               {/* DESCRIPTION */}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Description
-                </label>
+                <label className="text-sm font-medium">Description</label>
 
                 <textarea
                   rows={4}
@@ -460,16 +478,13 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex justify-end gap-3 border-t px-6 py-4">
-              <Button
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
 
               <Button
                 disabled={
-                  !name || !slug || createMutation.isPending
+                  !name || !slug || createMutation.isPending || uploading
                 }
                 onClick={() =>
                   createMutation.mutate({
@@ -480,26 +495,20 @@ export default function DashboardPage() {
                   })
                 }
               >
-                {createMutation.isPending
-                  ? "Creating..."
-                  : "Create Workspace"}
+                {createMutation.isPending ? "Creating..." : "Create Workspace"}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ========================= */}
-      {/* INVITE MEMBER MODAL */}
-      {/* ========================= */}
+      {/* INVITE MODAL */}
 
       {inviteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="border-b px-6 py-4">
-              <h2 className="text-xl font-semibold">
-                Invite Member
-              </h2>
+              <h2 className="text-xl font-semibold">Invite Member</h2>
 
               <p className="mt-1 text-sm text-slate-500">
                 Send workspace invitation via email
@@ -507,52 +516,32 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-5 p-6">
-              {/* USER */}
-
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Select User
-                </label>
+                <label className="text-sm font-medium">Select User</label>
 
                 <select
                   className="w-full rounded-xl border p-3 text-sm"
                   value={selectedEmail}
-                  onChange={(e) =>
-                    setSelectedEmail(e.target.value)
-                  }
+                  onChange={(e) => setSelectedEmail(e.target.value)}
                 >
                   <option value="">Select user</option>
 
-                  {users.map(
-                    (user: {
-                      id: string;
-                      email: string;
-                    }) => (
-                      <option
-                        key={user.id}
-                        value={user.email}
-                      >
-                        {user.email}
-                      </option>
-                    ),
-                  )}
+                  {users.map((user: { id: string; email: string }) => (
+                    <option key={user.id} value={user.email}>
+                      {user.email}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* ROLE */}
-
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Workspace Role
-                </label>
+                <label className="text-sm font-medium">Workspace Role</label>
 
                 <select
                   className="w-full rounded-xl border p-3 text-sm"
                   value={selectedRole}
                   onChange={(e) =>
-                    setSelectedRole(
-                      e.target.value as WorkspaceRole,
-                    )
+                    setSelectedRole(e.target.value as WorkspaceRole)
                   }
                 >
                   <option value="ADMIN">ADMIN</option>
@@ -563,17 +552,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex justify-end gap-3 border-t px-6 py-4">
-              <Button
-                variant="outline"
-                onClick={() => setInviteOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setInviteOpen(false)}>
                 Cancel
               </Button>
 
               <Button
-                disabled={
-                  !selectedEmail || inviteMutation.isPending
-                }
+                disabled={!selectedEmail || inviteMutation.isPending}
                 onClick={() =>
                   inviteMutation.mutate({
                     workspaceId: selectedWorkspaceId,
@@ -585,9 +569,7 @@ export default function DashboardPage() {
                   })
                 }
               >
-                {inviteMutation.isPending
-                  ? "Inviting..."
-                  : "Invite Member"}
+                {inviteMutation.isPending ? "Inviting..." : "Invite Member"}
               </Button>
             </div>
           </div>

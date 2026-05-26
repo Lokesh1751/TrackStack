@@ -13,7 +13,7 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-100  flex flex-col"> 
       <Header />
 
       <main className="flex-1">{children}</main>

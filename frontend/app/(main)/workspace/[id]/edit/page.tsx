@@ -1,6 +1,4 @@
 "use client";
-
-import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -75,8 +73,6 @@ export default function EditWorkspacePage() {
       queryClient.invalidateQueries({
         queryKey: ["workspaces"],
       });
-
-      router.push("/dashboard");
     },
 
     onError: (error: Error) => {
@@ -141,15 +137,49 @@ export default function EditWorkspacePage() {
     },
   });
 
-  // ✅ upload image
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
 
-    const localUrl = URL.createObjectURL(file);
+    try {
+      setUploading(true);
 
-    setLogoUrl(localUrl);
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+      );
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || "Upload failed");
+      }
+
+      setLogoUrl(data.secure_url);
+
+      toast.success("Logo uploaded successfully");
+    } catch (error: any) {
+      toast.error("Upload failed", {
+        description: error.message,
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (isLoading) {
@@ -195,7 +225,9 @@ export default function EditWorkspacePage() {
                   onChange={handleLogoUpload}
                 />
 
-                <p className="text-xs text-slate-500">Upload workspace logo</p>
+                <p className="text-xs text-slate-500">
+                  {uploading ? "Uploading..." : "Upload workspace logo"}
+                </p>
               </div>
             </div>
 
@@ -244,9 +276,8 @@ export default function EditWorkspacePage() {
             <Button variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>
-
             <Button
-              disabled={!name || !slug || updateMutation.isPending}
+              disabled={!name || !slug || updateMutation.isPending || uploading}
               onClick={() =>
                 updateMutation.mutate({
                   name,
@@ -256,7 +287,9 @@ export default function EditWorkspacePage() {
                 })
               }
             >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateMutation.isPending
+                ? "Saving..."
+                  : "Save Changes"}
             </Button>
           </div>
         </div>
