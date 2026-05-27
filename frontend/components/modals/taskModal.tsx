@@ -35,7 +35,7 @@ export function TaskModal({
   setSelectedTask,
 }: any) {
   const queryClient = useQueryClient();
-  const router = useRouter()
+  const router = useRouter();
 
   const [comment, setComment] = useState("");
 
@@ -45,6 +45,7 @@ export function TaskModal({
     priority: task.priority,
     estimateMinutes: task.estimateMinutes || 0,
     type: task.type,
+    dueDate: task.dueDate,
   });
 
   // =========================
@@ -273,7 +274,7 @@ export function TaskModal({
     mutationFn: () =>
       createTaskLink(task.id, {
         targetTaskId: selectedLinkedTaskId,
-        type: selectedLinkType,
+        type: selectedLinkType as "BLOCKS" | "RELATES_TO" | "DUPLICATES" | "DEPENDS_ON" | "CAUSED_BY",
       }),
 
     onSuccess: () => {
@@ -386,10 +387,10 @@ export function TaskModal({
             <div className="mb-2 text-sm text-neutral-500">
               {" "}
               <span className="flex gap-2 items-center justify-between">
-                <span className="flex gap-2 items-center">{task.taskKey} {getTaskTypeIcon(task.type)}</span> 
                 <span className="flex gap-2 items-center">
-                {task.status}
-              </span>
+                  {task.taskKey} {getTaskTypeIcon(task.type)}
+                </span>
+                <span className="flex gap-2 items-center">{task.status}</span>
               </span>
             </div>
 
@@ -488,6 +489,18 @@ export function TaskModal({
 
               <option value="BUG">BUG</option>
             </select>
+
+            <input
+              type="date"
+              value={new Date(editForm.dueDate).toISOString().split("T")[0]}
+              onChange={(e) =>
+                setEditForm({
+                  ...editForm,
+                  dueDate: new Date(e.target.value).toISOString(),
+                })
+              }
+              className="w-full rounded-2xl border border-neutral-200 bg-white p-3"
+            />
           </div>
 
           <div className="mt-4">
@@ -498,11 +511,15 @@ export function TaskModal({
             <div className="relative">
               <input
                 type="number"
-                value={editForm.estimateMinutes}
+                value={
+                  new Date(editForm.estimateMinutes).toISOString().split("T")[0]
+                }
                 onChange={(e) =>
                   setEditForm({
                     ...editForm,
-                    estimateMinutes: Number(e.target.value),
+                    dueDate: task.dueDate
+                      ? new Date(task.dueDate).toISOString().split("T")[0]
+                      : "",
                   })
                 }
                 className="w-full rounded-2xl border border-neutral-200 bg-white p-3 pr-20 outline-none"
@@ -638,7 +655,11 @@ export function TaskModal({
                   <div
                     key={link.id}
                     className="rounded-2xl border border-neutral-200 bg-white p-5 cursor-pointer"
-                    onClick={()=> router.push(`/tasks/${projectId}?sprint=${sprintId}&taskId=${link.id}`) }
+                    onClick={() =>
+                      router.push(
+                        `/tasks/${projectId}?sprint=${sprintId}&taskId=${link.id}`,
+                      )
+                    }
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       {/* LEFT */}
@@ -688,7 +709,7 @@ export function TaskModal({
                               onClick={() =>
                                 updateTaskLinkMutation.mutate({
                                   linkId: link.id,
-                                  type: editingLinkType,
+                                  type: editingLinkType as "BLOCKS" | "RELATES_TO" | "DUPLICATES" | "DEPENDS_ON" | "CAUSED_BY",
                                 })
                               }
                               disabled={updateTaskLinkMutation.isPending}
@@ -788,7 +809,7 @@ export function TaskModal({
                               onClick={() =>
                                 updateTaskLinkMutation.mutate({
                                   linkId: link.id,
-                                  type: editingLinkType,
+                                  type: editingLinkType as 'BLOCKS' | 'RELATES_TO' | 'DUPLICATES' | 'DEPENDS_ON' | 'CAUSED_BY',
                                 })
                               }
                               disabled={updateTaskLinkMutation.isPending}

@@ -1,4 +1,6 @@
+
 "use client";
+export const dynamic = "force-dynamic";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";

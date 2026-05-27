@@ -105,8 +105,9 @@ export function NotificationsSheet() {
 
   function formatNotificationMessage(
     message: string,
-    currentUserEmail: string,
+    currentUserEmail?: string,
   ) {
+    if (!currentUserEmail) return message;
     return message.replace(currentUserEmail, "You");
   }
 

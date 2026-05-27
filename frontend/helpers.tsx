@@ -164,6 +164,8 @@ export const slugify = (text: string) =>
         case "TASK_LINKED":
         case "TASK_LINK_REMOVED":
         case "TASK_LINK_UPDATED":
+        case "TASK_DUE_REMINDER":
+        case "TASK_OVERDUE":
           return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}`;
 
         case "SPRINT_HEALTH":

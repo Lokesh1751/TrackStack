@@ -40,7 +40,7 @@ export class ProjectService {
 
     const { error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
-      to: email,
+      to: 'lokeshangi@gmail.com',
       subject: `Invitation to join ${projectName}`,
       html: inviteMemberTemplate(invitedBy, projectName, inviteLink),
     });

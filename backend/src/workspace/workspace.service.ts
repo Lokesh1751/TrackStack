@@ -43,7 +43,7 @@ export class WorkspaceService {
 
     const { error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
-      to: email,
+      to: 'lokeshangi@gmail.com',
       subject: `Invitation to join ${workspaceName}`,
       html: workspaceInviteTemplate(invitedBy, workspaceName, inviteLink),
     });

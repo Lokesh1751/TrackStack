@@ -67,6 +67,15 @@ export interface Notification {
   triggeredBy?: {
     id: string;
     email: string;
+    name?: string;
+    avatarUrl?: string;
+  };
+
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+    avatarUrl?: string;
   };
 }
 export interface NotificationsResponse {
@@ -256,7 +265,7 @@ export const getWorkspaceMembers = (id: string) =>
   request<any>(`/workspace/${id}/members`);
 
 export const addMember = (id: string, data: any) =>
-  request(`/workspace/${id}/add-member`, {
+  request<{ message: string }>(`/workspace/${id}/add-member`, {
     method: "POST",
     body: JSON.stringify(data),
   });

@@ -193,10 +193,15 @@ export class AuthService {
 
       let health = 'HEALTHY';
 
-      if (sprintProgress + 10 < timeProgress) {
-        health = 'DELAYED';
-      } else if (Math.abs(sprintProgress - timeProgress) <= 10) {
-        health = 'AT_RISK';
+      if (daysPassed > 0) {
+        if (sprintProgress + 10 < timeProgress) {
+          health = 'DELAYED';
+        } else if (
+          sprintProgress < timeProgress &&
+          Math.abs(sprintProgress - timeProgress) <= 10
+        ) {
+          health = 'AT_RISK';
+        }
       }
 
       if (health !== 'HEALTHY') {

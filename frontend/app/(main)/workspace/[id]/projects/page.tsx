@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useState } from "react";
+
+import { Suspense, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -214,320 +216,330 @@ export default function Projects() {
   const canManageProjects = currentRole;
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className=" mx-auto px-4 py-8 space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-2xl border shadow-sm p-6">
-          <h1 className="text-3xl font-semibold">Workspace Projects</h1>
+    <Suspense fallback={null}>
+      <div className="min-h-screen bg-slate-100">
+        <div className=" mx-auto px-4 py-8 space-y-6">
+          {/* Header */}
+          <div className="bg-white rounded-2xl border shadow-sm p-6">
+            <h1 className="text-3xl font-semibold">Workspace Projects</h1>
 
-          <p className="text-sm text-slate-500 mt-2">
-            Manage projects inside this workspace
-          </p>
-        </div>
-
-        {/* Create Project */}
-        {canManageProjects && (
-          <div className="bg-white rounded-2xl border shadow-sm p-6 space-y-5">
-            <div>
-              <h2 className="text-xl font-semibold">Create Project</h2>
-
-              <p className="text-sm text-slate-500 mt-1">
-                Add a new project to this workspace
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {/* Name */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Project Name</label>
-
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Project name"
-                  className="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-
-                <textarea
-                  rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Project description"
-                  className="w-full border rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 focus:ring-black/10"
-                />
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  disabled={!name || createMutation.isPending}
-                  onClick={() =>
-                    createMutation.mutate({
-                      name,
-                      description,
-                    })
-                  }
-                >
-                  {createMutation.isPending ? "Creating..." : "Create Project"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Projects Table */}
-        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-          <div className="border-b px-6 py-5 flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-semibold">Projects</h2>
-
-              <p className="text-sm text-slate-500 mt-1">
-                All projects inside this workspace
-              </p>
-            </div>
-
-            <input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search projects..."
-              className="w-full md:w-72 border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
-            />
+            <p className="text-sm text-slate-500 mt-2">
+              Manage projects inside this workspace
+            </p>
           </div>
 
-          {isLoading ? (
-            <ProjectsPageSkeleton />
-          ) : projects.length === 0 ? (
-            <div className="p-6 text-sm text-slate-500">No projects found</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="text-left px-6 py-4 text-sm font-medium">
-                      Name
-                    </th>
+          {/* Create Project */}
+          {canManageProjects && (
+            <div className="bg-white rounded-2xl border shadow-sm p-6 space-y-5">
+              <div>
+                <h2 className="text-xl font-semibold">Create Project</h2>
 
-                    <th className="text-left px-6 py-4 text-sm font-medium">
-                      Description
-                    </th>
+                <p className="text-sm text-slate-500 mt-1">
+                  Add a new project to this workspace
+                </p>
+              </div>
 
-                    <th className="text-left px-6 py-4 text-sm font-medium">
-                      Created
-                    </th>
+              <div className="space-y-4">
+                {/* Name */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Project Name</label>
 
-                    {canManageProjects && (
-                      <th className="text-right px-6 py-4 text-sm font-medium">
-                        Actions
-                      </th>
-                    )}
-                    <th className="text-left px-6 py-4 text-sm font-medium">
-                      Sprint
-                    </th>
-                  </tr>
-                </thead>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Project name"
+                    className="w-full border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                  />
+                </div>
 
-                <tbody className="divide-y">
-                  {projects.map((project: any) => (
-                    <tr
-                      key={project.id}
-                      className="hover:bg-slate-50 transition cursor-pointer"
-                    >
-                      <td
-                        className="px-6 py-4 font-medium"
-                        onClick={() =>
-                          router.push(
-                            `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
-                          )
-                        }
-                      >
-                        {project.name}
-                      </td>
+                {/* Description */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
 
-                      <td
-                        className="px-6 py-4 text-sm text-slate-600"
-                        onClick={() =>
-                          router.push(
-                            `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
-                          )
-                        }
-                      >
-                        {project.description || "No description"}
-                      </td>
+                  <textarea
+                    rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Project description"
+                    className="w-full border rounded-xl p-3 text-sm resize-none outline-none focus:ring-2 focus:ring-black/10"
+                  />
+                </div>
 
-                      <td
-                        className="px-6 py-4 text-sm text-slate-500"
-                        onClick={() =>
-                          router.push(
-                            `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
-                          )
-                        }
-                      >
-                        {new Date(project.createdAt).toLocaleDateString()}
-                      </td>
-
-                      {canManageProjects && (
-                        <td className="px-6 py-4 text-right space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedProjectId(
-                                selectedProjectId ? "" : project.id,
-                              );
-                              setSelectedProjectName(project.name);
-                            }}
-                          >
-                            Members
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={deleteMutation.isPending}
-                            onClick={() => deleteMutation.mutate(project.id)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      )}
-
-                      <td>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => router.push(`/sprint/${project.id}`)}
-                        >
-                          Sprints
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                <div className="flex justify-end">
+                  <Button
+                    disabled={!name || createMutation.isPending}
+                    onClick={() =>
+                      createMutation.mutate({
+                        name,
+                        description,
+                      })
+                    }
+                  >
+                    {createMutation.isPending
+                      ? "Creating..."
+                      : "Create Project"}
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Project Members */}
-        {selectedProjectId && (
+          {/* Projects Table */}
           <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
             <div className="border-b px-6 py-5 flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-semibold">
-                  Project Members for {selectedProjectName}
-                </h2>
+                <h2 className="text-xl font-semibold">Projects</h2>
 
                 <p className="text-sm text-slate-500 mt-1">
-                  Invite and manage project members
+                  All projects inside this workspace
                 </p>
               </div>
 
               <input
-                value={searchMemberInput}
-                onChange={(e) => setSearchMemberInput(e.target.value)}
-                placeholder="Search project members..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search projects..."
                 className="w-full md:w-72 border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
               />
             </div>
 
-            {/* Invite Form */}
-            {canManageProjects && (
-              <div className="p-6 border-b space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <select
-                    value={selectedMemberEmail}
-                    onChange={(e) => setSelectedMemberEmail(e.target.value)}
-                    className="border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-                  >
-                    <option value="">Select workspace member</option>
-
-                    {availableMembers.map((member: any) => (
-                      <option key={member.userId} value={member.email}>
-                        {member.email}
-                      </option>
-                    ))}
-                  </select>
-
-                  <Button
-                    disabled={!selectedMemberEmail || inviteMutation.isPending}
-                    onClick={() =>
-                      inviteMutation.mutate({
-                        projectId: selectedProjectId,
-                        email: selectedMemberEmail,
-                      })
-                    }
-                  >
-                    {inviteMutation.isPending ? "Inviting..." : "Invite Member"}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Members List */}
-            {isMembersLoading ? (
-              <div className="divide-y">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between px-6 py-4 animate-pulse"
-                  >
-                    {/* LEFT */}
-                    <div className="space-y-2">
-                      <div className="h-4 w-44 rounded bg-slate-200" />
-
-                      <div className="h-3 w-20 rounded bg-slate-100" />
-                    </div>
-
-                    {/* BUTTON */}
-                    <div className="h-8 w-20 rounded-lg bg-slate-200" />
-                  </div>
-                ))}
-              </div>
-            ) : projectMembers.length === 0 ? (
+            {isLoading ? (
+              <ProjectsPageSkeleton />
+            ) : projects.length === 0 ? (
               <div className="p-6 text-sm text-slate-500">
-                No project members found
+                No projects found
               </div>
             ) : (
-              <div className="divide-y">
-                {projectMembers.map((member: any) => (
-                  <div
-                    key={member.userId}
-                    className="px-6 py-4 flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">{member.email}</p>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b">
+                    <tr>
+                      <th className="text-left px-6 py-4 text-sm font-medium">
+                        Name
+                      </th>
 
-                      <p className="text-xs text-slate-500 mt-1">
-                        {member.role}
-                      </p>
-                    </div>
+                      <th className="text-left px-6 py-4 text-sm font-medium">
+                        Description
+                      </th>
 
-                    {canManageProjects && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={removeMemberMutation.isPending}
-                        onClick={() =>
-                          removeMemberMutation.mutate({
-                            projectId: selectedProjectId,
-                            userId: member.userId,
-                          })
-                        }
+                      <th className="text-left px-6 py-4 text-sm font-medium">
+                        Created
+                      </th>
+
+                      {canManageProjects && (
+                        <th className="text-right px-6 py-4 text-sm font-medium">
+                          Actions
+                        </th>
+                      )}
+                      <th className="text-left px-6 py-4 text-sm font-medium">
+                        Sprint
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y">
+                    {projects.map((project: any) => (
+                      <tr
+                        key={project.id}
+                        className="hover:bg-slate-50 transition cursor-pointer"
                       >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                        <td
+                          className="px-6 py-4 font-medium"
+                          onClick={() =>
+                            router.push(
+                              `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                            )
+                          }
+                        >
+                          {project.name}
+                        </td>
+
+                        <td
+                          className="px-6 py-4 text-sm text-slate-600"
+                          onClick={() =>
+                            router.push(
+                              `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                            )
+                          }
+                        >
+                          {project.description || "No description"}
+                        </td>
+
+                        <td
+                          className="px-6 py-4 text-sm text-slate-500"
+                          onClick={() =>
+                            router.push(
+                              `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                            )
+                          }
+                        >
+                          {new Date(project.createdAt).toLocaleDateString()}
+                        </td>
+
+                        {canManageProjects && (
+                          <td className="px-6 py-4 text-right space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedProjectId(
+                                  selectedProjectId ? "" : project.id,
+                                );
+                                setSelectedProjectName(project.name);
+                              }}
+                            >
+                              Members
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={deleteMutation.isPending}
+                              onClick={() => deleteMutation.mutate(project.id)}
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        )}
+
+                        <td>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => router.push(`/sprint/${project.id}`)}
+                          >
+                            Sprints
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
-        )}
+
+          {/* Project Members */}
+          {selectedProjectId && (
+            <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+              <div className="border-b px-6 py-5 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    Project Members for {selectedProjectName}
+                  </h2>
+
+                  <p className="text-sm text-slate-500 mt-1">
+                    Invite and manage project members
+                  </p>
+                </div>
+
+                <input
+                  value={searchMemberInput}
+                  onChange={(e) => setSearchMemberInput(e.target.value)}
+                  placeholder="Search project members..."
+                  className="w-full md:w-72 border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                />
+              </div>
+
+              {/* Invite Form */}
+              {canManageProjects && (
+                <div className="p-6 border-b space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select
+                      value={selectedMemberEmail}
+                      onChange={(e) => setSelectedMemberEmail(e.target.value)}
+                      className="border rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    >
+                      <option value="">Select workspace member</option>
+
+                      {availableMembers.map((member: any) => (
+                        <option key={member.userId} value={member.email}>
+                          {member.email}
+                        </option>
+                      ))}
+                    </select>
+
+                    <Button
+                      disabled={
+                        !selectedMemberEmail || inviteMutation.isPending
+                      }
+                      onClick={() =>
+                        inviteMutation.mutate({
+                          projectId: selectedProjectId,
+                          email: selectedMemberEmail,
+                        })
+                      }
+                    >
+                      {inviteMutation.isPending
+                        ? "Inviting..."
+                        : "Invite Member"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Members List */}
+              {isMembersLoading ? (
+                <div className="divide-y">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between px-6 py-4 animate-pulse"
+                    >
+                      {/* LEFT */}
+                      <div className="space-y-2">
+                        <div className="h-4 w-44 rounded bg-slate-200" />
+
+                        <div className="h-3 w-20 rounded bg-slate-100" />
+                      </div>
+
+                      {/* BUTTON */}
+                      <div className="h-8 w-20 rounded-lg bg-slate-200" />
+                    </div>
+                  ))}
+                </div>
+              ) : projectMembers.length === 0 ? (
+                <div className="p-6 text-sm text-slate-500">
+                  No project members found
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {projectMembers.map((member: any) => (
+                    <div
+                      key={member.userId}
+                      className="px-6 py-4 flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">{member.email}</p>
+
+                        <p className="text-xs text-slate-500 mt-1">
+                          {member.role}
+                        </p>
+                      </div>
+
+                      {canManageProjects && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={removeMemberMutation.isPending}
+                          onClick={() =>
+                            removeMemberMutation.mutate({
+                              projectId: selectedProjectId,
+                              userId: member.userId,
+                            })
+                          }
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 }

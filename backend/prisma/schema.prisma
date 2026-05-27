@@ -104,6 +104,9 @@ enum NotificationType {
   TASK_LINK_REMOVED
   TASK_LINK_UPDATED
 
+  TASK_DUE_REMINDER
+  TASK_OVERDUE
+
 
   SYSTEM
 }
@@ -276,6 +279,11 @@ model Task {
   linkedTasks     TaskLink[] @relation("SourceTask")
   linkedFromTasks TaskLink[] @relation("TargetTask")
 
+
+  dueReminderSent Boolean @default(false)
+
+  overdueReminderSent Boolean @default(false)
+
   @@index([sprintId])
 }
 
@@ -337,6 +345,9 @@ model Sprint {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+
+healthNotificationSent Boolean @default(false)
 }
 
 model TaskLink {

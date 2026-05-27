@@ -73,7 +73,7 @@ export class TasksService {
       },
     });
 
-    const canCreateTask = !!projectMember || membership?.role === 'ADMIN';
+    const canCreateTask = !!projectMember || membership?.role === 'ADMIN' || isSuperAdmin;
 
     if (!canCreateTask) {
       throw new ForbiddenException(

@@ -30,7 +30,7 @@ import {
 import { getSprintDashboard } from "@/lib/api";
 import { SprintDashboardSkeleton } from "@/components/skeleton/sprint-dashboard";
 
-const COLORS = ["#111827", "#2563eb", "#16a34a", "#dc2626"];
+const COLORS = ["#111827", "#7189D0", "#16a34a", "#dc2626"];
 
 export default function SprintDashboardPage() {
   const { id } = useParams();

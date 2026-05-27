@@ -928,12 +928,16 @@ export class SprintService {
 
     const timeProgress = totalDays > 0 ? (daysPassed / totalDays) * 100 : 0;
 
-    if (sprintProgress + 10 < timeProgress) {
-      health = 'DELAYED';
-    } else if (Math.abs(sprintProgress - timeProgress) <= 10) {
-      health = 'AT_RISK';
+    if (daysPassed > 0) {
+      if (sprintProgress + 10 < timeProgress) {
+        health = 'DELAYED';
+      } else if (
+        sprintProgress < timeProgress &&
+        Math.abs(sprintProgress - timeProgress) <= 10
+      ) {
+        health = 'AT_RISK';
+      }
     }
-
     const burndownData = sprint.snapshots.map((snapshot) => ({
       date: snapshot.createdAt,
       remainingEstimate: snapshot.remainingEstimate,
