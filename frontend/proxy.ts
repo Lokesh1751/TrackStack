@@ -5,7 +5,8 @@ const PROTECTED_ROUTES = [
   "/workspaces",
   "/workspace",
   "/tasks",
-  "/projects"
+  "/projects",
+  "/sprints",
 ];
 
 export function proxy(request: NextRequest) {
