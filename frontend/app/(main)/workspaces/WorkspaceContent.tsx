@@ -256,7 +256,6 @@ export default function DashboardPage({useQueryFilters}: {useQueryFilters: any})
           body: formData,
         },
       );
-      console.log("ressssss", res);
 
       // if (!res.ok) {
       //   throw new Error("Upload failed");
@@ -264,14 +263,11 @@ export default function DashboardPage({useQueryFilters}: {useQueryFilters: any})
 
       const data = await res.json();
 
-      console.log("CLOUDINARY ERROR =>", data);
 
       setLogoUrl(data.secure_url);
-      console.log("successsss", data);
 
       toast.success("Logo uploaded");
     } catch (error: any) {
-      console.log("errorrrrrrrrrrrrrr", error);
       toast.error(error?.message);
     } finally {
       setUploading(false);
