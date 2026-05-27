@@ -8,7 +8,7 @@ const PROTECTED_ROUTES = [
   "/projects"
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const sessionId = request.cookies.get("sid")?.value;
