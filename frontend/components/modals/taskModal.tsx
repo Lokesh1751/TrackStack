@@ -19,6 +19,7 @@ import {
 } from "@/lib/api";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MentionsInput, Mention } from "react-mentions";
 
 import { Loader2, MessageSquare, Link2 } from "lucide-react";
 import { getTaskTypeIcon } from "@/helpers";
@@ -171,10 +172,28 @@ export function TaskModal({
   // =========================
 
   const addCommentMutation = useMutation({
-    mutationFn: () =>
-      addTaskComment(task.id, {
-        content: comment,
-      }),
+    mutationFn: () => {
+      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+
+      const mentions: string[] = [];
+
+      let match;
+
+      while ((match = mentionRegex.exec(comment)) !== null) {
+        mentions.push(match[2]);
+      }
+
+      // clean content
+      const cleanedContent = comment.replace(
+        /@\[([^\]]+)\]\(([^)]+)\)/g,
+        "@$1",
+      );
+
+      return addTaskComment(task.id, {
+        content: cleanedContent,
+        mentions: [...new Set(mentions)],
+      });
+    },
 
     onSuccess: () => {
       setComment("");
@@ -274,7 +293,12 @@ export function TaskModal({
     mutationFn: () =>
       createTaskLink(task.id, {
         targetTaskId: selectedLinkedTaskId,
-        type: selectedLinkType as "BLOCKS" | "RELATES_TO" | "DUPLICATES" | "DEPENDS_ON" | "CAUSED_BY",
+        type: selectedLinkType as
+          | "BLOCKS"
+          | "RELATES_TO"
+          | "DUPLICATES"
+          | "DEPENDS_ON"
+          | "CAUSED_BY",
       }),
 
     onSuccess: () => {
@@ -419,7 +443,7 @@ export function TaskModal({
               <button
                 onClick={() => removeFromSprintMutation.mutate()}
                 disabled={removeFromSprintMutation.isPending}
-                className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+                className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
               >
                 {!removeFromSprintMutation.isPending
                   ? "Move to Backlog"
@@ -547,14 +571,14 @@ export function TaskModal({
             <button
               onClick={() => updateTaskMutation.mutate()}
               disabled={updateTaskMutation.isPending}
-              className="rounded-2xl bg-black px-5 py-3 text-white"
+              className="rounded-2xl bg-[#7189D0] px-5 py-3 text-white"
             >
               {updateTaskMutation.isPending ? "Updating..." : "Update Task"}
             </button>
 
             <button
               onClick={() => deleteMutation.mutate()}
-              className="rounded-2xl bg-red-500 px-5 py-3 text-white"
+              className="rounded-2xl  px-5 py-3 text-white"
             >
               Delete
             </button>
@@ -630,7 +654,7 @@ export function TaskModal({
                 createTaskLinkMutation.mutate();
               }}
               disabled={createTaskLinkMutation.isPending}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-white disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-white disabled:opacity-50"
             >
               {createTaskLinkMutation.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -665,7 +689,7 @@ export function TaskModal({
                       {/* LEFT */}
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-black px-2 py-1 text-xs font-semibold text-white">
+                          <span className="rounded-full bg-[#7189D0] px-2 py-1 text-xs font-semibold text-white">
                             OUTGOING
                           </span>
 
@@ -709,11 +733,16 @@ export function TaskModal({
                               onClick={() =>
                                 updateTaskLinkMutation.mutate({
                                   linkId: link.id,
-                                  type: editingLinkType as "BLOCKS" | "RELATES_TO" | "DUPLICATES" | "DEPENDS_ON" | "CAUSED_BY",
+                                  type: editingLinkType as
+                                    | "BLOCKS"
+                                    | "RELATES_TO"
+                                    | "DUPLICATES"
+                                    | "DEPENDS_ON"
+                                    | "CAUSED_BY",
                                 })
                               }
                               disabled={updateTaskLinkMutation.isPending}
-                              className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+                              className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
                             >
                               {updateTaskLinkMutation.isPending
                                 ? "Updating..."
@@ -809,11 +838,16 @@ export function TaskModal({
                               onClick={() =>
                                 updateTaskLinkMutation.mutate({
                                   linkId: link.id,
-                                  type: editingLinkType as 'BLOCKS' | 'RELATES_TO' | 'DUPLICATES' | 'DEPENDS_ON' | 'CAUSED_BY',
+                                  type: editingLinkType as
+                                    | "BLOCKS"
+                                    | "RELATES_TO"
+                                    | "DUPLICATES"
+                                    | "DEPENDS_ON"
+                                    | "CAUSED_BY",
                                 })
                               }
                               disabled={updateTaskLinkMutation.isPending}
-                              className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+                              className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
                             >
                               {updateTaskLinkMutation.isPending
                                 ? "Updating..."
@@ -889,8 +923,11 @@ export function TaskModal({
             </div>
 
             <button
-              onClick={() => assignTaskMutation.mutate(currentUser?.id)}
-              className="flex items-center gap-2 cursor-pointer rounded-2xl bg-black px-3 py-3 text-sm font-medium text-white transition hover:opacity-90"
+              onClick={(e) => {
+                e.stopPropagation();
+                assignTaskMutation.mutate(currentUser?.id);
+              }}
+              className="flex items-center gap-2 cursor-pointer rounded-2xl bg-[#7189D0] px-3 py-3 text-sm font-medium text-white transition hover:opacity-90"
               disabled={assignTaskMutation.isPending}
             >
               {assignTaskMutation.isPending ? "Assigning..." : "Assign to me"}
@@ -928,9 +965,10 @@ export function TaskModal({
 
                 assignTaskMutation.mutate(selectedUserId);
               }}
-              className="rounded-2xl bg-black px-6 py-4 text-white"
+              className="rounded-2xl bg-[#7189D0] px-6 py-4 text-white"
+              disabled={assignTaskMutation.isPending}
             >
-              Assign Task
+              {assignTaskMutation.isPending ? "Assigning..." : "Assign Task"}
             </button>
           </div>
         </div>
@@ -956,32 +994,94 @@ export function TaskModal({
                     isAdmin) && (
                     <button
                       onClick={() => deleteCommentMutation.mutate(comment.id)}
-                      className="text-xs text-red-500"
+                      className="text-xs text-red-500 cursor-pointer"
                     >
                       Delete
                     </button>
                   )}
                 </div>
+                <div className="text-sm text-neutral-700 whitespace-pre-wrap break-words">
+                  {comment.content
+                    .split(/(\@\[([^\]]+)\]\(([^)]+)\))/g)
+                    .map((part: string | undefined, index: number) => {
+                      const match = part?.match(/\@\[([^\]]+)\]\(([^)]+)\)/);
 
-                <div className="text-sm text-neutral-700">
-                  {comment.content}
+                      if (match) {
+                        return (
+                          <span
+                            key={index}
+                            className="font-medium text-blue-500"
+                          >
+                            @{match[1]}
+                          </span>
+                        );
+                      } else {
+                        return <span key={index}>{part}</span>;
+                      }
+                    })}
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-5 flex gap-3">
-            <input
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Write comment..."
-              className="flex-1 rounded-2xl border bg-white p-3"
-            />
+          <div className="mt-5 flex gap-3 items-start">
+            <div className="flex-1 rounded-2xl border bg-white p-2">
+              <MentionsInput
+                value={comment}
+                onChange={(e: any) => setComment(e.target.value)}
+                placeholder="Write comment..."
+                className="w-full outline-none"
+                style={{
+                  control: {
+                    backgroundColor: "transparent",
+                    fontSize: 14,
+                  },
+
+                  highlighter: {
+                    overflow: "hidden",
+                  },
+
+                  input: {
+                    margin: 0,
+                    minHeight: 60,
+                    outline: "none",
+                    border: "none",
+                  },
+
+                  suggestions: {
+                    list: {
+                      backgroundColor: "white",
+                      border: "1px solid #ddd",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                    },
+
+                    item: {
+                      padding: "10px 14px",
+
+                      "&focused": {
+                        backgroundColor: "#f3f4f6",
+                      },
+                    },
+                  },
+                }}
+              >
+                <Mention
+                  trigger="@"
+                  markup="@[__display__](__id__)"
+                  displayTransform={(id: any, display: any) => `@${display}`}
+                  data={members.map((member: any) => ({
+                    id: member.userId,
+                    display: member.email,
+                  }))}
+                />
+              </MentionsInput>
+            </div>
 
             <button
               onClick={() => addCommentMutation.mutate()}
               disabled={addCommentMutation.isPending}
-              className="rounded-2xl bg-black px-5 py-3 text-white"
+              className="rounded-2xl bg-[#7189D0] px-5 py-3 text-white"
             >
               {addCommentMutation.isPending ? "Sending.." : "Send"}
             </button>

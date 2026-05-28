@@ -275,7 +275,7 @@ export default function SprintPage() {
                 onClick={() =>
                   router.push(`/tasks/${projectId}?sprint=${activeSprintid}`)
                 }
-                className="flex items-center justify-center gap-2 rounded-2xl bg-[#111827] px-6 py-4 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-4 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
               >
                 <FolderKanban className="h-4 w-4" />
                 Open Active Board
@@ -298,7 +298,7 @@ export default function SprintPage() {
 
         <div className="mt-8 rounded-[32px] border border-[#dbe2f3] bg-white p-8 shadow-sm">
           <div className="mb-8 flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#111827] text-white shadow-lg">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#7189D0] text-white shadow-lg">
               <Plus className="h-5 w-5" />
             </div>
 
@@ -390,7 +390,7 @@ export default function SprintPage() {
           <button
             onClick={() => createSprintMutation.mutate()}
             disabled={createSprintMutation.isPending}
-            className="mt-8 flex items-center gap-2 rounded-2xl bg-[#111827] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            className="mt-8 flex items-center gap-2 rounded-2xl bg-[#7189D0] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
           >
             {createSprintMutation.isPending ? (
               <>
@@ -655,7 +655,7 @@ export default function SprintPage() {
                           behavior: "smooth",
                         })
                     }
-                    className="mt-8 rounded-2xl bg-[#111827] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90"
+                    className="mt-8 rounded-2xl bg-[#7189D0] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90"
                   >
                     Create First Sprint
                   </button>

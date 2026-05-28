@@ -299,14 +299,14 @@ export default function Page() {
             {/* BUTTON */}
             <button
               onClick={() => router.push(`/sprint/${projectId}`)}
-              className="mt-6 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              className="mt-6 w-full rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
             >
               Make Any Sprint Active
             </button>
 
             <button
               onClick={() => router.push(`/sprint/${projectId}/backlog`)}
-              className="mt-6 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              className="mt-6 w-full rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
             >
               Backlogs
             </button>

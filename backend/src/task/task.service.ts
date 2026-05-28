@@ -73,7 +73,8 @@ export class TasksService {
       },
     });
 
-    const canCreateTask = !!projectMember || membership?.role === 'ADMIN' || isSuperAdmin;
+    const canCreateTask =
+      !!projectMember || membership?.role === 'ADMIN' || isSuperAdmin;
 
     if (!canCreateTask) {
       throw new ForbiddenException(
@@ -731,6 +732,7 @@ export class TasksService {
         taskId,
         userId,
         content: dto.content,
+        mentions: dto.mentions || [],
       },
 
       include: {
@@ -760,6 +762,31 @@ export class TasksService {
 
       userId: task.assigneeId || undefined,
     });
+
+    for (const mentionedUserId of dto.mentions || []) {
+      // avoid notifying self
+      if (mentionedUserId === userId) continue;
+
+      await this.notificationsService.createNotification({
+        title: 'You were mentioned',
+
+        message: `You were mentioned in a comment on ${task.title}`,
+
+        type: 'TASK_COMMENT_MENTION',
+
+        triggeredById: userId,
+
+        workspaceId: task.project.workspaceId,
+
+        projectId: task.projectId,
+
+        taskId: task.id,
+
+        sprintId: task.sprintId || '',
+
+        userId: mentionedUserId,
+      });
+    }
 
     return {
       message: 'Comment added successfully',

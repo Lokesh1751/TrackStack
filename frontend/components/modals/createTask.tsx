@@ -93,7 +93,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
       {/* OPEN BUTTON */}
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+        className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
       >
         <Plus className="h-4 w-4" />
         Create Task
@@ -296,7 +296,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                 <button
                   disabled={!form.title || createTaskMutation.isPending}
                   onClick={() => createTaskMutation.mutate()}
-                  className="flex items-center gap-2 rounded-2xl bg-black px-6 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
                 >
                   {createTaskMutation.isPending && (
                     <Loader2 className="h-4 w-4 animate-spin" />

@@ -106,6 +106,7 @@ enum NotificationType {
 
   TASK_DUE_REMINDER
   TASK_OVERDUE
+  TASK_COMMENT_MENTION
 
 
   SYSTEM
@@ -294,6 +295,7 @@ model TaskComment {
   userId String @db.Uuid
 
   content String
+  mentions String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

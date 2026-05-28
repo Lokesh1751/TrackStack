@@ -107,7 +107,7 @@ export function SprintFilter({ filters, setFilters }: Props) {
         {/* RESET */}
         <button
           onClick={handleReset}
-          className="rounded-2xl border border-black bg-black px-4 py-3 text-sm font-medium text-white transition cursor-pointer"
+          className="rounded-2xl border border-black bg-[#7189D0] px-4 py-3 text-sm font-medium text-white transition cursor-pointer"
         >
           Reset
         </button>

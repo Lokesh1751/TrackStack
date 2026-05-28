@@ -148,7 +148,7 @@ export function TaskFilter({
         </div>
 
         {/* RIGHT */}
-        <div className="flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm">
+        <div className="flex items-center bg-[#7189D0] gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm">
           <div className="h-2 w-2 rounded-full bg-green-400" />
 
           <span>

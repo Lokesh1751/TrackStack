@@ -106,7 +106,7 @@ yarn dev
 Frontend runs on:
 
 ```bash
-http://localhost:3000
+http://localhost:3001
 ```
 
 ---
@@ -162,7 +162,7 @@ yarn start
 Backend runs on:
 
 ```bash
-http://localhost:3001
+http://localhost:3000
 ```
 
 ---

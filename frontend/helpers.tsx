@@ -98,6 +98,7 @@ export const slugify = (text: string) =>
         case "TASK_STATUS_UPDATED":
         case "TASK_MOVED_TO_SPRINT":
         case "TASK_MOVED_TO_BACKLOG":
+        case "TASK_COMMENT_MENTION":
           return <ClipboardList className="h-5 w-5" />;
   
         case "TASK_COMMENT_ADDED":
@@ -160,6 +161,7 @@ export const slugify = (text: string) =>
         case "TASK_MOVED_TO_BACKLOG":
         case "TASK_COMMENT_ADDED":
         case "TASK_COMMENT_DELETED":
+        case "TASK_COMMENT_MENTION":
   
         case "TASK_LINKED":
         case "TASK_LINK_REMOVED":

@@ -97,7 +97,7 @@ export function TaskCard({ task, index, onOpen }: TaskCardProps) {
           {/* FOOTER */}
           <div className="mt-6 flex flex-col gap-3 justify-between border-t border-neutral-100 pt-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7189D0] text-sm font-bold text-white">
                 {task.assignee?.email?.charAt(0)?.toUpperCase() || "U"}
               </div>
 

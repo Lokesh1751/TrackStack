@@ -219,7 +219,7 @@ export default function BacklogPage() {
 
                     {/* ASSIGNEE */}
                     <div className="mt-5 flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7189D0] text-sm font-bold text-white">
                         {task.assignee?.email?.charAt(0)?.toUpperCase() || "U"}
                       </div>
 
@@ -245,7 +245,7 @@ export default function BacklogPage() {
                     {/* MANAGE BUTTON */}
                     <button
                       onClick={() => setSelectedTask(task)}
-                      className="rounded-2xl bg-black cursor-pointer px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                      className="rounded-2xl bg-[#7189D0] cursor-pointer px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
                     >
                       Manage
                     </button>
@@ -320,7 +320,7 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#7189D0]/50 p-4">
       <div className="w-full max-w-lg rounded-3xl bg-white p-6">
         {/* HEADER */}
         <div className="mb-5 flex justify-between">
@@ -350,7 +350,7 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
           <button
             onClick={() => assignMutation.mutate(selectedUser)}
             disabled={!selectedUser}
-            className="mt-3 w-full rounded-2xl bg-black py-3 text-white"
+            className="mt-3 w-full rounded-2xl bg-[#7189D0] py-3 text-white"
           >
             Assign User
           </button>
@@ -379,7 +379,7 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
           <button
             onClick={() => sprintMutation.mutate(selectedSprint)}
             disabled={!selectedSprint}
-            className="mt-3 w-full rounded-2xl bg-black py-3 text-white"
+            className="mt-3 w-full rounded-2xl bg-[#7189D0] py-3 text-white"
           >
             Move to Sprint
           </button>
