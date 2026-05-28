@@ -950,6 +950,8 @@ export class SprintService {
         status: sprint.status,
         startDate: sprint.startDate,
         endDate: sprint.endDate,
+        projectId: sprint.projectId,
+        project: sprint.project,
       },
 
       stats: {

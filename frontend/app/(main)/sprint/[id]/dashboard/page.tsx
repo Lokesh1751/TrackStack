@@ -18,6 +18,7 @@ import {
 } from "recharts";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import {
   Activity,
@@ -29,6 +30,7 @@ import {
 
 import { getSprintDashboard } from "@/lib/api";
 import { SprintDashboardSkeleton } from "@/components/skeleton/sprint-dashboard";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ["#111827", "#7189D0", "#16a34a", "#dc2626"];
 
@@ -36,6 +38,7 @@ export default function SprintDashboardPage() {
   const { id } = useParams();
 
   const sprintId = id as string;
+  const router = useRouter();
 
   const { data, isLoading } = useQuery({
     queryKey: ["sprint-dashboard", sprintId],
@@ -73,17 +76,26 @@ export default function SprintDashboardPage() {
               Sprint Analytics Dashboard
             </p>
           </div>
-
-          <div
-            className={`rounded-2xl px-5 py-3 text-sm font-bold ${
-              stats?.health === "HEALTHY"
-                ? "bg-green-100 text-green-700"
-                : stats?.health === "AT_RISK"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-red-100 text-red-700"
-            }`}
-          >
-            {stats?.health}
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() =>
+                router.push(`/tasks/${sprint?.projectId}?sprintId=${sprintId}`)
+              }
+              className="rounded-2xl border px-5 py-5 text-sm cursor-pointer"
+            >
+              Open Board
+            </Button>
+            <div
+              className={`rounded-2xl px-5 py-3 text-sm font-bold ${
+                stats?.health === "HEALTHY"
+                  ? "bg-green-100 text-green-700"
+                  : stats?.health === "AT_RISK"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+              }`}
+            >
+              {stats?.health}
+            </div>
           </div>
         </div>
       </div>

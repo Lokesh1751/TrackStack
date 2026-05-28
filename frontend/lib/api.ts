@@ -867,6 +867,7 @@ export const getSprintDashboard = async (sprintId: string) => {
       status: string;
       startDate: string;
       endDate: string;
+      projectId: string;
     };
 
     stats: {
