@@ -604,6 +604,23 @@ export const deleteComment = async (commentId: string) => {
   });
 };
 
+// =====================================
+// EDIT COMMENT
+// =====================================
+
+export const editComment = async (
+  commentId: string,
+  data: {
+    content: string;
+    mentions?: string[];
+  },
+) => {
+  return request<{ message: string; comment: any }>(`/comments/${commentId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
 // =====================================================
 // SPRINT APIs
 // =====================================================

@@ -16,6 +16,7 @@ import {
   deleteTaskLink,
   createTaskLink,
   updateTaskLink,
+  editComment,
 } from "@/lib/api";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,6 +60,10 @@ export function TaskModal({
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [editingLinkType, setEditingLinkType] = useState("BLOCKS");
 
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+
+  const [editingComment, setEditingComment] = useState("");
+
   // =========================
   // GET PROJECT TASKS
   // =========================
@@ -96,6 +101,57 @@ export function TaskModal({
   });
 
   const comments = commentsData?.comments || [];
+
+  // =========================
+  // EDIT COMMENT
+  // =========================
+
+  const updateCommentMutation = useMutation({
+    mutationFn: ({
+      commentId,
+      content,
+    }: {
+      commentId: string;
+      content: string;
+    }) => {
+      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+
+      const mentions: string[] = [];
+
+      let match;
+
+      while ((match = mentionRegex.exec(content)) !== null) {
+        mentions.push(match[2]);
+      }
+
+      const cleanedContent = content.replace(
+        /@\[([^\]]+)\]\(([^)]+)\)/g,
+        "@$1",
+      );
+
+      return editComment(commentId, {
+        content: cleanedContent,
+        mentions: [...new Set(mentions)],
+      });
+    },
+
+    onSuccess: () => {
+      toast.success("Comment updated");
+
+      setEditingCommentId(null);
+      setEditingComment("");
+
+      queryClient.invalidateQueries({
+        queryKey: ["comments", task.id],
+      });
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
 
   // =========================
   // GET MEMBERS
@@ -992,34 +1048,113 @@ export function TaskModal({
                   {(comment.userId === currentUser?.id ||
                     isSuperAdmin ||
                     isAdmin) && (
-                    <button
-                      onClick={() => deleteCommentMutation.mutate(comment.id)}
-                      className="text-xs text-red-500 cursor-pointer"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          setEditingCommentId(comment.id);
+
+                          setEditingComment(comment.content);
+                        }}
+                        className="text-xs text-black cursor-pointer"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => deleteCommentMutation.mutate(comment.id)}
+                        className="text-xs text-red-500 cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   )}
                 </div>
-                <div className="text-sm text-neutral-700 whitespace-pre-wrap break-words">
-                  {comment.content
-                    .split(/(\@\[([^\]]+)\]\(([^)]+)\))/g)
-                    .map((part: string | undefined, index: number) => {
-                      const match = part?.match(/\@\[([^\]]+)\]\(([^)]+)\)/);
+                {editingCommentId === comment.id ? (
+                  <div className="mt-3">
+                    <div className="rounded-2xl border bg-white p-2">
+                      <MentionsInput
+                        value={editingComment}
+                        onChange={(e: any) => setEditingComment(e.target.value)}
+                        className="w-full outline-none"
+                        style={{
+                          control: {
+                            backgroundColor: "transparent",
+                            fontSize: 14,
+                          },
 
-                      if (match) {
-                        return (
-                          <span
-                            key={index}
-                            className="font-medium text-blue-500"
-                          >
-                            @{match[1]}
-                          </span>
-                        );
-                      } else {
-                        return <span key={index}>{part}</span>;
-                      }
-                    })}
-                </div>
+                          highlighter: {
+                            overflow: "hidden",
+                          },
+
+                          input: {
+                            margin: 0,
+                            minHeight: 60,
+                            outline: "none",
+                            border: "none",
+                          },
+                        }}
+                      >
+                        <Mention
+                          trigger="@"
+                          markup="@[__display__](__id__)"
+                          displayTransform={(id: any, display: any) =>
+                            `@${display}`
+                          }
+                          data={members.map((member: any) => ({
+                            id: member.userId,
+                            display: member.email,
+                          }))}
+                        />
+                      </MentionsInput>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() =>
+                          updateCommentMutation.mutate({
+                            commentId: comment.id,
+                            content: editingComment,
+                          })
+                        }
+                        disabled={updateCommentMutation.isPending}
+                        className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
+                      >
+                        {updateCommentMutation.isPending ? "Saving..." : "Save"}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setEditingCommentId(null);
+                          setEditingComment("");
+                        }}
+                        className="rounded-xl border px-4 py-2 text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-neutral-700 whitespace-pre-wrap break-words">
+                    {comment.content
+                      .split(/(\@\[([^\]]+)\]\(([^)]+)\))/g)
+                      .map((part: string | undefined, index: number) => {
+                        const match = part?.match(/\@\[([^\]]+)\]\(([^)]+)\)/);
+
+                        if (match) {
+                          return (
+                            <span
+                              key={index}
+                              className="font-medium text-blue-500"
+                            >
+                              @{match[1]}
+                            </span>
+                          );
+                        } else {
+                          return <span key={index}>{part}</span>;
+                        }
+                      })}
+                  </div>
+                )}
               </div>
             ))}
           </div>

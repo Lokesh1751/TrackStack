@@ -1225,4 +1225,94 @@ export class TasksService {
       })),
     };
   }
+
+  async editComment(commentId: string, dto: CreateCommentDto, userId: string) {
+    const comment = await this.db.taskComment.findUnique({
+      where: {
+        id: commentId,
+      },
+
+      include: {
+        task: {
+          include: {
+            project: true,
+          },
+        },
+      },
+    });
+
+    if (!comment) {
+      throw new BadRequestException('Comment not found');
+    }
+
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
+    const membership = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: comment.task.project.workspaceId,
+        },
+      },
+    });
+
+    if (!membership && !isSuperAdmin) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const canEdit = comment.userId === userId;
+
+    if (!canEdit && !isSuperAdmin) {
+      throw new ForbiddenException('You cannot edit this comment');
+    }
+
+    const updatedComment = await this.db.taskComment.update({
+      where: {
+        id: commentId,
+      },
+
+      data: {
+        content: dto.content,
+        mentions: dto.mentions || [],
+      },
+
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    for (const mentionedUserId of dto.mentions || []) {
+      if (mentionedUserId === userId) continue;
+
+      await this.notificationsService.createNotification({
+        title: 'You were mentioned',
+
+        message: `You were mentioned in an edited comment on ${comment.task.title}`,
+
+        type: 'TASK_COMMENT_MENTION',
+
+        triggeredById: userId,
+
+        workspaceId: comment.task.project.workspaceId,
+
+        projectId: comment.task.projectId,
+
+        taskId: comment.task.id,
+
+        sprintId: comment.task.sprintId || '',
+
+        userId: mentionedUserId,
+      });
+    }
+
+    return {
+      message: 'Comment updated successfully',
+      comment: updatedComment,
+    };
+  }
 }

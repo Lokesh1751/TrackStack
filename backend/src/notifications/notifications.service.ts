@@ -131,13 +131,14 @@ export class NotificationsService {
   // =====================================================
 
   async getUnreadCount(userId: string) {
-    return this.db.notification.count({
+    const count = await this.db.notification.count({
       where: {
         ...(await this.getNotificationWhereClause(userId)),
 
         isRead: false,
       },
     });
+    return count;
   }
 
   // =====================================================

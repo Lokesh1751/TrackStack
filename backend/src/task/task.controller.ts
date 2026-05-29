@@ -272,4 +272,19 @@ export class TasksController {
 
     return this.tasksService.assignTask(taskId, assigneeId, userId);
   }
+
+  @Patch('comments/:commentId')
+  editComment(
+    @Param('commentId') commentId: string,
+    @Body(ValidationPipe) dto: CreateCommentDto,
+    @Req() req: Request,
+  ) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return this.tasksService.editComment(commentId, dto, userId);
+  }
 }
