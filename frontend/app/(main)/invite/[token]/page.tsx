@@ -60,7 +60,7 @@ export default function InvitationPage() {
       toast.success(data.message || "Invitation accepted");
 
       setTimeout(() => {
-        router.push("/");
+        window.close();
       }, 1500);
     },
 
@@ -88,7 +88,7 @@ export default function InvitationPage() {
       toast.success(data.message || "Invitation declined");
 
       setTimeout(() => {
-        router.push("/");
+        window.close();
       }, 1500);
     },
 

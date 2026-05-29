@@ -64,6 +64,10 @@ export function TaskModal({
 
   const [editingComment, setEditingComment] = useState("");
 
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+
+  const [replyContent, setReplyContent] = useState("");
+
   // =========================
   // GET PROJECT TASKS
   // =========================
@@ -101,6 +105,7 @@ export function TaskModal({
   });
 
   const comments = commentsData?.comments || [];
+  
 
   // =========================
   // EDIT COMMENT
@@ -271,6 +276,53 @@ export function TaskModal({
     },
   });
 
+  const replyCommentMutation = useMutation({
+    mutationFn: ({
+      parentId,
+      content,
+    }: {
+      parentId: string;
+      content: string;
+    }) => {
+      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+
+      const mentions: string[] = [];
+
+      let match;
+
+      while ((match = mentionRegex.exec(content)) !== null) {
+        mentions.push(match[2]);
+      }
+
+      const cleanedContent = content.replace(
+        /@\[([^\]]+)\]\(([^)]+)\)/g,
+        "@$1",
+      );
+
+      return addTaskComment(task.id, {
+        content: cleanedContent,
+        mentions: [...new Set(mentions)],
+        parentId,
+      });
+    },
+
+    onSuccess: () => {
+      toast.success("Reply added");
+
+      setReplyingToId(null);
+      setReplyContent("");
+
+      queryClient.invalidateQueries({
+        queryKey: ["comments", task.id],
+      });
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
   // =========================
   // DELETE TASK
   // =========================
@@ -457,6 +509,341 @@ export function TaskModal({
 
   const isSuperAdmin = userDataa?.data?.isSuperAdmin;
   const isAdmin = userDataa?.data?.role === "ADMIN";
+
+  type CommentItemProps = {
+  comment: any;
+  level?: number;
+
+  members: any[];
+  currentUser: any;
+
+  replyingToId: string | null;
+  setReplyingToId: React.Dispatch<
+    React.SetStateAction<string | null>
+  >;
+
+  replyContent: string;
+  setReplyContent: React.Dispatch<
+    React.SetStateAction<string>
+  >;
+
+  editingCommentId: string | null;
+  setEditingCommentId: React.Dispatch<
+    React.SetStateAction<string | null>
+  >;
+
+  editingComment: string;
+  setEditingComment: React.Dispatch<
+    React.SetStateAction<string>
+  >;
+
+  replyCommentMutation: any;
+  updateCommentMutation: any;
+  deleteCommentMutation: any;
+
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+};
+
+function CommentItem({
+  comment,
+  level = 0,
+
+  members,
+  currentUser,
+
+  replyingToId,
+  setReplyingToId,
+
+  replyContent,
+  setReplyContent,
+
+  editingCommentId,
+  setEditingCommentId,
+
+  editingComment,
+  setEditingComment,
+
+  replyCommentMutation,
+  updateCommentMutation,
+  deleteCommentMutation,
+
+  isAdmin,
+  isSuperAdmin,
+}: CommentItemProps) {
+  const isReplying = replyingToId === comment.id;
+  const isEditing = editingCommentId === comment.id;
+
+  return (
+    <div className="relative">
+      {/* THREAD LINE */}
+      {level > 0 && (
+        <div className="absolute left-4 top-0 h-full bg-neutral-200" />
+      )}
+
+      <div
+        className="relative"
+        style={{
+          marginLeft: `${Math.min(level, 4) * 24}px`,
+        }}
+      >
+        {/* CONNECTOR */}
+        {level > 0 && (
+          <div className="absolute -left-2 top-8 h-px w-4 bg-neutral-200" />
+        )}
+
+        <div
+          className={`
+            rounded-2xl border border-neutral-200 bg-white shadow-sm
+            ${level === 0 ? "p-5" : "p-4"}
+          `}
+        >
+          {/* HEADER */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              {/* AVATAR */}
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#7189D0] text-xs font-bold text-white">
+                {comment.user.email?.charAt(0).toUpperCase()}
+              </div>
+
+              <div>
+                <div className="text-sm font-semibold text-neutral-900">
+                  {comment.user.email}
+                </div>
+
+                <div className="mt-0.5 text-xs text-neutral-400">
+                  {new Date(comment.createdAt).toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            {(comment.userId === currentUser?.id ||
+              isAdmin ||
+              isSuperAdmin) && (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setEditingCommentId(comment.id);
+                    setEditingComment(comment.content);
+                  }}
+                  className="text-xs text-neutral-500 hover:text-black"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() =>
+                    deleteCommentMutation.mutate(comment.id)
+                  }
+                  disabled={deleteCommentMutation.isPending}
+                  className="text-xs text-red-500"
+                >
+                  {deleteCommentMutation.isPending ? "Deleting..." : "Delete"} 
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* CONTENT */}
+          {!isEditing ? (
+            <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-neutral-700">
+              {comment.content}
+            </div>
+          ) : (
+            <div className="mt-4">
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+                <MentionsInput
+                  value={editingComment}
+                  onChange={(e: any) =>
+                    setEditingComment(e.target.value)
+                  }
+                  className="w-full"
+                  style={{
+                    control: {
+                      backgroundColor: "transparent",
+                      fontSize: 14,
+                    },
+
+                    input: {
+                      margin: 0,
+                      minHeight: 80,
+                      border: "none",
+                      outline: "none",
+                    },
+
+                    highlighter: {
+                      overflow: "hidden",
+                    },
+                  }}
+                >
+                  <Mention
+                    trigger="@"
+                    markup="@[__display__](__id__)"
+                    displayTransform={(id:any, display:any) =>
+                      `@${display}`
+                    }
+                    data={members.map((member: any) => ({
+                      id: member.userId,
+                      display: member.email,
+                    }))}
+                  />
+                </MentionsInput>
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() =>
+                    updateCommentMutation.mutate({
+                      commentId: comment.id,
+                      content: editingComment,
+                    })
+                  }
+                  className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
+                >
+                  Save
+                </button>
+
+                <button
+                  onClick={() => {
+                    setEditingCommentId(null);
+                    setEditingComment("");
+                  }}
+                  className="rounded-xl border px-4 py-2 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ACTIONS */}
+          {!isEditing && (
+            <div className="mt-4 flex items-center gap-4 border-t border-neutral-100 pt-4">
+              <button
+                onClick={() => {
+                  setReplyingToId(
+                    isReplying ? null : comment.id,
+                  );
+
+                  setReplyContent("");
+                }}
+                className="text-xs font-medium text-neutral-500 hover:text-black"
+              >
+                {isReplying ? "Cancel" : "Reply"}
+              </button>
+            </div>
+          )}
+
+          {/* REPLY BOX */}
+          {isReplying && (
+            <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+                <MentionsInput
+                  value={replyContent}
+                  onChange={(e: any) =>
+                    setReplyContent(e.target.value)
+                  }
+                  placeholder="Write a reply..."
+                  className="w-full"
+                  style={{
+                    control: {
+                      backgroundColor: "transparent",
+                      fontSize: 14,
+                    },
+
+                    input: {
+                      margin: 0,
+                      minHeight: 70,
+                      border: "none",
+                      outline: "none",
+                    },
+
+                    highlighter: {
+                      overflow: "hidden",
+                    },
+                  }}
+                >
+                  <Mention
+                    trigger="@"
+                    markup="@[__display__](__id__)"
+                    displayTransform={(id:any, display:any) =>
+                      `@${display}`
+                    }
+                    data={members.map((member: any) => ({
+                      id: member.userId,
+                      display: member.email,
+                    }))}
+                  />
+                </MentionsInput>
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() =>
+                    replyCommentMutation.mutate({
+                      parentId: comment.id,
+                      content: replyContent,
+                    })
+                  }
+                  disabled={!replyContent.trim() || replyCommentMutation.isPending}
+                  className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
+                >
+                  {replyCommentMutation.isPending ? "Replying..." : "Reply"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setReplyingToId(null);
+                    setReplyContent("");
+                  }}
+                  className="rounded-xl border px-4 py-2 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* CHILD REPLIES */}
+        {!!comment.replies?.length && (
+          <div className="mt-4 space-y-4">
+            {comment.replies.map((reply: any) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                level={level + 1}
+                members={members}
+                currentUser={currentUser}
+                replyingToId={replyingToId}
+                setReplyingToId={setReplyingToId}
+                replyContent={replyContent}
+                setReplyContent={setReplyContent}
+                editingCommentId={editingCommentId}
+                setEditingCommentId={
+                  setEditingCommentId
+                }
+                editingComment={editingComment}
+                setEditingComment={setEditingComment}
+                replyCommentMutation={
+                  replyCommentMutation
+                }
+                updateCommentMutation={
+                  updateCommentMutation
+                }
+                deleteCommentMutation={
+                  deleteCommentMutation
+                }
+                isAdmin={isAdmin}
+                isSuperAdmin={isSuperAdmin}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
@@ -1036,129 +1423,6 @@ export function TaskModal({
 
             <h3 className="text-lg font-semibold">Comments</h3>
           </div>
-
-          <div className="space-y-4">
-            {comments.map((comment: any) => (
-              <div key={comment.id} className="rounded-2xl bg-white p-4">
-                <div className="mb-1 flex items-center justify-between">
-                  <div className="text-sm font-semibold">
-                    {comment.user.email}
-                  </div>
-
-                  {(comment.userId === currentUser?.id ||
-                    isSuperAdmin ||
-                    isAdmin) && (
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => {
-                          setEditingCommentId(comment.id);
-
-                          setEditingComment(comment.content);
-                        }}
-                        className="text-xs text-black cursor-pointer"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => deleteCommentMutation.mutate(comment.id)}
-                        className="text-xs text-red-500 cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {editingCommentId === comment.id ? (
-                  <div className="mt-3">
-                    <div className="rounded-2xl border bg-white p-2">
-                      <MentionsInput
-                        value={editingComment}
-                        onChange={(e: any) => setEditingComment(e.target.value)}
-                        className="w-full outline-none"
-                        style={{
-                          control: {
-                            backgroundColor: "transparent",
-                            fontSize: 14,
-                          },
-
-                          highlighter: {
-                            overflow: "hidden",
-                          },
-
-                          input: {
-                            margin: 0,
-                            minHeight: 60,
-                            outline: "none",
-                            border: "none",
-                          },
-                        }}
-                      >
-                        <Mention
-                          trigger="@"
-                          markup="@[__display__](__id__)"
-                          displayTransform={(id: any, display: any) =>
-                            `@${display}`
-                          }
-                          data={members.map((member: any) => ({
-                            id: member.userId,
-                            display: member.email,
-                          }))}
-                        />
-                      </MentionsInput>
-                    </div>
-
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() =>
-                          updateCommentMutation.mutate({
-                            commentId: comment.id,
-                            content: editingComment,
-                          })
-                        }
-                        disabled={updateCommentMutation.isPending}
-                        className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
-                      >
-                        {updateCommentMutation.isPending ? "Saving..." : "Save"}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setEditingCommentId(null);
-                          setEditingComment("");
-                        }}
-                        className="rounded-xl border px-4 py-2 text-sm"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-sm text-neutral-700 whitespace-pre-wrap break-words">
-                    {comment.content
-                      .split(/(\@\[([^\]]+)\]\(([^)]+)\))/g)
-                      .map((part: string | undefined, index: number) => {
-                        const match = part?.match(/\@\[([^\]]+)\]\(([^)]+)\)/);
-
-                        if (match) {
-                          return (
-                            <span
-                              key={index}
-                              className="font-medium text-blue-500"
-                            >
-                              @{match[1]}
-                            </span>
-                          );
-                        } else {
-                          return <span key={index}>{part}</span>;
-                        }
-                      })}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
           <div className="mt-5 flex gap-3 items-start">
             <div className="flex-1 rounded-2xl border bg-white p-2">
               <MentionsInput
@@ -1221,6 +1485,39 @@ export function TaskModal({
               {addCommentMutation.isPending ? "Sending.." : "Send"}
             </button>
           </div>
+<div className="space-y-5 mt-3">
+  {comments
+    .filter((c: any) => !c.parentId)
+    .map((comment: any) => (
+      <CommentItem
+        key={comment.id}
+        comment={comment}
+        members={members}
+        currentUser={currentUser}
+        replyingToId={replyingToId}
+        setReplyingToId={setReplyingToId}
+        replyContent={replyContent}
+        setReplyContent={setReplyContent}
+        editingCommentId={editingCommentId}
+        setEditingCommentId={
+          setEditingCommentId
+        }
+        editingComment={editingComment}
+        setEditingComment={setEditingComment}
+        replyCommentMutation={
+          replyCommentMutation
+        }
+        updateCommentMutation={
+          updateCommentMutation
+        }
+        deleteCommentMutation={
+          deleteCommentMutation
+        }
+        isAdmin={isAdmin}
+        isSuperAdmin={isSuperAdmin}
+      />
+    ))}
+</div>
         </div>
       </div>
     </div>

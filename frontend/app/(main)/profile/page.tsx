@@ -35,7 +35,7 @@ export default function ProfilePage() {
 
   const [avatarUrl, setAvatarUrl] = useState("");
 
-  const [isEditing, setIsEditing] = useState(false);
+const [isEditing, setIsEditing] = useState(false);
 
   const [uploading, setUploading] = useState(false);
 

@@ -733,6 +733,7 @@ export class TasksService {
         userId,
         content: dto.content,
         mentions: dto.mentions || [],
+        parentId: dto.parentId || null,
       },
 
       include: {
@@ -834,21 +835,43 @@ export class TasksService {
       },
 
       include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
+        user: true,
       },
 
       orderBy: {
-        createdAt: 'desc',
+        createdAt: 'asc',
       },
     });
 
+    const commentMap = new Map();
+
+    const roots: any[] = [];
+
+    // create map with replies array
+    comments.forEach((comment) => {
+      commentMap.set(comment.id, {
+        ...comment,
+        replies: [],
+      });
+    });
+
+    // build nested tree
+    comments.forEach((comment) => {
+      const node = commentMap.get(comment?.id);
+
+      if (comment?.parentId) {
+        const parent = commentMap.get(comment?.parentId);
+
+        if (parent) {
+          parent.replies.push(node);
+        }
+      } else {
+        roots.push(node);
+      }
+    });
+
     return {
-      comments,
+      comments: roots,
     };
   }
 

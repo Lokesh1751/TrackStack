@@ -297,6 +297,11 @@ model TaskComment {
   content String
   mentions String[] @default([])
 
+  parentId   String? @db.Uuid
+
+  parent     TaskComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies    TaskComment[] @relation("CommentReplies")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -305,6 +310,7 @@ model TaskComment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@index([parentId])
 }
 
 model SprintSnapshot {

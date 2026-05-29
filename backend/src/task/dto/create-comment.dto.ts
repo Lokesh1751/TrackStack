@@ -1,4 +1,10 @@
-import { IsArray, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MinLength,
+} from 'class-validator';
 
 export class CreateCommentDto {
   @IsString()
@@ -9,4 +15,8 @@ export class CreateCommentDto {
   @IsString({ each: true })
   @IsOptional()
   mentions?: string[];
+
+  @IsUUID()
+  @IsOptional()
+  parentId?: string | null;
 }

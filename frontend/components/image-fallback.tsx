@@ -8,11 +8,19 @@ type Props = ImageProps & {
   fallback?: React.ReactNode;
 };
 
-export function ImageWithFallback({ src, alt, fallback, ...props }: Props) {
-  const [imgSrc, setImgSrc] = useState(src);
+export function ImageWithFallback({
+  src,
+  alt,
+  fallback,
+  ...props
+}: Props) {
+  const validSrc =
+    typeof src === "string" && src.trim() === "" ? null : src;
+
+  const [imgSrc, setImgSrc] = useState(validSrc);
   const [hasError, setHasError] = useState(false);
 
-  if (hasError) {
+  if (!imgSrc || hasError) {
     return (
       fallback || (
         <div className="flex h-full w-full items-center justify-center bg-neutral-100 text-neutral-400">

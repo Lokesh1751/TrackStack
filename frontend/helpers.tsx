@@ -178,3 +178,30 @@ export const slugify = (text: string) =>
           return "#";
       }
     };
+
+  export const buildCommentTree = (comments: any[]) => {
+  const map = new Map();
+
+  const roots: any[] = [];
+
+  comments.forEach((comment) => {
+    map.set(comment.id, {
+      ...comment,
+      replies: [],
+    });
+  });
+
+  comments.forEach((comment) => {
+    if (comment.parentId) {
+      const parent = map.get(comment.parentId);
+
+      if (parent) {
+        parent.replies.push(map.get(comment.id));
+      }
+    } else {
+      roots.push(map.get(comment.id));
+    }
+  });
+
+  return roots;
+};

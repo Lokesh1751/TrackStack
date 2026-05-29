@@ -575,6 +575,7 @@ export const addTaskComment = async (
   data: {
     content: string;
     mentions?: string[];
+    parentId?: string | null;
   },
 ) => {
   return request<{ message: string; comment: any }>(
