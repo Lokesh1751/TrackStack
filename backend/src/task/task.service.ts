@@ -764,6 +764,45 @@ export class TasksService {
       userId: task.assigneeId || undefined,
     });
 
+    // REPLY NOTIFICATION
+if (dto.parentId) {
+  const parentComment = await this.db.taskComment.findUnique({
+    where: {
+      id: dto.parentId,
+    },
+
+    select: {
+      userId: true,
+    },
+  });
+console.log('parentComment',parentComment)
+  // avoid notifying self
+  if (
+    parentComment?.userId &&
+    parentComment.userId !== userId
+  ) {
+    await this.notificationsService.createNotification({
+      title: 'New Reply on Your Comment',
+
+      message: `Someone replied to your comment on ${task.title}`,
+
+      type: 'TASK_COMMENT_REPLY',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+
+      sprintId: task.sprintId || '',
+
+      userId: parentComment.userId,
+    });
+  }
+}
+
     for (const mentionedUserId of dto.mentions || []) {
       // avoid notifying self
       if (mentionedUserId === userId) continue;
