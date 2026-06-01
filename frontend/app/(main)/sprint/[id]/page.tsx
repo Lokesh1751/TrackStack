@@ -33,6 +33,7 @@ import {
 import { SprintPageSkeleton } from "@/components/skeleton/sprint";
 import { CreateTaskModal } from "@/components/modals/createTask";
 import { SprintFilter } from "@/components/filters/SprintFilter";
+import { Button } from "@/components/ui/button";
 
 export default function SprintPage() {
   const { id } = useParams();
@@ -271,7 +272,7 @@ export default function SprintPage() {
 
             {/* ACTIONS */}
             <div className="flex flex-col gap-4 sm:flex-row xl:flex-col">
-              <button
+              <Button
                 onClick={() =>
                   router.push(`/tasks/${projectId}?sprint=${activeSprintid}`)
                 }
@@ -279,15 +280,15 @@ export default function SprintPage() {
               >
                 <FolderKanban className="h-4 w-4" />
                 Open Active Board
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => router.push(`/sprint/${projectId}/backlog`)}
                 className="flex items-center justify-center gap-2 rounded-2xl border border-[#dbe2f3] bg-white px-6 py-4 text-sm font-semibold text-[#111827] transition hover:bg-[#f8faff]"
               >
                 Backlog Tasks
                 <ArrowRight className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -387,7 +388,7 @@ export default function SprintPage() {
             </div>
           </div>
 
-          <button
+          <Button
             onClick={() => createSprintMutation.mutate()}
             disabled={createSprintMutation.isPending}
             className="mt-8 flex items-center gap-2 rounded-2xl bg-[#7189D0] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
@@ -403,7 +404,7 @@ export default function SprintPage() {
                 Create Sprint
               </>
             )}
-          </button>
+          </Button>
         </div>
 
         {/* ========================= */}
@@ -473,7 +474,7 @@ export default function SprintPage() {
                             </p>
                           </div>
 
-                          <button
+                          <Button
                             onClick={() =>
                               deleteSprintMutation.mutate(sprint.id)
                             }
@@ -481,7 +482,7 @@ export default function SprintPage() {
                             className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100 disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </div>
 
                         {/* INFO */}
@@ -556,7 +557,7 @@ export default function SprintPage() {
                         <div className="mt-8 border-t border-[#eef2fb] pt-6">
                           <div className="flex flex-wrap gap-3">
                             {isPlanned && (
-                              <button
+                              <Button
                                 onClick={() =>
                                   startSprintMutation.mutate(sprint.id)
                                 }
@@ -572,11 +573,11 @@ export default function SprintPage() {
                                 )}
 
                                 Start Sprint
-                              </button>
+                              </Button>
                             )}
 
                             {isActive && (
-                              <button
+                              <Button
                                 onClick={() =>
                                   completeSprintMutation.mutate(
                                     sprint.id,
@@ -594,10 +595,10 @@ export default function SprintPage() {
                                 )}
 
                                 Complete Sprint
-                              </button>
+                              </Button>
                             )}
 
-                            <button
+                            <Button
                               onClick={() =>
                                 router.push(
                                   `/tasks/${projectId}?sprint=${sprint.id}`,
@@ -606,10 +607,10 @@ export default function SprintPage() {
                               className="rounded-2xl border border-[#dbe2f3] bg-white px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#f8faff]"
                             >
                               Open Board
-                            </button>
+                            </Button>
 
                             {isActive && (
-                              <button
+                              <Button
                                 onClick={() =>
                                   router.push(
                                     `/sprint/${sprint.id}/dashboard`,
@@ -618,7 +619,7 @@ export default function SprintPage() {
                                 className="rounded-2xl border border-[#dbe2f3] bg-white px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#f8faff]"
                               >
                                 Analytics
-                              </button>
+                              </Button>
                             )}
 
                             <CreateTaskModal
@@ -647,7 +648,7 @@ export default function SprintPage() {
                     project team.
                   </p>
 
-                  <button
+                  <Button
                     onClick={() =>
                       document
                         .querySelector("input")
@@ -658,7 +659,7 @@ export default function SprintPage() {
                     className="mt-8 rounded-2xl bg-[#7189D0] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90"
                   >
                     Create First Sprint
-                  </button>
+                  </Button>
                 </div>
               )}
             </>

@@ -163,7 +163,7 @@ export default function ResetPasswordPage({searchParams}: {searchParams:any}) {
 
               {timeLeft === 0 && (
                 <div className="text-right">
-                  <button
+                  <Button
                     type="button"
                     className="text-xs text-black cursor-pointer"
                     onClick={() =>
@@ -171,7 +171,7 @@ export default function ResetPasswordPage({searchParams}: {searchParams:any}) {
                     }
                   >
                     {resendOtpMutation.isPending ? <Loader /> : "Resend Otp"}
-                  </button>
+                  </Button>
                 </div>
               )}
 

@@ -27,7 +27,8 @@ export class ProjectService {
   private async sendProjectInvitationEmail(
     email: string,
     projectName: string,
-    inviteLink: string,
+    acceptInviteLink: string,
+    declineInviteLink: string,
     invitedBy: string,
   ) {
     const resendApiKey = process.env.RESEND_API_KEY;
@@ -42,7 +43,12 @@ export class ProjectService {
       from: 'onboarding@resend.dev',
       to: 'lokeshangi@gmail.com',
       subject: `Invitation to join ${projectName}`,
-      html: inviteMemberTemplate(invitedBy, projectName, inviteLink),
+      html: inviteMemberTemplate(
+        invitedBy,
+        projectName,
+        acceptInviteLink,
+        declineInviteLink,
+      ),
     });
 
     if (error) {
@@ -599,7 +605,8 @@ export class ProjectService {
     // SEND EMAIL
     // =========================
 
-    const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}?projectName=${project.name}`;
+    const acceptInviteLink = `${process.env.FRONTEND_URL}/invite/${token}?projectName=${project.name}&&invitationType=accept`;
+    const declineInviteLink = `${process.env.FRONTEND_URL}/invite/${token}?projectName=${project.name}&&invitationType=decline`;
 
     const inviter = await this.db.user.findUnique({
       where: {
@@ -610,7 +617,8 @@ export class ProjectService {
     await this.sendProjectInvitationEmail(
       dto.email,
       project.name,
-      inviteLink,
+      acceptInviteLink,
+      declineInviteLink,
       inviter?.email || 'TrackStack Admin',
     );
     await this.notificationsService.createNotification({

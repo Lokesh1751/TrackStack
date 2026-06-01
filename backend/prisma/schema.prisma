@@ -424,6 +424,7 @@ model Notification {
   projectId   String? @db.Uuid
   sprintId    String?
   taskId      String? @db.Uuid
+  commentId   String? @db.Uuid
 
   redirectUrl String?
 

@@ -726,14 +726,31 @@ export class TasksService {
     if (!membership && !isSuperAdmin) {
       throw new UnauthorizedException('Access denied');
     }
+    let parentId: string | null = null;
 
+    if (dto.parentId) {
+      const parentComment = await this.db.taskComment.findUnique({
+        where: {
+          id: dto.parentId,
+        },
+        select: {
+          id: true,
+          parentId: true,
+        },
+      });
+
+      if (!parentComment) {
+        throw new BadRequestException('Parent comment not found');
+      }
+      parentId = parentComment.parentId || parentComment.id;
+    }
     const comment = await this.db.taskComment.create({
       data: {
         taskId,
         userId,
         content: dto.content,
         mentions: dto.mentions || [],
-        parentId: dto.parentId || null,
+        parentId,
       },
 
       include: {
@@ -760,47 +777,48 @@ export class TasksService {
 
       taskId: task.id,
       sprintId: task.sprintId || '',
+      commentId: comment.id,
 
       userId: task.assigneeId || undefined,
     });
 
-    // REPLY NOTIFICATION
+let repliedToUserId: string | undefined;
+
 if (dto.parentId) {
   const parentComment = await this.db.taskComment.findUnique({
     where: {
       id: dto.parentId,
     },
-
     select: {
+      id: true,
+      parentId: true,
       userId: true,
     },
   });
-console.log('parentComment',parentComment)
-  // avoid notifying self
-  if (
-    parentComment?.userId &&
-    parentComment.userId !== userId
-  ) {
-    await this.notificationsService.createNotification({
-      title: 'New Reply on Your Comment',
 
-      message: `Someone replied to your comment on ${task.title}`,
-
-      type: 'TASK_COMMENT_REPLY',
-
-      triggeredById: userId,
-
-      workspaceId: task.project.workspaceId,
-
-      projectId: task.projectId,
-
-      taskId: task.id,
-
-      sprintId: task.sprintId || '',
-
-      userId: parentComment.userId,
-    });
+  if (!parentComment) {
+    throw new BadRequestException('Parent comment not found');
   }
+
+  parentId = parentComment.parentId || parentComment.id;
+  repliedToUserId = parentComment.userId;
+}
+if (
+  repliedToUserId &&
+  repliedToUserId !== userId
+) {
+  await this.notificationsService.createNotification({
+    title: 'New Reply on Your Comment',
+    message: `Someone replied to your comment on ${task.title}`,
+    type: 'TASK_COMMENT_REPLY',
+    triggeredById: userId,
+    workspaceId: task.project.workspaceId,
+    projectId: task.projectId,
+    taskId: task.id,
+    sprintId: task.sprintId || '',
+    commentId: comment.id,
+    userId: repliedToUserId,
+  });
 }
 
     for (const mentionedUserId of dto.mentions || []) {
@@ -824,6 +842,8 @@ console.log('parentComment',parentComment)
 
         sprintId: task.sprintId || '',
 
+        commentId: comment.id,
+
         userId: mentionedUserId,
       });
     }
@@ -831,7 +851,7 @@ console.log('parentComment',parentComment)
     return {
       message: 'Comment added successfully',
       comment,
-    };
+    };  
   }
 
   // =====================================
@@ -978,6 +998,7 @@ console.log('parentComment',parentComment)
 
       taskId: comment.task.id,
       sprintId: comment.task.sprintId || '',
+      commentId: comment.id,
 
       userId: comment.task.assigneeId || undefined,
     });
@@ -1367,6 +1388,7 @@ console.log('parentComment',parentComment)
         taskId: comment.task.id,
 
         sprintId: comment.task.sprintId || '',
+        commentId: comment.id,
 
         userId: mentionedUserId,
       });

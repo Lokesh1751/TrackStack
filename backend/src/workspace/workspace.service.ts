@@ -30,7 +30,8 @@ export class WorkspaceService {
   private async sendWorkspaceInvitationEmail(
     email: string,
     workspaceName: string,
-    inviteLink: string,
+    acceptInviteLink: string,
+    declineInviteLink: string,
     invitedBy: string,
   ) {
     const resendApiKey = process.env.RESEND_API_KEY;
@@ -45,7 +46,12 @@ export class WorkspaceService {
       from: 'onboarding@resend.dev',
       to: 'lokeshangi@gmail.com',
       subject: `Invitation to join ${workspaceName}`,
-      html: workspaceInviteTemplate(invitedBy, workspaceName, inviteLink),
+      html: workspaceInviteTemplate(
+        invitedBy,
+        workspaceName,
+        acceptInviteLink,
+        declineInviteLink,
+      ),
     });
 
     if (error) {
@@ -621,12 +627,14 @@ export class WorkspaceService {
     // SEND EMAIL
     // =========================
 
-    const inviteLink = `${process.env.FRONTEND_URL}/invite/${token}?workspaceName=${workspace.name}`;
+    const acceptInviteLink = `${process.env.FRONTEND_URL}/invite/${token}?workspaceName=${workspace.name}&&invitationType=accept`;
+    const declineInviteLink = `${process.env.FRONTEND_URL}/invite/${token}?workspaceName=${workspace.name}&&invitationType=decline`;
 
     await this.sendWorkspaceInvitationEmail(
       dto.email,
       workspace.name,
-      inviteLink,
+      acceptInviteLink,
+      declineInviteLink,
       currentUser.email || 'TrackStack Admin',
     );
     await this.notificationsService.createNotification({

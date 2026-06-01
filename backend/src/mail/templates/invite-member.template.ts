@@ -1,7 +1,8 @@
 export const inviteMemberTemplate = (
   invitedBy: string,
   projectName: string,
-  inviteLink: string,
+  acceptInviteLink: string,
+  declineInviteLink: string,
 ) => {
   return `
   <!DOCTYPE html>
@@ -297,7 +298,7 @@ export const inviteMemberTemplate = (
                   <!-- BUTTON -->
                   <div style="margin-top: 42px; text-align: center;">
                     <a
-                      href="${inviteLink}"
+                      href="${acceptInviteLink}"
                       style="
                         display: inline-block;
                         background: linear-gradient(135deg, #7189D0 0%, #4f46e5 100%);
@@ -311,6 +312,22 @@ export const inviteMemberTemplate = (
                       "
                     >
                       Accept Invitation
+                    </a>
+                    <a
+                      href="${declineInviteLink}"
+                      style="
+                        display: inline-block;
+                        background: red;
+                        color: white;
+                        text-decoration: none;
+                        padding: 18px 36px;
+                        border-radius: 16px;
+                        font-size: 15px;
+                        font-weight: 700;
+                        box-shadow: 0 10px 24px rgba(79,70,229,0.25);
+                      "
+                    >
+                      Decline Invitation
                     </a>
                   </div>
 

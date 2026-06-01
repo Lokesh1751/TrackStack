@@ -52,13 +52,13 @@ export class NotificationsService {
 
     userId?: string;
 
-    triggeredById?: string;
+    triggeredById?: string | null;
 
     workspaceId?: string;
     projectId?: string;
     sprintId?: string;
     taskId?: string;
-
+    commentId?: string;
     redirectUrl?: string;
   }) {
     return this.db.notification.create({

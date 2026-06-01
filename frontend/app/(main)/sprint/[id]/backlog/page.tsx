@@ -21,6 +21,7 @@ import { TaskFilter } from "@/components/filters/TaskFilter";
 import { useToast } from "@/hooks/useToast";
 
 import { useDebounce } from "@/hooks/useDebounce";
+import { Button } from "@/components/ui/button";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 
@@ -243,12 +244,12 @@ export default function BacklogPage() {
                     </div>
 
                     {/* MANAGE BUTTON */}
-                    <button
+                    <Button
                       onClick={() => setSelectedTask(task)}
                       className="rounded-2xl bg-[#7189D0] cursor-pointer px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
                     >
                       Manage
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -320,13 +321,13 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#7189D0]/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-lg rounded-3xl bg-white p-6">
         {/* HEADER */}
         <div className="mb-5 flex justify-between">
           <h2 className="text-xl font-bold">{task.title}</h2>
 
-          <button onClick={onClose}>✕</button>
+          <Button onClick={onClose}>✕</Button>
         </div>
 
         {/* ASSIGN USER */}
@@ -347,13 +348,13 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
             ))}
           </select>
 
-          <button
+          <Button
             onClick={() => assignMutation.mutate(selectedUser)}
             disabled={!selectedUser}
             className="mt-3 w-full rounded-2xl bg-[#7189D0] py-3 text-white"
           >
             Assign User
-          </button>
+          </Button>
         </div>
 
         {/* MOVE TO SPRINT */}
@@ -376,13 +377,13 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
             ))}
           </select>
 
-          <button
+          <Button
             onClick={() => sprintMutation.mutate(selectedSprint)}
             disabled={!selectedSprint}
             className="mt-3 w-full rounded-2xl bg-[#7189D0] py-3 text-white"
           >
             Move to Sprint
-          </button>
+          </Button>
         </div>
       </div>
     </div>

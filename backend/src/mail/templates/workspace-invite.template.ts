@@ -3,7 +3,8 @@
 export const workspaceInviteTemplate = (
   invitedBy: string,
   workspaceName: string,
-  inviteLink: string,
+  acceptInviteLink: string,
+  declineInviteLink: string,
 ) => {
   return `
     <!DOCTYPE html>
@@ -160,7 +161,7 @@ export const workspaceInviteTemplate = (
                     <!-- BUTTON -->
                     <div style="margin-top: 40px; text-align: center;">
                       <a
-                        href="${inviteLink}"
+                        href="${acceptInviteLink}"
                         style="
                           display: inline-block;
                           background: #7189D0;
@@ -172,7 +173,23 @@ export const workspaceInviteTemplate = (
                           font-weight: 600;
                         "
                       >
-                        Accept Workspace Invite
+                        Accept Invitation
+                      </a>
+
+                      <a
+                        href="${declineInviteLink}"
+                        style="
+                          display: inline-block;
+                          background: red;
+                          color: white;
+                          text-decoration: none;
+                          padding: 16px 32px;
+                          border-radius: 12px;
+                          font-size: 15px;
+                          font-weight: 600;
+                        "
+                      >
+                        Decline Invitation
                       </a>
                     </div>
   

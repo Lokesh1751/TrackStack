@@ -1,4 +1,3 @@
-
 "use client";
 export const dynamic = "force-dynamic";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -23,6 +22,7 @@ import {
   FolderKanban,
   Building2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function InvitationPage() {
   const { token } = useParams();
@@ -38,6 +38,8 @@ export default function InvitationPage() {
   const projectName = searchParams.get("projectName");
 
   const workspaceName = searchParams.get("workspaceName");
+
+  const invitationType = searchParams.get("invitationType");
 
   const isProjectInvite = !!projectName;
 
@@ -99,8 +101,7 @@ export default function InvitationPage() {
     },
   });
 
-  const isLoading =
-    acceptMutation.isPending || declineMutation.isPending;
+  const isLoading = acceptMutation.isPending || declineMutation.isPending;
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f7fb] px-4 py-10">
@@ -150,10 +151,8 @@ export default function InvitationPage() {
 
                 <p className="mt-4 max-w-xl text-sm leading-7 text-white/85">
                   You have been invited to join{" "}
-                  <span className="font-bold text-white">
-                    {entityName}
-                  </span>{" "}
-                  on TrackStack and collaborate with your team.
+                  <span className="font-bold text-white">{entityName}</span> on
+                  TrackStack and collaborate with your team.
                 </p>
               </div>
             </div>
@@ -197,9 +196,7 @@ export default function InvitationPage() {
                 <FolderKanban className="h-6 w-6 text-[#7189D0]" />
               </div>
 
-              <h3 className="text-lg font-bold text-[#111827]">
-                Tasks
-              </h3>
+              <h3 className="text-lg font-bold text-[#111827]">Tasks</h3>
 
               <p className="mt-2 text-xs leading-6 text-[#6b7280]">
                 Manage project tasks and agile workflows
@@ -211,9 +208,7 @@ export default function InvitationPage() {
                 <Sparkles className="h-6 w-6 text-[#7189D0]" />
               </div>
 
-              <h3 className="text-lg font-bold text-[#111827]">
-                Sprints
-              </h3>
+              <h3 className="text-lg font-bold text-[#111827]">Sprints</h3>
 
               <p className="mt-2 text-xs leading-6 text-[#6b7280]">
                 Plan, manage and track sprint delivery
@@ -225,9 +220,7 @@ export default function InvitationPage() {
                 <Users className="h-6 w-6 text-[#7189D0]" />
               </div>
 
-              <h3 className="text-lg font-bold text-[#111827]">
-                Teamwork
-              </h3>
+              <h3 className="text-lg font-bold text-[#111827]">Teamwork</h3>
 
               <p className="mt-2 text-xs leading-6 text-[#6b7280]">
                 Collaborate with your organization members
@@ -262,29 +255,33 @@ export default function InvitationPage() {
           {/* ================================================= */}
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <button
-              disabled={isLoading}
-              onClick={() => acceptMutation.mutate()}
-              className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-[#7189D0]/20 transition hover:bg-[#6279bc] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <CheckCircle2 className="h-5 w-5" />
+            {invitationType === "accept" && (
+              <Button
+                disabled={isLoading}
+                onClick={() => acceptMutation.mutate()}
+                className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-[#7189D0]/20 transition hover:bg-[#6279bc] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-5 w-5" />
 
-              {acceptMutation.isPending
-                ? "Accepting..."
-                : "Accept Invitation"}
-            </button>
+                {acceptMutation.isPending
+                  ? "Accepting..."
+                  : "Accept Invitation"}
+              </Button>
+            )}
 
-            <button
-              disabled={isLoading}
-              onClick={() => declineMutation.mutate()}
-              className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <XCircle className="h-5 w-5" />
+            {invitationType === "decline" && (
+              <Button
+                disabled={isLoading}
+                onClick={() => declineMutation.mutate()}
+                className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <XCircle className="h-5 w-5" />
 
-              {declineMutation.isPending
-                ? "Declining..."
-                : "Decline Invitation"}
-            </button>
+                {declineMutation.isPending
+                  ? "Declining..."
+                  : "Decline Invitation"}
+              </Button>
+            )}
           </div>
 
           {/* ================================================= */}

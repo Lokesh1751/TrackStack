@@ -27,6 +27,9 @@ import { getTaskTypeIcon } from "@/helpers";
 
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export function TaskModal({
   task,
@@ -68,6 +71,11 @@ export function TaskModal({
 
   const [replyContent, setReplyContent] = useState("");
 
+  const searchParams = useSearchParams();
+
+  const commentIdFromUrl = searchParams.get("commentId");
+  const commentRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   // =========================
   // GET PROJECT TASKS
   // =========================
@@ -106,6 +114,24 @@ export function TaskModal({
 
   const comments = commentsData?.comments || [];
 
+  useEffect(() => {
+    if (!commentIdFromUrl || !comments.length) return;
+
+    const el = commentRefs.current[commentIdFromUrl];
+
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      el.classList.add("bg-[#7189D0]/10");
+
+      setTimeout(() => {
+        el.classList.remove("bg-[#7189D0]/10");
+      }, 2000);
+    }
+  }, [commentIdFromUrl, comments]);
   // =========================
   // EDIT COMMENT
   // =========================
@@ -566,7 +592,16 @@ export function TaskModal({
     const isEditing = editingCommentId === comment.id;
 
     return (
-      <div className="relative">
+   <div
+  ref={(el) => {
+    commentRefs.current[comment.id] = el;
+  }}
+  className={`
+    rounded-2xl border border-neutral-200 bg-white shadow-sm
+    transition-all duration-500
+    ${level === 0 ? "p-5" : "p-4"}
+  `}
+>
         {/* THREAD LINE */}
         {level > 0 && (
           <div className="absolute left-4 top-0 h-full bg-neutral-200" />
@@ -612,23 +647,25 @@ export function TaskModal({
                 isAdmin ||
                 isSuperAdmin) && (
                 <div className="flex items-center gap-3">
-                  <button
+                  <Button
                     onClick={() => {
                       setEditingCommentId(comment.id);
                       setEditingComment(comment.content);
                     }}
-                    className="text-xs text-neutral-500 hover:text-black"
+                    variant="outline"
+                    className="text-xs "
                   >
                     Edit
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     onClick={() => deleteCommentMutation.mutate(comment.id)}
                     disabled={deleteCommentMutation.isPending}
-                    className="text-xs text-red-500"
+                    variant="destructive"
+                    className="text-xs "
                   >
                     {deleteCommentMutation.isPending ? "Deleting..." : "Delete"}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -678,7 +715,7 @@ export function TaskModal({
                 </div>
 
                 <div className="mt-3 flex gap-2">
-                  <button
+                  <Button
                     onClick={() =>
                       updateCommentMutation.mutate({
                         commentId: comment.id,
@@ -688,9 +725,9 @@ export function TaskModal({
                     className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
                   >
                     Save
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     onClick={() => {
                       setEditingCommentId(null);
                       setEditingComment("");
@@ -698,24 +735,25 @@ export function TaskModal({
                     className="rounded-xl border px-4 py-2 text-sm"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {/* ACTIONS */}
             {!isEditing && (
-              <div className="mt-4 flex items-center gap-4 border-t border-neutral-100 pt-4">
-                <button
+              <div className="mt-4 flex items-center gap-4 border-t border-neutral-100 pt-4 cursor-pointer">
+                <Button
                   onClick={() => {
                     setReplyingToId(isReplying ? null : comment.id);
 
                     setReplyContent("");
                   }}
-                  className="text-xs font-medium text-neutral-500 hover:text-black"
+                  variant="outline"
+                  className="text-xs "
                 >
                   {isReplying ? "Cancel" : "Reply"}
-                </button>
+                </Button>
               </div>
             )}
 
@@ -761,7 +799,7 @@ export function TaskModal({
                 </div>
 
                 <div className="mt-3 flex gap-2">
-                  <button
+                  <Button
                     onClick={() =>
                       replyCommentMutation.mutate({
                         parentId: comment.id,
@@ -774,9 +812,9 @@ export function TaskModal({
                     className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
                   >
                     {replyCommentMutation.isPending ? "Replying..." : "Reply"}
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     onClick={() => {
                       setReplyingToId(null);
                       setReplyContent("");
@@ -784,37 +822,98 @@ export function TaskModal({
                     className="rounded-xl border px-4 py-2 text-sm"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* CHILD REPLIES */}
+          {/* REPLIES */}
           {!!comment.replies?.length && (
             <div className="mt-4 space-y-4">
-              {comment.replies.map((reply: any) => (
-                <CommentItem
-                  key={reply.id}
-                  comment={reply}
-                  level={level + 1}
-                  members={members}
-                  currentUser={currentUser}
-                  replyingToId={replyingToId}
-                  setReplyingToId={setReplyingToId}
-                  replyContent={replyContent}
-                  setReplyContent={setReplyContent}
-                  editingCommentId={editingCommentId}
-                  setEditingCommentId={setEditingCommentId}
-                  editingComment={editingComment}
-                  setEditingComment={setEditingComment}
-                  replyCommentMutation={replyCommentMutation}
-                  updateCommentMutation={updateCommentMutation}
-                  deleteCommentMutation={deleteCommentMutation}
-                  isAdmin={isAdmin}
-                  isSuperAdmin={isSuperAdmin}
-                />
-              ))}
+              {comment.replies.map((reply: any) => {
+                const isReplying = replyingToId === reply.id;
+                const isEditing = editingCommentId === reply.id;
+
+                return (
+                  <div
+                    key={reply.id}
+                    ref={(el) => {
+                      commentRefs.current[reply.id] = el;
+                    }}
+                    className="relative"
+                    style={{
+                      marginLeft: "24px",
+                    }}
+                  >
+                    {/* THREAD LINE */}
+                    <div className="absolute left-4 top-0 h-full bg-neutral-200" />
+
+                    {/* CONNECTOR */}
+                    <div className="absolute -left-2 top-8 h-px w-4 bg-neutral-200" />
+
+                    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+                      {/* HEADER */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#7189D0] text-xs font-bold text-white">
+                            {reply.user.email?.charAt(0).toUpperCase()}
+                          </div>
+
+                          <div>
+                            <div className="text-sm font-semibold text-neutral-900">
+                              {reply.user.email}
+                            </div>
+
+                            <div className="mt-0.5 text-xs text-neutral-400">
+                              {new Date(reply.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+
+                        {(reply.userId === currentUser?.id ||
+                          isAdmin ||
+                          isSuperAdmin) && (
+                          <div className="flex items-center gap-3">
+                            <Button
+                              onClick={() => {
+                                setEditingCommentId(reply.id);
+                                setEditingComment(reply.content);
+                              }}
+                              variant="outline"
+                              className="text-xs "
+                            >
+                              Edit
+                            </Button>
+
+                            <Button
+                              onClick={() =>
+                                deleteCommentMutation.mutate(reply.id)
+                              }
+                              disabled={deleteCommentMutation.isPending}
+                              className="text-xs "
+                              variant="destructive"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CONTENT */}
+                      {!isEditing ? (
+                        <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-neutral-700">
+                          {reply.content}
+                        </div>
+                      ) : (
+                        <div className="mt-4">
+                          {/* Same edit UI you already have */}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -841,9 +940,9 @@ export function TaskModal({
             <h2 className="text-3xl font-bold">{task.title}</h2>
           </div>
 
-          <button onClick={onClose} className="rounded-xl border px-4 py-2">
+          <Button onClick={onClose} className="rounded-xl border px-4 py-2">
             Close
-          </button>
+          </Button>
         </div>
 
         {/* SPRINT */}
@@ -860,7 +959,7 @@ export function TaskModal({
             </div>
 
             {task.sprint && (
-              <button
+              <Button
                 onClick={() => removeFromSprintMutation.mutate()}
                 disabled={removeFromSprintMutation.isPending}
                 className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
@@ -868,7 +967,7 @@ export function TaskModal({
                 {!removeFromSprintMutation.isPending
                   ? "Move to Backlog"
                   : "Moving...."}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -936,7 +1035,7 @@ export function TaskModal({
 
             <input
               type="date"
-              value={new Date(editForm.dueDate).toISOString().split("T")[0]}
+              value={editForm.dueDate ? new Date(editForm.dueDate).toISOString().split("T")[0] : ""}
               onChange={(e) =>
                 setEditForm({
                   ...editForm,
@@ -956,7 +1055,7 @@ export function TaskModal({
               <input
                 type="number"
                 value={
-                  new Date(editForm.estimateMinutes).toISOString().split("T")[0]
+                 editForm.estimateMinutes ? new Date(editForm.estimateMinutes).toISOString().split("T")[0] : ""
                 }
                 onChange={(e) =>
                   setEditForm({
@@ -988,20 +1087,20 @@ export function TaskModal({
           />
 
           <div className="mt-5 flex gap-3">
-            <button
+            <Button
               onClick={() => updateTaskMutation.mutate()}
               disabled={updateTaskMutation.isPending}
               className="rounded-2xl bg-[#7189D0] px-5 py-3 text-white"
             >
               {updateTaskMutation.isPending ? "Updating..." : "Update Task"}
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={() => deleteMutation.mutate()}
               className="rounded-2xl  px-5 py-3 text-white"
             >
               Delete
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1063,7 +1162,7 @@ export function TaskModal({
             </select>
 
             {/* CREATE BUTTON */}
-            <button
+            <Button
               onClick={() => {
                 if (!selectedLinkedTaskId) {
                   toast.error("Please select task");
@@ -1080,7 +1179,7 @@ export function TaskModal({
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
               Add Link
-            </button>
+            </Button>
           </div>
 
           {/* LINKS LIST */}
@@ -1149,7 +1248,7 @@ export function TaskModal({
                               <option value="CAUSED_BY">CAUSED_BY</option>
                             </select>
 
-                            <button
+                            <Button
                               onClick={() =>
                                 updateTaskLinkMutation.mutate({
                                   linkId: link.id,
@@ -1167,36 +1266,38 @@ export function TaskModal({
                               {updateTaskLinkMutation.isPending
                                 ? "Updating..."
                                 : "Update"}
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                               onClick={() => setEditingLinkId(null)}
                               className="rounded-xl border px-4 py-2 text-sm"
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </>
                         ) : (
                           <>
-                            <button
+                            <Button
                               onClick={() => {
                                 setEditingLinkId(link.id);
 
                                 setEditingLinkType(link.type);
                               }}
+                              variant="outline"
                               className="rounded-xl border border-neutral-200 px-4 py-2 text-sm"
                             >
                               Edit
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                               onClick={() =>
                                 deleteTaskLinkMutation.mutate(link.id)
                               }
-                              className="rounded-xl bg-red-500 px-4 py-2 text-sm text-white"
+                              variant="destructive"
+                              className="rounded-xl px-4 py-2 text-sm"
                             >
                               Remove
-                            </button>
+                            </Button>
                           </>
                         )}
                       </div>
@@ -1254,7 +1355,7 @@ export function TaskModal({
                               <option value="CAUSED_BY">CAUSED_BY</option>
                             </select>
 
-                            <button
+                            <Button
                               onClick={() =>
                                 updateTaskLinkMutation.mutate({
                                   linkId: link.id,
@@ -1272,36 +1373,38 @@ export function TaskModal({
                               {updateTaskLinkMutation.isPending
                                 ? "Updating..."
                                 : "Update"}
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                               onClick={() => setEditingLinkId(null)}
                               className="rounded-xl border px-4 py-2 text-sm"
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </>
                         ) : (
                           <>
-                            <button
+                            <Button
                               onClick={() => {
                                 setEditingLinkId(link.id);
 
                                 setEditingLinkType(link.type);
                               }}
-                              className="rounded-xl border border-neutral-200 px-4 py-2 text-sm"
+                              variant="outline"
+                              className="rounded-xl px-4 py-2 text-sm"
                             >
                               Edit
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                               onClick={() =>
                                 deleteTaskLinkMutation.mutate(link.id)
                               }
-                              className="rounded-xl bg-red-500 px-4 py-2 text-sm text-white"
+                              variant="destructive"
+                              className="rounded-xl px-4 py-2 text-sm"
                             >
                               Remove
-                            </button>
+                            </Button>
                           </>
                         )}
                       </div>
@@ -1342,7 +1445,7 @@ export function TaskModal({
               </p>
             </div>
 
-            <button
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 assignTaskMutation.mutate(currentUser?.id);
@@ -1351,7 +1454,7 @@ export function TaskModal({
               disabled={assignTaskMutation.isPending}
             >
               {assignTaskMutation.isPending ? "Assigning..." : "Assign to me"}
-            </button>
+            </Button>
             {task.assignee && (
               <div className="rounded-2xl bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700">
                 Current: {task.assignee.email}
@@ -1376,7 +1479,7 @@ export function TaskModal({
               </select>
             </div>
 
-            <button
+            <Button
               onClick={() => {
                 if (!selectedUserId) {
                   toast.error("Please select a member");
@@ -1389,7 +1492,7 @@ export function TaskModal({
               disabled={assignTaskMutation.isPending}
             >
               {assignTaskMutation.isPending ? "Assigning..." : "Assign Task"}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1454,13 +1557,13 @@ export function TaskModal({
               </MentionsInput>
             </div>
 
-            <button
+            <Button
               onClick={() => addCommentMutation.mutate()}
               disabled={addCommentMutation.isPending}
               className="rounded-2xl bg-[#7189D0] px-5 py-3 text-white"
             >
               {addCommentMutation.isPending ? "Sending.." : "Send"}
-            </button>
+            </Button>
           </div>
           <div className="space-y-5 mt-3">
             {comments

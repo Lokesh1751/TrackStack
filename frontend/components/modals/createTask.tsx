@@ -11,6 +11,7 @@ import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { createTask, getProjectMembers } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   projectId: string;
@@ -91,13 +92,13 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
   return (
     <>
       {/* OPEN BUTTON */}
-      <button
+      <Button
         onClick={() => setOpen(true)}
         className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
       >
         <Plus className="h-4 w-4" />
         Create Task
-      </button>
+      </Button>
 
       {/* MODAL */}
       {typeof window !== "undefined" &&
@@ -118,12 +119,12 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                     </p>
                   </div>
 
-                  <button
+                  <Button
                     onClick={() => setOpen(false)}
                     className="rounded-xl border px-4 py-2 text-sm"
                   >
                     Close
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -286,14 +287,14 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
 
               {/* FOOTER */}
               <div className="flex items-center justify-end gap-3 border-t px-6 py-5">
-                <button
+                <Button
                   onClick={() => setOpen(false)}
                   className="rounded-2xl border px-5 py-3 text-sm font-medium"
                 >
                   Cancel
-                </button>
+                </Button>
 
-                <button
+                <Button
                   disabled={!form.title || createTaskMutation.isPending}
                   onClick={() => createTaskMutation.mutate()}
                   className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
@@ -303,7 +304,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                   )}
 
                   {createTaskMutation.isPending ? "Creating..." : "Create Task"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>,

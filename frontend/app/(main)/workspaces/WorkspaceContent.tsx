@@ -503,7 +503,7 @@ export default function DashboardPage({useQueryFilters}: {useQueryFilters: any})
         {/* INVITE MODAL */}
 
         {inviteOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#7189D0]/50 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
             <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
               <div className="border-b px-6 py-4">
                 <h2 className="text-xl font-semibold">Invite Member</h2>

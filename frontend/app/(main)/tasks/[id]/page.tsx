@@ -1,4 +1,3 @@
-
 "use client";
 export const dynamic = "force-dynamic";
 import { useMemo, useState, useEffect } from "react";
@@ -22,6 +21,7 @@ import { TaskFilter } from "@/components/filters/TaskFilter";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { TaskCard } from "@/components/task-card";
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
 
 const statuses = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
 
@@ -32,7 +32,7 @@ export default function Page() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const sprintId = searchParams.get("sprint");
+  const sprintId = searchParams.get("sprintId");
   const taskId = searchParams.get("taskId");
   const queryClient = useQueryClient();
 
@@ -274,6 +274,7 @@ export default function Page() {
   const currentSprint = tasks?.find(
     (t: any) => t?.sprint?.id === sprintId,
   )?.sprint;
+  
 
   if (sprintId === "undefined") {
     return (
@@ -297,19 +298,19 @@ export default function Page() {
             </p>
 
             {/* BUTTON */}
-            <button
+            <Button
               onClick={() => router.push(`/sprint/${projectId}`)}
               className="mt-6 w-full rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
             >
               Make Any Sprint Active
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={() => router.push(`/sprint/${projectId}/backlog`)}
               className="mt-6 w-full rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
             >
               Backlogs
-            </button>
+            </Button>
           </div>
         </div>
       </Suspense>
@@ -336,18 +337,24 @@ export default function Page() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
+              <Button
+                onClick={() => router.push(`/sprint/${projectId}`)}
+                className="rounded-xl border px-4 py-2 text-sm cursor-pointer"
+              >
+                Sprints
+              </Button>
+              <Button
                 onClick={() => router.push(`/sprint/${sprintId}/dashboard`)}
                 className="rounded-xl border px-4 py-2 text-sm cursor-pointer"
               >
                 Analysis
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => router.push(`/sprint/${projectId}/backlog`)}
                 className="rounded-xl border px-4 py-2 text-sm"
               >
                 Backlogs
-              </button>
+              </Button>
 
               <CreateTaskModal
                 projectId={projectId}
@@ -430,6 +437,7 @@ export default function Page() {
                   const params = new URLSearchParams(searchParams.toString());
 
                   params.delete("taskId");
+                  params.delete("commentId");
 
                   router.push(`?${params.toString()}`);
                 }}

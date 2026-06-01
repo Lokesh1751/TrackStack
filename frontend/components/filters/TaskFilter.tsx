@@ -1,6 +1,7 @@
 // components/task-filter.tsx
 
 "use client";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   search: string;
@@ -133,7 +134,7 @@ export function TaskFilter({
           </select>
 
           {/* RESET */}
-          <button
+          <Button
             onClick={() => {
               setSearch("");
               setStatusFilter("");
@@ -144,7 +145,7 @@ export function TaskFilter({
             className="rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-medium transition hover:bg-neutral-100"
           >
             Reset
-          </button>
+          </Button>
         </div>
 
         {/* RIGHT */}

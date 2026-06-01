@@ -406,9 +406,16 @@ export default function Projects() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => router.push(`/sprint/${project.id}`)}
+                            onClick={() =>{
+                              if(project?.activeSprint?.id){
+                                router.push(`/tasks/${project.id}?sprintId=${project?.activeSprint?.id}`)
+                              }else{
+                                router.push(`/sprint/${project.id}`)
+                              }
+                              
+                            }}
                           >
-                            Sprints
+                            Sprint
                           </Button>
                         </td>
                       </tr>

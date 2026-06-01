@@ -160,11 +160,6 @@ export const slugify = (text: string) =>
         case "TASK_STATUS_UPDATED":
         case "TASK_MOVED_TO_SPRINT":
         case "TASK_MOVED_TO_BACKLOG":
-        case "TASK_COMMENT_ADDED":
-        case "TASK_COMMENT_DELETED":
-        case "TASK_COMMENT_MENTION":
-        case "TASK_COMMENT_REPLY":
-  
         case "TASK_LINKED":
         case "TASK_LINK_REMOVED":
         case "TASK_LINK_UPDATED":
@@ -174,6 +169,12 @@ export const slugify = (text: string) =>
 
         case "SPRINT_HEALTH":
           return `/sprint/${notification?.sprintId}/dashboard`
+
+        case "TASK_COMMENT_ADDED":
+        case "TASK_COMMENT_DELETED":
+        case "TASK_COMMENT_MENTION":
+        case "TASK_COMMENT_REPLY":
+          return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}&commentId=${notification?.commentId}`;
           
   
         default:
