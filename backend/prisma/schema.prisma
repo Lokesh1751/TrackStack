@@ -181,6 +181,7 @@ model Project {
   tasks          Task[]
   sprints        Sprint[]
   projectInvites ProjectInvite[]
+  comments       TaskComment[] @relation("TaskCommentProject")
 
   @@index([workspaceId])
 }
@@ -310,6 +311,13 @@ model TaskComment {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  projectId  String  @db.Uuid
+  sprintId   String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade, name: "TaskCommentProject")
+
+  sprint Sprint? @relation(fields: [sprintId], references: [id], onDelete: Cascade, name: "TaskCommentSprint")
+
   @@index([taskId])
   @@index([parentId])
 }
@@ -351,6 +359,7 @@ model Sprint {
 
   tasks     Task[]
   snapshots SprintSnapshot[]
+  comments  TaskComment[] @relation("TaskCommentSprint")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

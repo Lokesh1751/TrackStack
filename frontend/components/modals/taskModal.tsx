@@ -122,13 +122,17 @@ export function TaskModal({
     if (el) {
       el.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: "end",
       });
 
-      el.classList.add("bg-[#7189D0]/10");
+      el.classList.add("bg-[#DCE2F6]");
+      el.classList.add("ring-1");
+      el.classList.add("ring-[#DCE2F6]");
 
       setTimeout(() => {
-        el.classList.remove("bg-[#7189D0]/10");
+        el.classList.remove("bg-[#DCE2F6]");
+        el.classList.remove("ring-1");
+        el.classList.remove("ring-[#DCE2F6]");
       }, 2000);
     }
   }, [commentIdFromUrl, comments]);

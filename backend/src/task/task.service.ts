@@ -748,6 +748,8 @@ export class TasksService {
       data: {
         taskId,
         userId,
+        projectId: task.projectId,
+        sprintId: task.sprintId,
         content: dto.content,
         mentions: dto.mentions || [],
         parentId,

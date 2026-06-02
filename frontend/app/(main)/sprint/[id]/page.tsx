@@ -447,7 +447,8 @@ export default function SprintPage() {
                     return (
                       <div
                         key={sprint.id}
-                        className="group overflow-hidden rounded-[34px] border border-[#dbe2f3] bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                        className="group overflow-hidden cursor-pointer rounded-[34px] border border-[#dbe2f3] bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                        onClick={() => sprint?.status === 'ACTIVE' && router.push(`/tasks/${projectId}?sprint=${sprint.id}`)}
                       >
                         {/* HEADER */}
                         <div className="mb-7 flex items-start justify-between gap-4">

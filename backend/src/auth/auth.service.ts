@@ -372,31 +372,57 @@ export class AuthService {
                 name: true,
               },
             },
-          },
-        },
 
-        // COMMENTS
-        taskComments: {
-          take: 5,
-
-          orderBy: {
-            createdAt: 'desc',
-          },
-
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-
-            task: {
+            sprint: {
+              where: {
+                status: 'ACTIVE',
+              },
               select: {
                 id: true,
-                title: true,
-                taskKey: true,
+                name: true,
+                status: true,
               },
             },
           },
         },
+
+        // COMMENTS
+      taskComments: {
+  take: 5,
+
+  orderBy: {
+    createdAt: 'desc',
+  },
+
+  select: {
+    id: true,
+    content: true,
+    createdAt: true,
+
+    task: {
+      select: {
+        id: true,
+        title: true,
+        taskKey: true,
+
+        sprint: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
+
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    },
+  },
+},
 
         // CREATED SPRINTS
         sprints: {
@@ -454,7 +480,7 @@ export class AuthService {
     // STATS
     // =========================
 
-    const totalProjects = user.projectMembers.length;
+    const totalProjects = user.projectMembers.length; 
 
     const totalTasks = user.assignedTasks.length;
 

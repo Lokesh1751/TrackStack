@@ -61,7 +61,7 @@ export default function ResetPasswordPage({searchParams}: {searchParams:any}) {
   });
 
   useEffect(() => {
-    const email = searchParams.get("email");
+    const email = searchParams?.get?.("email");
     if (email) otpForm.setValue("email", email);
 
     const stored = sessionStorage.getItem("otp_expiry");
@@ -101,6 +101,7 @@ export default function ResetPasswordPage({searchParams}: {searchParams:any}) {
       toast.success("Password reset successful");
       router.push("/");
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const resendOtpMutation = useMutation({
@@ -163,7 +164,7 @@ export default function ResetPasswordPage({searchParams}: {searchParams:any}) {
 
               {timeLeft === 0 && (
                 <div className="text-right">
-                  <Button
+                  <button
                     type="button"
                     className="text-xs text-black cursor-pointer"
                     onClick={() =>
@@ -171,7 +172,7 @@ export default function ResetPasswordPage({searchParams}: {searchParams:any}) {
                     }
                   >
                     {resendOtpMutation.isPending ? <Loader /> : "Resend Otp"}
-                  </Button>
+                  </button>
                 </div>
               )}
 

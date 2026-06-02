@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -48,7 +48,8 @@ export default function BacklogPage() {
 
   const debouncedSearch = useDebounce(search, 500);
 
-
+  const searchParams = useSearchParams();
+  const taskIdFromUrl = searchParams.get("taskId");
 
   // =========================
   // CURRENT USER
@@ -89,6 +90,33 @@ export default function BacklogPage() {
   });
 
   const tasks = data?.tasks || [];
+
+  useEffect(() => {
+    if (taskIdFromUrl && !isLoading && tasks.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`task-${taskIdFromUrl}`);
+        if (el) {
+          el.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+
+          el.classList.add("bg-[#DCE2F6]");
+          el.classList.add("ring-1");
+          el.classList.add("ring-[#7189D0]");
+
+          const removeTimer = setTimeout(() => {
+            el.classList.remove("bg-[#DCE2F6]");
+            el.classList.remove("ring-2");
+            el.classList.remove("ring-[#7189D0]");
+          }, 2000);
+
+          return () => clearTimeout(removeTimer);
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [taskIdFromUrl, isLoading, tasks]);
 
   // =========================
   // MEMBERS
@@ -168,7 +196,7 @@ export default function BacklogPage() {
               {tasks.map((task: any) => (
                 <div
                   key={task.id}
-                  className="group flex items-start justify-between rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-black hover:shadow-md"
+                  className="group flex cursor-pointer items-start justify-between rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
                 >
                   {/* LEFT */}
                   <div className="flex-1">
@@ -284,6 +312,7 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
   const [selectedUser, setSelectedUser] = useState("");
 
   const [selectedSprint, setSelectedSprint] = useState("");
+  console.log('selectedUser',)
 
   const toast = useToast();
 
@@ -327,7 +356,7 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
         <div className="mb-5 flex justify-between">
           <h2 className="text-xl font-bold">{task.title}</h2>
 
-          <Button onClick={onClose}>✕</Button>
+          <button onClick={onClose}>✕</button>
         </div>
 
         {/* ASSIGN USER */}

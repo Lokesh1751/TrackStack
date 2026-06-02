@@ -152,7 +152,6 @@ export const slugify = (text: string) =>
           return `/sprint/${notification?.projectId}?sprintId=${notification?.sprintId}`;
   
         case "TASK_ADDED_TO_SPRINT":
-        case "TASK_REMOVED_FROM_SPRINT":
         case "TASK_CREATED":
         case "TASK_UPDATED":
         case "TASK_DELETED":
@@ -169,6 +168,9 @@ export const slugify = (text: string) =>
 
         case "SPRINT_HEALTH":
           return `/sprint/${notification?.sprintId}/dashboard`
+
+        case "TASK_REMOVED_FROM_SPRINT":
+          return `/sprint/${notification?.projectId}/backlog?taskId=${notification?.taskId}`
 
         case "TASK_COMMENT_ADDED":
         case "TASK_COMMENT_DELETED":

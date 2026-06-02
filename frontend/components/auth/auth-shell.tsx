@@ -227,7 +227,8 @@ export function AuthShell() {
                 <Button
                   type="button"
                   onClick={() => setView("auth")}
-                  className="text-sm cursor-pointer text-black"
+                  variant="outline"
+                  className="text-sm cursor-pointer"
                 >
                   Back to login
                 </Button>
@@ -273,7 +274,7 @@ export function AuthShell() {
                           placeholder="Enter your password"
                           {...loginForm.register("password")}
                         />
-                        <Button
+                        <button
                           type="button"
                           onClick={() => setShowLoginPassword((prev) => !prev)}
                           className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500"
@@ -288,7 +289,7 @@ export function AuthShell() {
                           ) : (
                             <Eye className="h-4 w-4" />
                           )}
-                        </Button>
+                        </button>
                       </div>
                       {loginForm.formState.errors.password && (
                         <p className="mt-1 text-xs text-red-600">
@@ -298,13 +299,13 @@ export function AuthShell() {
                     </div>
 
                     <div className="text-sm text-right">
-                      <Button
+                      <button
                         type="button"
                         onClick={() => setView("forgot")}
                         className="text-black cursor-pointer"
                       >
                         Forgot password?
-                      </Button>
+                      </button>
                     </div>
 
                     <Button
@@ -347,7 +348,7 @@ export function AuthShell() {
                           placeholder="Password"
                           {...signupForm.register("password")}
                         />
-                        <Button
+                        <button
                           type="button"
                           onClick={() => setShowSignupPassword((prev) => !prev)}
                           className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500"
@@ -362,7 +363,7 @@ export function AuthShell() {
                           ) : (
                             <Eye className="h-4 w-4" />
                           )}
-                        </Button>
+                        </button>
                       </div>
                       {signupForm.formState.errors.password && (
                         <p className="mt-1 text-xs text-red-600">
@@ -380,7 +381,7 @@ export function AuthShell() {
                           placeholder="Confirm Password"
                           {...signupForm.register("confirmPassword")}
                         />
-                        <Button
+                        <button
                           type="button"
                           onClick={() =>
                             setShowSignupConfirmPassword((prev) => !prev)
@@ -397,7 +398,7 @@ export function AuthShell() {
                           ) : (
                             <Eye className="h-4 w-4" />
                           )}
-                        </Button>
+                        </button>
                       </div>
                       {signupForm.formState.errors.confirmPassword && (
                         <p className="mt-1 text-xs text-red-600">

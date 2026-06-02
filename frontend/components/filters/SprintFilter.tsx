@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useDebounce } from "@/hooks/useDebounce";
+import { Button } from "../ui/button";
 
 type Props = {
   filters: {
