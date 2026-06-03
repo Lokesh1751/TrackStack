@@ -9,7 +9,7 @@ const PROTECTED_ROUTES = [
   "/sprints",
 ];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const sessionId = request.cookies.get("sid")?.value;
