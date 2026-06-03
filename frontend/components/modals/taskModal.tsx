@@ -5,6 +5,7 @@ import {
   getProjectTasks,
   deleteTask,
   assignTask,
+  unassignTask,
   addTaskComment,
   getTaskComments,
   updateTask,
@@ -242,6 +243,46 @@ export function TaskModal({
 
     onSuccess: () => {
       toast.success("Task assigned");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      refetch();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+   const assignToMeMutation = useMutation({
+    mutationFn: (assigneeId: string) => assignTask(task.id, assigneeId),
+
+    onSuccess: () => {
+      toast.success("Task assigned");
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", projectId],
+      });
+
+      refetch();
+    },
+
+    onError: (error: Error) => {
+      toast.error("Error", {
+        description: error.message,
+      });
+    },
+  });
+
+   const unassignTaskMutation = useMutation({
+    mutationFn: (assigneeId: string | null) => unassignTask(task.id, assigneeId as string),
+
+    onSuccess: () => {
+      toast.success("Task unassigned");
 
       queryClient.invalidateQueries({
         queryKey: ["tasks", projectId],
@@ -1452,12 +1493,23 @@ export function TaskModal({
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                assignTaskMutation.mutate(currentUser?.id);
+                assignToMeMutation.mutate(currentUser?.id);
               }}
               className="flex items-center gap-2 cursor-pointer rounded-2xl bg-[#7189D0] px-3 py-3 text-sm font-medium text-white transition hover:opacity-90"
-              disabled={assignTaskMutation.isPending}
+              disabled={assignToMeMutation.isPending}
             >
-              {assignTaskMutation.isPending ? "Assigning..." : "Assign to me"}
+              {assignToMeMutation.isPending ? "Assigning..." : "Assign to me"}
+            </Button>
+
+             <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                unassignTaskMutation.mutate(currentUser?.id); 
+              }}
+              className="flex items-center gap-2 cursor-pointer rounded-2xl bg-[#7189D0] px-3 py-3 text-sm font-medium text-white transition hover:opacity-90"
+              disabled={unassignTaskMutation.isPending}
+            >
+              {unassignTaskMutation.isPending ? "Unassigning..." : "Unassign"}
             </Button>
             {task.assignee && (
               <div className="rounded-2xl bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700">

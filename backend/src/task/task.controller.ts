@@ -261,7 +261,7 @@ export class TasksController {
   @Patch('tasks/:taskId/assign')
   assignTask(
     @Param('taskId') taskId: string,
-    @Body('assigneeId') assigneeId: string,
+    @Body('assigneeId') assigneeId: string | null,
     @Req() req: Request,
   ) {
     const userId = req.session.userId;
@@ -286,5 +286,17 @@ export class TasksController {
     }
 
     return this.tasksService.editComment(commentId, dto, userId);
+  }
+
+  @Patch('tasks/:taskId/unassign')
+  @UseGuards(SessionAuthGuard)
+  unassignTask(@Param('taskId') taskId: string, @Req() req: Request) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return this.tasksService.unassignTask(taskId,userId);
   }
 }

@@ -1013,7 +1013,7 @@ if (
   // ASSIGN TASK
   // =====================================
 
-  async assignTask(taskId: string, assigneeId: string, userId: string) {
+  async assignTask(taskId: string, assigneeId: string | null, userId: string) {
     const task = await this.db.task.findUnique({
       where: {
         id: taskId,
@@ -1047,7 +1047,7 @@ if (
       where: {
         projectId_userId: {
           projectId: task.projectId,
-          userId: assigneeId,
+          userId: assigneeId || '',
         },
       },
     });
@@ -1091,13 +1091,90 @@ if (
       taskId: task.id,
       sprintId: task.sprintId || '',
 
-      userId: assigneeId,
+      userId: assigneeId || '',
     });
     return {
       message: 'Task assigned successfully',
       task: updatedTask,
     };
   }
+
+  // =====================================
+  // UNASSIGN TASK
+  // =====================================
+
+  async unassignTask(taskId: string, userId: string) {
+    const task = await this.db.task.findUnique({
+      where: {
+        id: taskId,
+      },
+
+      include: {
+        project: true,
+      },
+    });
+
+    if (!task) {
+      throw new BadRequestException('Task not found');
+    }
+
+    const isSuperAdmin = await this.isSuperAdmin(userId);
+
+    const membership = await this.db.membership.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: task.project.workspaceId,
+        },
+      },
+    });
+
+    if (!membership && !isSuperAdmin) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const updatedTask = await this.db.task.update({
+      where: {
+        id: taskId,
+      },
+
+      data: {
+        assigneeId: null,
+      },
+
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+
+        sprint: true,
+      },
+    });
+    await this.notificationsService.createNotification({
+      title: 'Task Unassigned',
+
+      message: `${updatedTask.title} unassigned`,
+
+      type: 'TASK_UNASSIGNED',
+
+      triggeredById: userId,
+
+      workspaceId: task.project.workspaceId,
+
+      projectId: task.projectId,
+
+      taskId: task.id,
+      sprintId: task.sprintId || '',
+    });
+    return {
+      message: 'Task unassigned successfully',
+      task: updatedTask,
+    };
+  }
+
 
   // =====================================
   // MOVE TASK TO SPRINT

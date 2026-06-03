@@ -559,10 +559,21 @@ export const updateTaskStatus = async (
 // ASSIGN TASK
 // =====================================
 
-export const assignTask = async (taskId: string, assigneeId: string) => {
+export const assignTask = async (taskId: string, assigneeId: string | null) => {
   return request<{ message: string; task: any }>(`/tasks/${taskId}/assign`, {
     method: "PATCH",
     body: JSON.stringify({ assigneeId }),
+  });
+};
+
+// =====================================
+// UNASSIGN TASK
+// =====================================
+
+export const unassignTask = async (taskId: string, userId: string) => {
+  return request<{ message: string; task: any }>(`/tasks/${taskId}/unassign`, {
+    method: "PATCH",
+    body: JSON.stringify({ userId }),
   });
 };
 
