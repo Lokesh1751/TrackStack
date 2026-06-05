@@ -8,6 +8,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const EXPIRY_TIME = 1000 * 60 * 60 * 24;
   app.enableCors({
     origin: ['http://localhost:3001', 'https://track-stack-ua81.vercel.app'],
     credentials: true,
@@ -29,7 +30,7 @@ async function bootstrap() {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24 * 7,
+        maxAge: EXPIRY_TIME,
       },
     }),
   );

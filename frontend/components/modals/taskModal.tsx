@@ -32,6 +32,7 @@ import { useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CommentItem } from "@/components/comment-item";
+import { CommentsSkeleton } from "../skeleton/comments";
 
 export function TaskModal({
   task,
@@ -109,7 +110,7 @@ export function TaskModal({
   // GET COMMENTS
   // =========================
 
-  const { data: commentsData } = useQuery({
+  const { data: commentsData, isLoading: commentsLoading } = useQuery({
     queryKey: ["comments", task.id],
     queryFn: () => getTaskComments(task.id),
   });
@@ -1245,32 +1246,36 @@ export function TaskModal({
               {addCommentMutation.isPending ? "Sending.." : "Send"}
             </Button>
           </div>
-          <div className="space-y-5 mt-3 mb-3">
-            {comments
-              .filter((c: any) => !c.parentId)
-              .map((comment: any) => (
-                <CommentItem
-                  key={comment.id}
-                  comments={comments}
-                  comment={comment}
-                  members={members}
-                  currentUser={currentUser}
-                  replyingToId={replyingToId}
-                  setReplyingToId={setReplyingToId}
-                  replyContent={replyContent}
-                  setReplyContent={setReplyContent}
-                  editingCommentId={editingCommentId}
-                  setEditingCommentId={setEditingCommentId}
-                  editingComment={editingComment}
-                  setEditingComment={setEditingComment}
-                  replyCommentMutation={replyCommentMutation}
-                  updateCommentMutation={updateCommentMutation}
-                  deleteCommentMutation={deleteCommentMutation}
-                  isAdmin={isAdmin}
-                  isSuperAdmin={isSuperAdmin}
-                />
-              ))}
-          </div>
+          {commentsLoading ? (
+            <CommentsSkeleton />
+          ) : (
+            <div className="space-y-5 mt-3 mb-3">
+              {comments
+                .filter((c: any) => !c.parentId)
+                .map((comment: any) => (
+                  <CommentItem
+                    key={comment.id}
+                    comments={comments}
+                    comment={comment}
+                    members={members}
+                    currentUser={currentUser}
+                    replyingToId={replyingToId}
+                    setReplyingToId={setReplyingToId}
+                    replyContent={replyContent}
+                    setReplyContent={setReplyContent}
+                    editingCommentId={editingCommentId}
+                    setEditingCommentId={setEditingCommentId}
+                    editingComment={editingComment}
+                    setEditingComment={setEditingComment}
+                    replyCommentMutation={replyCommentMutation}
+                    updateCommentMutation={updateCommentMutation}
+                    deleteCommentMutation={deleteCommentMutation}
+                    isAdmin={isAdmin}
+                    isSuperAdmin={isSuperAdmin}
+                  />
+                ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
