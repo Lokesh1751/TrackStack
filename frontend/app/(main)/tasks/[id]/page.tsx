@@ -7,6 +7,7 @@ import {
   updateTaskStatus,
   getProjectMembers,
   getCurrentUser,
+  completeSprint,
 } from "@/lib/api";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -76,9 +77,6 @@ export default function Page() {
   // GET TASKS
   // =========================
 
-  // =========================
-  // GET TASKS
-  // =========================
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: [
@@ -109,6 +107,24 @@ export default function Page() {
   });
 
   const tasks = data?.tasks || [];
+  
+   const completeSprintMutation = useMutation({
+      mutationFn: (sprintId: string) => completeSprint(sprintId),
+  
+      onSuccess: () => {
+        toast.success("Sprint completed");
+  
+        queryClient.invalidateQueries({
+          queryKey: ["sprints", projectId],
+        });
+        router.push(`/sprint/${projectId}`)
+      },
+  
+      onError: (error: Error) => {
+        toast.error(error.message);
+      },
+    });
+  
 
   useEffect(() => {
     if (!taskId || !tasks.length) return;
@@ -337,6 +353,13 @@ export default function Page() {
             </div>
 
             <div className="flex items-center gap-3">
+              <Button
+                onClick={() => { if (sprintId) completeSprintMutation.mutate(sprintId) }}
+                className="rounded-xl border px-4 py-2 text-sm cursor-pointer"
+                disabled={completeSprintMutation.isPending}
+              >
+                {completeSprintMutation.isPending ? "Completing..." : "Complete Sprint"}
+              </Button>
               <Button
                 onClick={() => router.push(`/sprint/${projectId}`)}
                 className="rounded-xl border px-4 py-2 text-sm cursor-pointer"

@@ -560,6 +560,9 @@ export class SprintService {
     if (!sprint) {
       throw new BadRequestException('Sprint not found');
     }
+    if(sprint?.status === 'COMPLETED'){
+      throw new BadRequestException('Sprint already completed');
+    }
 
     const superAdmin = await this.isSuperAdmin(userId);
 

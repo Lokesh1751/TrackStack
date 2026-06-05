@@ -244,9 +244,7 @@ export default function SprintPage() {
                   </div>
 
                   <h2 className="mt-4 text-4xl font-black text-[#111827]">
-                    {
-                      sprints.filter((s: any) => s.status === "ACTIVE").length
-                    }
+                    {sprints.filter((s: any) => s.status === "ACTIVE").length}
                   </h2>
                 </div>
 
@@ -261,9 +259,8 @@ export default function SprintPage() {
 
                   <h2 className="mt-4 text-4xl font-black text-[#111827]">
                     {
-                      sprints.filter(
-                        (s: any) => s.status === "COMPLETED",
-                      ).length
+                      sprints.filter((s: any) => s.status === "COMPLETED")
+                        .length
                     }
                   </h2>
                 </div>
@@ -274,7 +271,7 @@ export default function SprintPage() {
             <div className="flex flex-col gap-4 sm:flex-row xl:flex-col">
               <Button
                 onClick={() =>
-                  router.push(`/tasks/${projectId}?sprint=${activeSprintid}`)
+                  router.push(`/tasks/${projectId}?sprintId=${activeSprintid}`)
                 }
                 className="flex items-center justify-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-4 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
               >
@@ -439,8 +436,7 @@ export default function SprintPage() {
                   {sprints.map((sprint: any) => {
                     const isActive = sprint.status === "ACTIVE";
 
-                    const isCompleted =
-                      sprint.status === "COMPLETED";
+                    const isCompleted = sprint.status === "COMPLETED";
 
                     const isPlanned = sprint.status === "PLANNED";
 
@@ -448,7 +444,12 @@ export default function SprintPage() {
                       <div
                         key={sprint.id}
                         className="group overflow-hidden cursor-pointer rounded-[34px] border border-[#dbe2f3] bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                        onClick={() => sprint?.status === 'ACTIVE' && router.push(`/tasks/${projectId}?sprint=${sprint.id}`)}
+                        onClick={() =>
+                          sprint?.status === "ACTIVE" &&
+                          router.push(
+                            `/tasks/${projectId}?sprintId=${sprint.id}`,
+                          )
+                        }
                       >
                         {/* HEADER */}
                         <div className="mb-7 flex items-start justify-between gap-4">
@@ -470,8 +471,7 @@ export default function SprintPage() {
                             </h2>
 
                             <p className="mt-4 line-clamp-3 text-sm leading-7 text-slate-500">
-                              {sprint.goal ||
-                                "No sprint goal defined yet"}
+                              {sprint.goal || "No sprint goal defined yet"}
                             </p>
                           </div>
 
@@ -518,13 +518,14 @@ export default function SprintPage() {
                               <div className="text-xs text-slate-400">
                                 Ends on{" "}
                                 {sprint.endDate
-                                  ? new Date(
-                                      sprint.endDate,
-                                    ).toLocaleDateString("en-IN", {
-                                      day: "numeric",
-                                      month: "short",
-                                      year: "numeric",
-                                    })
+                                  ? new Date(sprint.endDate).toLocaleDateString(
+                                      "en-IN",
+                                      {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                      },
+                                    )
                                   : "--"}
                               </div>
                             </div>
@@ -562,9 +563,7 @@ export default function SprintPage() {
                                 onClick={() =>
                                   startSprintMutation.mutate(sprint.id)
                                 }
-                                disabled={
-                                  startSprintMutation.isPending
-                                }
+                                disabled={startSprintMutation.isPending}
                                 className="flex items-center gap-2 rounded-2xl bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                               >
                                 {startSprintMutation.isPending ? (
@@ -572,7 +571,6 @@ export default function SprintPage() {
                                 ) : (
                                   <Play className="h-4 w-4" />
                                 )}
-
                                 Start Sprint
                               </Button>
                             )}
@@ -580,13 +578,9 @@ export default function SprintPage() {
                             {isActive && (
                               <Button
                                 onClick={() =>
-                                  completeSprintMutation.mutate(
-                                    sprint.id,
-                                  )
+                                  completeSprintMutation.mutate(sprint.id)
                                 }
-                                disabled={
-                                  completeSprintMutation.isPending
-                                }
+                                disabled={completeSprintMutation.isPending}
                                 className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                               >
                                 {completeSprintMutation.isPending ? (
@@ -594,28 +588,27 @@ export default function SprintPage() {
                                 ) : (
                                   <CheckCircle2 className="h-4 w-4" />
                                 )}
-
                                 Complete Sprint
                               </Button>
                             )}
 
-                            <Button
-                              onClick={() =>
-                                router.push(
-                                  `/tasks/${projectId}?sprint=${sprint.id}`,
-                                )
-                              }
-                              className="rounded-2xl border border-[#dbe2f3] bg-white px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#f8faff]"
-                            >
-                              Open Board
-                            </Button>
+                            {!isCompleted && (
+                              <Button
+                                onClick={() =>
+                                  router.push(
+                                    `/tasks/${projectId}?sprintId=${sprint.id}`,
+                                  )
+                                }
+                                className="rounded-2xl border border-[#dbe2f3] bg-white px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#f8faff]"
+                              >
+                                Open Board
+                              </Button>
+                            )}
 
                             {isActive && (
                               <Button
                                 onClick={() =>
-                                  router.push(
-                                    `/sprint/${sprint.id}/dashboard`,
-                                  )
+                                  router.push(`/sprint/${sprint.id}/dashboard`)
                                 }
                                 className="rounded-2xl border border-[#dbe2f3] bg-white px-5 py-3 text-sm font-semibold text-[#111827] transition hover:bg-[#f8faff]"
                               >
@@ -623,10 +616,12 @@ export default function SprintPage() {
                               </Button>
                             )}
 
-                            <CreateTaskModal
-                              projectId={projectId}
-                              sprintId={sprint.id}
-                            />
+                            {!isCompleted && (
+                              <CreateTaskModal
+                                projectId={projectId}
+                                sprintId={sprint.id}
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -644,18 +639,15 @@ export default function SprintPage() {
                   </h2>
 
                   <p className="mt-4 max-w-xl text-sm leading-8 text-slate-500">
-                    Create your first sprint to start planning tasks,
-                    organizing work and managing agile delivery for your
-                    project team.
+                    Create your first sprint to start planning tasks, organizing
+                    work and managing agile delivery for your project team.
                   </p>
 
                   <Button
                     onClick={() =>
-                      document
-                        .querySelector("input")
-                        ?.scrollIntoView({
-                          behavior: "smooth",
-                        })
+                      document.querySelector("input")?.scrollIntoView({
+                        behavior: "smooth",
+                      })
                     }
                     className="mt-8 rounded-2xl bg-[#7189D0] px-7 py-4 text-sm font-semibold text-white transition hover:opacity-90"
                   >
