@@ -58,7 +58,6 @@ export function NotificationsSheet() {
 
     queryFn: getUnreadNotificationsCount,
 
-    refetchInterval: 10000,
   });
 
   const unreadCount = unreadQuery.data ?? 0;
@@ -73,7 +72,6 @@ export function NotificationsSheet() {
     initialPageParam: 1,
 
     queryFn: async ({ pageParam }) => getNotifications(pageParam, LIMIT),
-    refetchInterval: 100000,
 
     getNextPageParam: (lastPage) => {
       if (lastPage.page < lastPage.totalPages) {
