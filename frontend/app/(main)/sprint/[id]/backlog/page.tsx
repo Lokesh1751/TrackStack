@@ -312,7 +312,6 @@ function TaskActionModal({ task, members, sprints, onClose }: any) {
   const [selectedUser, setSelectedUser] = useState("");
 
   const [selectedSprint, setSelectedSprint] = useState("");
-  console.log('selectedUser',)
 
   const toast = useToast();
 

@@ -10,11 +10,7 @@ import { SprintModule } from './sprint/sprint.module';
 import { TaskLinkModule } from './task-link/task-link.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from './notifications/notifications.module';
-import { RemindersService } from './reminders/reminders.service';
-import { NotificationsService } from './notifications/notifications.service';
 import { RemindersModule } from './reminders/reminders.module';
-
-
 
 @Module({
   imports: [
@@ -30,6 +26,6 @@ import { RemindersModule } from './reminders/reminders.module';
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService, RemindersService, NotificationsService],
+  providers: [AppService],
 })
 export class AppModule {}

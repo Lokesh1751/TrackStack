@@ -3,10 +3,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
 
 import { DatabaseService } from '@/database/database.service';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationsGateway: NotificationsGateway,
+  ) {}
 
   // =====================================================
   // CHECK SUPER ADMIN
@@ -61,9 +65,36 @@ export class NotificationsService {
     commentId?: string;
     redirectUrl?: string;
   }) {
-    return this.db.notification.create({
+    const notification = await this.db.notification.create({
       data,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+        triggeredBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
     });
+
+    if (notification.userId) {
+      this.notificationsGateway.sendNotificationToUser(
+        notification.userId,
+        notification,
+      );
+    }
+
+    return notification;
   }
 
   // =====================================================
