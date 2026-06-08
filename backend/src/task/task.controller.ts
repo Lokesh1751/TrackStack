@@ -333,4 +333,18 @@ export class TasksController {
 
     return this.tasksService.deleteAttachment(attachmentId, userId);
   }
+
+  @Delete('tasks/comments/attachments/:attachmentId')
+  deleteCommentAttachment(
+    @Param('attachmentId') attachmentId: string,
+    @Req() req: Request,
+  ) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return this.tasksService.deleteCommentAttachment(attachmentId, userId);
+  }
 }

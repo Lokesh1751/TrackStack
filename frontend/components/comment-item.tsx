@@ -4,6 +4,10 @@ import React, { useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { MentionsInput, Mention } from "react-mentions";
 import { Button } from "@/components/ui/button";
+import { Paperclip, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteCommentAttachment } from "@/lib/api";
 
 export type CommentItemProps = {
   comment: any;
@@ -65,6 +69,78 @@ export const CommentItem = function CommentItem({
 
   const searchParams = useSearchParams();
   const commentIdFromUrl = searchParams.get("commentId");
+
+  const [replyAttachments, setReplyAttachments] = React.useState<{ fileName: string; fileUrl: string }[]>([]);
+  const [replyUploading, setReplyUploading] = React.useState(false);
+
+  const queryClient = useQueryClient();
+
+  const deleteCommentAttachmentMutation = useMutation({
+    mutationFn: (attachmentId: string) => deleteCommentAttachment(attachmentId),
+    onSuccess: () => {
+      toast.success("Comment attachment removed");
+      queryClient.invalidateQueries({
+        queryKey: ["comments", comment.taskId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["task", comment.taskId],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to remove attachment");
+    },
+  });
+
+  const handleReplyFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setReplyUploading(true);
+      const newFiles = [...replyAttachments];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "upload_preset",
+          process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+        );
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) {
+          throw new Error(uploadData?.error?.message || "Upload failed");
+        }
+
+        newFiles.push({
+          fileName: file.name,
+          fileUrl: uploadData.secure_url,
+        });
+      }
+
+      setReplyAttachments(newFiles);
+      toast.success("Reply files uploaded successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Upload failed");
+    } finally {
+      setReplyUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeReplyAttachment = (index: number) => {
+    setReplyAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const commentRefs = useRef<Record<string, HTMLDivElement | null>>({});
   useEffect(() => {
@@ -171,8 +247,27 @@ export const CommentItem = function CommentItem({
 
           {/* CONTENT */}
           {!isEditing ? (
-            <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-neutral-700">
-              {comment.content}
+            <div className="mt-4 space-y-3">
+              <div className="whitespace-pre-wrap break-words text-sm leading-7 text-neutral-700">
+                {comment.content}
+              </div>
+
+              {comment.attachments && comment.attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-neutral-100">
+                  {comment.attachments.map((file: any) => (
+                    <a
+                      key={file.id}
+                      href={file.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100 hover:text-[#7189D0] transition shadow-sm max-w-[250px]"
+                    >
+                      <Paperclip className="h-3 w-3 shrink-0" />
+                      <span className="truncate max-w-[150px]">{file.fileName}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="mt-4">
@@ -210,6 +305,34 @@ export const CommentItem = function CommentItem({
                   />
                 </MentionsInput>
               </div>
+
+              {comment.attachments && comment.attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-neutral-100">
+                  {comment.attachments.map((file: any) => (
+                    <div key={file.id} className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs shadow-sm">
+                      <Paperclip className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+                      <span className="font-medium text-neutral-700 truncate max-w-[150px]">{file.fileName}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          deleteCommentAttachmentMutation.mutate(file.id);
+                        }}
+                        className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer transition relative z-10 w-4 h-4 flex items-center justify-center rounded hover:bg-neutral-100"
+                        disabled={deleteCommentAttachmentMutation.isPending}
+                        title="Remove Attachment"
+                      >
+                        {deleteCommentAttachmentMutation.isPending && deleteCommentAttachmentMutation.variables === file.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-neutral-400" />
+                        ) : (
+                          "×"
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-3 flex gap-2">
                 <Button
@@ -292,33 +415,86 @@ export const CommentItem = function CommentItem({
                     }))}
                   />
                 </MentionsInput>
+
+                {/* LIST OF UPLOADED REPLY ATTACHMENTS */}
+                {replyAttachments.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2 border-t border-neutral-100 pt-2">
+                    {replyAttachments.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs text-neutral-700"
+                      >
+                        <Paperclip className="h-3 w-3" />
+                        <span className="truncate max-w-[150px]">{file.fileName}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeReplyAttachment(idx)}
+                          className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="mt-3 flex gap-2">
-                <Button
-                  onClick={() =>
-                    replyCommentMutation.mutate({
-                      parentId: comment.id,
-                      content: replyContent,
-                    })
-                  }
-                  disabled={
-                    !replyContent.trim() || replyCommentMutation.isPending
-                  }
-                  className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
-                >
-                  {replyCommentMutation.isPending ? "Replying..." : "Reply"}
-                </Button>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() =>
+                      replyCommentMutation.mutate({
+                        parentId: comment.id,
+                        content: replyContent,
+                        attachments: replyAttachments,
+                      }, {
+                        onSuccess: () => {
+                          setReplyAttachments([]);
+                        }
+                      })
+                    }
+                    disabled={
+                      !replyContent.trim() || replyCommentMutation.isPending
+                    }
+                    className="rounded-xl bg-[#7189D0] px-4 py-2 text-sm text-white"
+                  >
+                    {replyCommentMutation.isPending ? "Replying..." : "Reply"}
+                  </Button>
 
-                <Button
-                  onClick={() => {
-                    setReplyingToId(null);
-                    setReplyContent("");
-                  }}
-                  className="rounded-xl border px-4 py-2 text-sm"
-                >
-                  Cancel
-                </Button>
+                  <Button
+                    onClick={() => {
+                      setReplyingToId(null);
+                      setReplyContent("");
+                      setReplyAttachments([]);
+                    }}
+                    className="rounded-xl border px-4 py-2 text-sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+
+                <div>
+                  <input
+                    type="file"
+                    id={`reply-file-upload-${comment.id}`}
+                    multiple
+                    onChange={handleReplyFileUpload}
+                    className="hidden"
+                    disabled={replyUploading}
+                  />
+                  <label
+                    htmlFor={`reply-file-upload-${comment.id}`}
+                    className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-300 px-3 py-2 hover:border-black/55 transition text-xs font-medium text-neutral-600 bg-white"
+                    title="Attach Files"
+                  >
+                    {replyUploading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-neutral-500" />
+                    ) : (
+                      <Paperclip className="h-3.5 w-3.5 text-neutral-500" />
+                    )}
+                    <span>Attach Files</span>
+                  </label>
+                </div>
               </div>
             </div>
           )}

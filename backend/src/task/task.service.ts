@@ -808,6 +808,15 @@ export class TasksService {
         content: dto.content,
         mentions: dto.mentions || [],
         parentId,
+        attachments: dto.attachments && dto.attachments.length > 0 ? {
+          createMany: {
+            data: dto.attachments.map(att => ({
+              uploadedById: userId,
+              fileName: att.fileName,
+              fileUrl: att.fileUrl,
+            }))
+          }
+        } : undefined
       },
 
       include: {
@@ -815,6 +824,16 @@ export class TasksService {
           select: {
             id: true,
             email: true,
+          },
+        },
+        attachments: {
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
           },
         },
       },
@@ -952,6 +971,16 @@ if (
 
       include: {
         user: true,
+        attachments: {
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
 
       orderBy: {
@@ -1633,6 +1662,40 @@ async deleteAttachment(
 
   return {
     message: 'Attachment deleted successfully',
+  };
+}
+
+async deleteCommentAttachment(
+  attachmentId: string,
+  userId: string,
+) {
+  const attachment =
+    await this.db.taskCommentAttachment.findUnique({
+      where: {
+        id: attachmentId,
+      },
+    });
+
+  if (!attachment) {
+    throw new BadRequestException(
+      'Comment attachment not found',
+    );
+  }
+
+  if (attachment.uploadedById !== userId) {
+    throw new UnauthorizedException(
+      'Access denied',
+    );
+  }
+
+  await this.db.taskCommentAttachment.delete({
+    where: {
+      id: attachmentId,
+    },
+  });
+
+  return {
+    message: 'Comment attachment deleted successfully',
   };
 }
 }

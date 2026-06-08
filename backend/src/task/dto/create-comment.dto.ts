@@ -4,7 +4,10 @@ import {
   IsString,
   IsUUID,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CreateTaskAttachmentDto } from './create-attachment.dto';
 
 export class CreateCommentDto {
   @IsString()
@@ -19,4 +22,10 @@ export class CreateCommentDto {
   @IsUUID()
   @IsOptional()
   parentId?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateTaskAttachmentDto)
+  attachments?: CreateTaskAttachmentDto[];
 }

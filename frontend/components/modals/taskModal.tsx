@@ -59,6 +59,59 @@ export function TaskModal({
   const router = useRouter();
 
   const [comment, setComment] = useState("");
+  const [commentAttachments, setCommentAttachments] = useState<{ fileName: string; fileUrl: string }[]>([]);
+  const [commentUploading, setCommentUploading] = useState(false);
+
+  const handleCommentFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setCommentUploading(true);
+      const newFiles = [...commentAttachments];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "upload_preset",
+          process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+        );
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) {
+          throw new Error(uploadData?.error?.message || "Upload failed");
+        }
+
+        newFiles.push({
+          fileName: file.name,
+          fileUrl: uploadData.secure_url,
+        });
+      }
+
+      setCommentAttachments(newFiles);
+      toast.success("Comment files uploaded successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Upload failed");
+    } finally {
+      setCommentUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeCommentAttachment = (index: number) => {
+    setCommentAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const [editForm, setEditForm] = useState({
     title: task.title,
@@ -403,11 +456,13 @@ export function TaskModal({
       return addTaskComment(task.id, {
         content: cleanedContent,
         mentions: [...new Set(mentions)],
+        attachments: commentAttachments,
       });
     },
 
     onSuccess: () => {
       setComment("");
+      setCommentAttachments([]);
 
       queryClient.invalidateQueries({
         queryKey: ["comments", task.id],
@@ -430,9 +485,11 @@ export function TaskModal({
     mutationFn: ({
       parentId,
       content,
+      attachments,
     }: {
       parentId: string;
       content: string;
+      attachments?: { fileName: string; fileUrl: string }[];
     }) => {
       const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
 
@@ -453,6 +510,7 @@ export function TaskModal({
         content: cleanedContent,
         mentions: [...new Set(mentions)],
         parentId,
+        attachments,
       });
     },
 
@@ -1462,15 +1520,59 @@ export function TaskModal({
                   }))}
                 />
               </MentionsInput>
+
+              {/* LIST OF UPLOADED COMMENT ATTACHMENTS */}
+              {commentAttachments.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2 border-t border-neutral-100 pt-2">
+                  {commentAttachments.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs text-neutral-700"
+                    >
+                      <Paperclip className="h-3 w-3" />
+                      <span className="truncate max-w-[150px]">{file.fileName}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeCommentAttachment(idx)}
+                        className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <Button
-              onClick={() => addCommentMutation.mutate()}
-              disabled={addCommentMutation.isPending}
-              className="rounded-2xl bg-[#7189D0] px-5 py-3 text-white"
-            >
-              {addCommentMutation.isPending ? "Sending.." : "Send"}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <input
+                type="file"
+                id="comment-file-upload"
+                multiple
+                onChange={handleCommentFileUpload}
+                className="hidden"
+                disabled={commentUploading}
+              />
+              <label
+                htmlFor="comment-file-upload"
+                className="flex cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-neutral-300 p-3 hover:border-black/55 transition text-sm font-medium text-neutral-600 bg-white"
+                title="Attach Files"
+              >
+                {commentUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-neutral-500" />
+                ) : (
+                  <Paperclip className="h-4 w-4 text-neutral-500" />
+                )}
+              </label>
+
+              <Button
+                onClick={() => addCommentMutation.mutate()}
+                disabled={addCommentMutation.isPending || !comment.trim()}
+                className="rounded-2xl bg-[#7189D0] px-5 py-3 text-white"
+              >
+                {addCommentMutation.isPending ? "Sending.." : "Send"}
+              </Button>
+            </div>
           </div>
           {commentsLoading ? (
             <CommentsSkeleton />

@@ -588,6 +588,7 @@ export const addTaskComment = async (
     content: string;
     mentions?: string[];
     parentId?: string | null;
+    attachments?: { fileName: string; fileUrl: string }[];
   },
 ) => {
   return request<{ message: string; comment: any }>(
@@ -1061,6 +1062,15 @@ export const getTaskAttachments = async (taskId: string) => {
 // =========================
 export const deleteTaskAttachment = async (attachmentId: string) => {
   return request<{ message: string }>(`/tasks/attachments/${attachmentId}`, {
+    method: "DELETE",
+  });
+};
+
+// =========================
+// DELETE COMMENT ATTACHMENT
+// =========================
+export const deleteCommentAttachment = async (attachmentId: string) => {
+  return request<{ message: string }>(`/tasks/comments/attachments/${attachmentId}`, {
     method: "DELETE",
   });
 };
