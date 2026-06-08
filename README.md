@@ -2,7 +2,7 @@
 
 TrackStack is a modern Agile Project Management platform built with Next.js, NestJS, Prisma and Neon PostgreSQL.
 
-It helps teams manage workspaces, projects, sprints and tasks with structured collaboration workflows and sprint analytics.
+It helps teams manage workspaces, projects, sprints, tasks and collaboration workflows with real-time updates, notifications and sprint analytics.
 
 ---
 
@@ -10,35 +10,73 @@ It helps teams manage workspaces, projects, sprints and tasks with structured co
 
 ## Workspace Management
 
-- Super Admins can create and manage workspaces
-- Workspace Admins can manage workspace members
-- Users can be invited into workspaces
-- Role-based workspace access control
+* Super Admins can create and manage workspaces
+* Workspace Admins can manage workspace members
+* Users can be invited into workspaces
+* Role-based workspace access control
+
+## Profile Management
+
+* User profile management
+* Update personal information
+* Profile settings and account preferences
+* Secure account management
 
 ## Project Management
 
-- Workspace Admins can create projects
-- Organized project listing and management
-- Invitation-based project member system
+* Workspace Admins can create projects
+* Organized project listing and management
+* Invitation-based project member system
+* Project member management
 
 ## Task Board
 
-- Modern Kanban-style task board
-- Task workflow management
-- Task comments for collaboration and discussions
-- Team communication directly inside tasks
+* Modern Kanban-style task board
+* Task workflow management
+* Task assignment and tracking
+* Task comments for collaboration and discussions
+* Nested threaded replies for task discussions
+* User mentions inside comments
+* Task status management
+* Drag and drop task board
 
 ## Sprint Management
 
-- Create sprint cycles with goals and timelines
-- Start and complete sprint workflows
-- Sprint lifecycle tracking
+* Create sprint cycles with goals and timelines
+* Start and complete sprint workflows
+* Sprint lifecycle tracking
+* Sprint planning and execution
 
 ## Sprint Analytics
 
-- Sprint analysis reports
-- Charts and productivity insights
-- Agile workflow monitoring
+* Sprint analysis reports
+* Charts and productivity insights
+* Agile workflow monitoring
+* Performance tracking dashboards
+
+## Notifications System
+
+* Database-backed notifications
+* Real-time WebSocket notifications
+* Read and unread notification tracking
+* Notification center
+* Deep linking support for notifications
+* Direct navigation to related resources
+
+## Real-Time Updates
+
+* WebSocket integration
+* Instant notification delivery
+* Live collaboration experience
+* Real-time task and activity updates
+
+## Deep Linking
+
+* Smart redirection from notifications
+* Project-level navigation
+* Task-level navigation
+* Sprint-level navigation
+* Comment and mention-based navigation
 
 ---
 
@@ -46,23 +84,25 @@ It helps teams manage workspaces, projects, sprints and tasks with structured co
 
 ## Frontend
 
-- Next.js
-- React
-- TypeScript
-- TailwindCSS
-- TanStack Query
+* Next.js
+* React
+* TypeScript
+* TailwindCSS
+* TanStack Query
+* Socket.IO Client
 
 ## Backend
 
-- NestJS
-- Prisma ORM
-- Neon PostgreSQL
+* NestJS
+* Prisma ORM
+* Neon PostgreSQL
+* Socket.IO
 
 ## UI & Libraries
 
-- Lucide React Icons
-- Sonner Toast
-- Reusable Component Architecture
+* Lucide React Icons
+* Sonner Toast
+* Reusable Component Architecture
 
 ---
 
@@ -132,7 +172,7 @@ Create `.env`
 ```env
 DATABASE_URL=your_neon_postgres_url
 JWT_SECRET=your_secret
-PORT=3001
+PORT=3000
 ```
 
 ---
@@ -171,19 +211,19 @@ http://localhost:3000
 
 ## Super Admin
 
-- Manage workspaces
-- Add workspace admins
+* Manage workspaces
+* Add workspace admins
 
 ## Workspace Admin
 
-- Create projects
-- Invite project members
-- Manage collaboration workflows
+* Create projects
+* Invite project members
+* Manage collaboration workflows
 
 ## Member
 
-- Access assigned projects
-- Collaborate on tasks and sprints
+* Access assigned projects
+* Collaborate on tasks and sprints
 
 ---
 
@@ -199,11 +239,19 @@ Project organization and agile workflows.
 
 ## Tasks
 
-Kanban task board with collaboration comments.
+Kanban task board with threaded discussions, mentions and collaboration.
 
 ## Sprints
 
 Sprint creation, completion and analytics tracking.
+
+## Notifications
+
+Database and WebSocket powered notification system with deep linking.
+
+## Profile
+
+User account and profile management.
 
 ## Reports & Analytics
 
@@ -213,11 +261,13 @@ Sprint performance reports and charts.
 
 # UI Features
 
-- Responsive modern dashboards
-- Light-themed clean UI
-- Skeleton loading states
-- Reusable modals and layouts
-- Mobile responsive design
+* Responsive modern dashboards
+* Light-themed clean UI
+* Skeleton loading states
+* Reusable modals and layouts
+* Mobile responsive design
+* Real-time toast notifications
+* Smart navigation and deep linking
 
 ---
 
@@ -225,22 +275,22 @@ Sprint performance reports and charts.
 
 TrackStack uses:
 
-- Prisma ORM
-- Neon PostgreSQL Database
+* Prisma ORM
+* Neon PostgreSQL Database
 
 ---
 
 # Future Improvements
 
-- Real-time notifications
-- Drag and drop task board
-- File attachments
-- Team chat system
-- Activity timeline
-- WebSocket updates
+* File attachments
+* Team chat system
+* Activity timeline
+* Email digest notifications
+* Advanced reporting dashboard
+* Calendar and timeline views
 
 ---
 
 # Author
 
-Built using Next.js, NestJS, Prisma and Neon PostgreSQL.
+Built using Next.js, NestJS, Prisma, Neon PostgreSQL and WebSocket-based real-time architecture.
