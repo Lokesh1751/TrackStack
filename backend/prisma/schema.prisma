@@ -54,7 +54,6 @@ enum InviteStatus {
 }
 
 enum NotificationType {
-
   WORKSPACE_CREATED
   WORKSPACE_UPDATED
   WORKSPACE_DELETED
@@ -85,7 +84,6 @@ enum NotificationType {
   TASK_ADDED_TO_SPRINT
   TASK_REMOVED_FROM_SPRINT
 
-
   TASK_CREATED
   TASK_UPDATED
   TASK_DELETED
@@ -96,7 +94,6 @@ enum NotificationType {
 
   TASK_MOVED_TO_SPRINT
   TASK_MOVED_TO_BACKLOG
-
 
   TASK_COMMENT_ADDED
   TASK_COMMENT_DELETED
@@ -109,7 +106,6 @@ enum NotificationType {
   TASK_OVERDUE
   TASK_COMMENT_MENTION
   TASK_COMMENT_REPLY
-
 
   SYSTEM
 }
@@ -182,7 +178,7 @@ model Project {
   tasks          Task[]
   sprints        Sprint[]
   projectInvites ProjectInvite[]
-  comments       TaskComment[] @relation("TaskCommentProject")
+  comments       TaskComment[]   @relation("TaskCommentProject")
 
   @@index([workspaceId])
 }
@@ -238,10 +234,12 @@ model User {
 
   taskComments TaskComment[]
 
-  sentProjectInvites   ProjectInvite[]   @relation("ProjectInviteSender")
-  sentWorkspaceInvites WorkspaceInvite[] @relation("WorkspaceInviteSender")
-  notifications Notification[]
-  triggeredNotifications Notification[] @relation("NotificationTriggeredBy")
+  sentProjectInvites     ProjectInvite[]         @relation("ProjectInviteSender")
+  sentWorkspaceInvites   WorkspaceInvite[]       @relation("WorkspaceInviteSender")
+  notifications          Notification[]
+  triggeredNotifications Notification[]          @relation("NotificationTriggeredBy")
+  taskAttachments        TaskAttachment[]
+  taskCommentAttachments TaskCommentAttachment[]
 }
 
 model Task {
@@ -283,12 +281,30 @@ model Task {
   linkedTasks     TaskLink[] @relation("SourceTask")
   linkedFromTasks TaskLink[] @relation("TargetTask")
 
-
   dueReminderSent Boolean @default(false)
 
   overdueReminderSent Boolean @default(false)
 
+  attachments TaskAttachment[]
+
   @@index([sprintId])
+}
+
+model TaskAttachment {
+  id String @id @default(uuid())
+
+  taskId String? @db.Uuid
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  uploadedById String @db.Uuid
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  fileName String
+  fileUrl  String
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
 }
 
 model TaskComment {
@@ -297,13 +313,13 @@ model TaskComment {
   taskId String @db.Uuid
   userId String @db.Uuid
 
-  content String
+  content  String
   mentions String[] @default([])
 
-  parentId   String? @db.Uuid
+  parentId String? @db.Uuid
 
-  parent     TaskComment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies    TaskComment[] @relation("CommentReplies")
+  parent  TaskComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies TaskComment[] @relation("CommentReplies")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -312,15 +328,32 @@ model TaskComment {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  projectId  String  @db.Uuid
-  sprintId   String?
+  projectId String  @db.Uuid
+  sprintId  String?
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade, name: "TaskCommentProject")
 
   sprint Sprint? @relation(fields: [sprintId], references: [id], onDelete: Cascade, name: "TaskCommentSprint")
 
+  attachments TaskCommentAttachment[]
+
   @@index([taskId])
   @@index([parentId])
+}
+
+model TaskCommentAttachment {
+  id String @id @default(uuid())
+
+  commentId String      @db.Uuid
+  comment   TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  uploadedById String @db.Uuid
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  fileName String
+  fileUrl  String
+
+  createdAt DateTime @default(now())
 }
 
 model SprintSnapshot {
@@ -360,13 +393,12 @@ model Sprint {
 
   tasks     Task[]
   snapshots SprintSnapshot[]
-  comments  TaskComment[] @relation("TaskCommentSprint")
+  comments  TaskComment[]    @relation("TaskCommentSprint")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
-healthNotificationSent Boolean @default(false)
+  healthNotificationSent Boolean @default(false)
 }
 
 model TaskLink {
@@ -428,7 +460,7 @@ model Notification {
   // who triggered event
   triggeredById String? @db.Uuid
 
-  triggeredBy User? @relation( "NotificationTriggeredBy", fields: [triggeredById], references: [id])
+  triggeredBy User? @relation("NotificationTriggeredBy", fields: [triggeredById], references: [id])
 
   workspaceId String? @db.Uuid
   projectId   String? @db.Uuid

@@ -18,6 +18,9 @@ import {
   createTaskLink,
   updateTaskLink,
   editComment,
+  addTaskAttachment,
+  deleteTaskAttachment,
+  getTaskAttachments,
 } from "@/lib/api";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +34,7 @@ import {
   X,
   Delete,
   Trash,
+  Paperclip,
 } from "lucide-react";
 import { getTaskTypeIcon } from "@/helpers";
 
@@ -86,6 +90,68 @@ export function TaskModal({
 
   const [replyContent, setReplyContent] = useState("");
 
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setUploading(true);
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "upload_preset",
+          process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+        );
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) {
+          throw new Error(uploadData?.error?.message || "Upload failed");
+        }
+
+        const fileUrl = uploadData.secure_url;
+        const fileName = file.name;
+
+        await addTaskAttachment(task.id, {
+          fileName,
+          fileUrl,
+        });
+      }
+
+      toast.success("Attachments uploaded successfully");
+      refetchTaskDetails();
+    } catch (error: any) {
+      toast.error(error.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (attachmentId: string) => deleteTaskAttachment(attachmentId),
+    onSuccess: () => {
+      toast.success("Attachment deleted");
+      refetchTaskDetails();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete attachment");
+    },
+  });
+
   const searchParams = useSearchParams();
 
   const commentIdFromUrl = searchParams.get("commentId");
@@ -117,6 +183,7 @@ export function TaskModal({
   });
 
   const taskData = taskDetailsData?.task || task;
+  const attachments = taskData.attachments || [];
 
   // =========================
   // GET COMMENTS
@@ -1260,6 +1327,80 @@ export function TaskModal({
               {assignTaskMutation.isPending ? "Assigning..." : "Assign Task"}
             </Button>
           </div>
+        </div>
+
+        {/* ATTACHMENTS */}
+        <div className="mt-6 rounded-3xl border bg-neutral-50 p-5">
+          <div className="mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Paperclip className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Attachments</h3>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                id="task-details-file-upload"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+              <label
+                htmlFor="task-details-file-upload"
+                className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#7189D0] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Paperclip className="h-4 w-4" />
+                    Upload File
+                  </>
+                )}
+              </label>
+            </div>
+          </div>
+
+          {attachments.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {attachments.map((file: any) => (
+                <div
+                  key={file.id}
+                  className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm shadow-sm"
+                >
+                  <div className="flex flex-col truncate max-w-[75%]">
+                    <a
+                      href={file.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-[#7189D0] hover:underline truncate"
+                    >
+                      <img src={file.fileUrl} alt={file.fileName} className="w-10 h-10 rounded-md" />
+                      {file.fileName}
+                    </a>
+                    <span className="text-xs text-neutral-400">
+                      Uploaded by {file.uploadedBy?.email || "Unknown"}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteAttachmentMutation.mutate(file.id)}
+                    disabled={deleteAttachmentMutation.isPending}
+                    className="text-red-500 hover:text-red-700 p-2"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-500 italic">No attachments uploaded yet</p>
+          )}
         </div>
 
         {/* COMMENTS */}

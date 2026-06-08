@@ -1,13 +1,17 @@
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsInt,
   IsOptional,
   IsString,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 import { TaskPriority, TaskStatus, TaskType } from '@prisma/client';
+import { CreateTaskAttachmentDto } from './create-attachment.dto';
 
 export class CreateTaskDto {
   @IsString()
@@ -49,4 +53,14 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   assigneeId?: string | null;
+
+  // =========================
+  // ATTACHMENTS (OPTIONAL)
+  // =========================
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateTaskAttachmentDto)
+  attachments?: CreateTaskAttachmentDto[];
 }

@@ -24,6 +24,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
+import { CreateTaskAttachmentDto } from './dto/create-attachment.dto';
 
 @UseGuards(SessionAuthGuard)
 @Controller()
@@ -297,6 +298,39 @@ export class TasksController {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return this.tasksService.unassignTask(taskId,userId);
+    return this.tasksService.unassignTask(taskId, userId);
+  }
+
+  @Post('tasks/:taskId/attachments')
+  addAttachment(
+    @Param('taskId') taskId: string,
+    @Body() dto: CreateTaskAttachmentDto,
+    @Req() req: Request,
+  ) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    return this.tasksService.addAttachment(taskId, dto, userId);
+  }
+
+  @Get('tasks/:taskId/attachments')
+  getTaskAttachments(@Param('taskId') taskId: string) {
+    return this.tasksService.getTaskAttachments(taskId);
+  }
+
+  @Delete('tasks/attachments/:attachmentId')
+  deleteAttachment(
+    @Param('attachmentId') attachmentId: string,
+    @Req() req: Request,
+  ) {
+    const userId = req.session.userId;
+
+    if (!userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return this.tasksService.deleteAttachment(attachmentId, userId);
   }
 }

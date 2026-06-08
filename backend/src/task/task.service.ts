@@ -11,6 +11,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateTaskAttachmentDto } from './dto/create-attachment.dto';
 
 import { randomUUID } from 'crypto';
 import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
@@ -147,6 +148,17 @@ export class TasksService {
         sprint: true,
       },
     });
+    if (dto.attachments && dto.attachments.length > 0) {
+      await this.db.taskAttachment.createMany({
+        data: dto.attachments.map((att) => ({
+          taskId: task.id,
+          uploadedById: userId,
+          fileName: att.fileName,
+          fileUrl: att.fileUrl,
+        })),
+      });
+    }
+
     await this.notificationsService.createNotification({
       title: 'Task Created',
 
@@ -165,9 +177,41 @@ export class TasksService {
 
       userId: task.assigneeId || undefined,
     });
+
+    const updatedTask = await this.db.task.findUnique({
+      where: {
+        id: task.id,
+      },
+      include: {
+        reporter: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+        assignee: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+        sprint: true,
+        attachments: {
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
     return {
       message: 'Task created successfully',
-      task,
+      task: updatedTask,
     };
   }
 
@@ -383,6 +427,17 @@ export class TasksService {
 
           orderBy: {
             createdAt: 'desc',
+          },
+        },
+
+        attachments: {
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
           },
         },
       },
@@ -1478,4 +1533,107 @@ if (
       comment: updatedComment,
     };
   }
+
+async addAttachment(
+  taskId: string,
+  dto: CreateTaskAttachmentDto,
+  userId: string,
+) {
+  const isTemp = !taskId || taskId === 'null' || taskId === 'undefined' || taskId === 'temp';
+
+  if (!isTemp) {
+    const task = await this.db.task.findUnique({
+      where: {
+        id: taskId,
+      },
+    });
+
+    if (!task) {
+      throw new BadRequestException('Task not found');
+    }
+  }
+
+  const attachment = await this.db.taskAttachment.create({
+    data: {
+      taskId: isTemp ? null : taskId,
+      uploadedById: userId,
+      fileName: dto.fileName,
+      fileUrl: dto.fileUrl,
+    },
+
+    include: {
+      uploadedBy: {
+        select: {
+          id: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  return {
+    message: 'Attachment uploaded successfully',
+    attachment,
+  };
 }
+
+async getTaskAttachments(taskId: string) {
+  const attachments = await this.db.taskAttachment.findMany({
+    where: {
+      taskId,
+    },
+
+    include: {
+      uploadedBy: {
+        select: {
+          id: true,
+          email: true,
+        },
+      },
+    },
+
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return {
+    attachments,
+  };
+}
+
+async deleteAttachment(
+  attachmentId: string,
+  userId: string,
+) {
+  const attachment =
+    await this.db.taskAttachment.findUnique({
+      where: {
+        id: attachmentId,
+      },
+    });
+
+  if (!attachment) {
+    throw new BadRequestException(
+      'Attachment not found',
+    );
+  }
+
+  if (attachment.uploadedById !== userId) {
+    throw new UnauthorizedException(
+      'Access denied',
+    );
+  }
+
+  await this.db.taskAttachment.delete({
+    where: {
+      id: attachmentId,
+    },
+  });
+
+  return {
+    message: 'Attachment deleted successfully',
+  };
+}
+}
+

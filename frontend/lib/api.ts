@@ -439,6 +439,7 @@ export const createTask = async (
     // ✅ NEW
     sprintId?: string | null;
     assigneeId?: string | null;
+    attachments?: { fileName: string; fileUrl: string }[];
   },
 ) => {
   return request<{ message: string; task: any }>(
@@ -1028,6 +1029,38 @@ export const deleteNotification = async (notificationId: string) => {
   return request<{
     message: string;
   }>(`/notifications/${notificationId}`, {
+    method: "DELETE",
+  });
+};
+
+
+// =========================
+// ADD TASK ATTACHMENT
+// =========================
+export const addTaskAttachment = async (
+  taskId: string,
+  data: { fileName: string; fileUrl: string },
+) => {
+  return request<{ message: string }>(`/tasks/${taskId}/attachments`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+// =========================
+// GET TASK ATTACHMENTS
+// =========================
+export const getTaskAttachments = async (taskId: string) => {
+  return request<{ message: string }>(`/tasks/${taskId}/attachments`, {
+    method: "GET",
+  });
+};
+
+// =========================
+// DELETE TASK ATTACHMENT
+// =========================
+export const deleteTaskAttachment = async (attachmentId: string) => {
+  return request<{ message: string }>(`/tasks/attachments/${attachmentId}`, {
     method: "DELETE",
   });
 };

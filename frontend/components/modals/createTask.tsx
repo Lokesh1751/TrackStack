@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Paperclip } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -33,6 +33,66 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
     assigneeId: "",
   });
 
+  const [uploadedFiles, setUploadedFiles] = useState<{ fileName: string; fileUrl: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setUploading(true);
+      const newFiles = [...uploadedFiles];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "upload_preset",
+          process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
+        );
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) {
+          throw new Error(uploadData?.error?.message || "Upload failed");
+        }
+
+        newFiles.push({
+          fileName: file.name,
+          fileUrl: uploadData.secure_url,
+        });
+      }
+
+      setUploadedFiles(newFiles);
+      toast.success("Files uploaded successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, idx) => idx !== index));
+    toast.success("Attachment removed");
+  };
+
+  const handleClose = () => {
+    setUploadedFiles([]);
+    setOpen(false);
+  };
+
   // =========================
   // MEMBERS
   // =========================
@@ -58,6 +118,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
         dueDate: form.dueDate
           ? new Date(form.dueDate).toISOString()
           : undefined,
+        attachments: uploadedFiles,
       }),
 
     onSuccess: () => {
@@ -81,6 +142,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
         assigneeId: "",
       });
 
+      setUploadedFiles([]);
       setOpen(false);
     },
 
@@ -120,7 +182,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                   </div>
 
                   <Button
-                    onClick={() => setOpen(false)}
+                    onClick={handleClose}
                     className="rounded-xl border px-4 py-2 text-sm"
                   >
                     Close
@@ -283,12 +345,64 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
                     ))}
                   </select>
                 </div>
+
+                {/* ATTACHMENTS */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700 flex items-center justify-between">
+                    <span>Attachments</span>
+                    {uploading && (
+                      <span className="text-xs text-neutral-500 flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Uploading...
+                      </span>
+                    )}
+                  </label>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      id="create-task-file-upload"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <label
+                      htmlFor="create-task-file-upload"
+                      className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-neutral-300 px-6 py-4 hover:border-black/55 transition text-sm font-medium text-neutral-600 w-full"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      Select Files to Upload
+                    </label>
+                  </div>
+
+                  {uploadedFiles.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {uploadedFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm"
+                        >
+                          <span className="truncate max-w-[80%] font-medium text-neutral-700">
+                            {file.fileName}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(idx)}
+                            className="text-red-500 hover:text-red-700 font-medium transition cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* FOOTER */}
               <div className="flex items-center justify-end gap-3 border-t px-6 py-5">
                 <Button
-                  onClick={() => setOpen(false)}
+                  onClick={handleClose}
                   className="rounded-2xl border px-5 py-3 text-sm font-medium"
                 >
                   Cancel
