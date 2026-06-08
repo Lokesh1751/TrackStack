@@ -364,7 +364,7 @@ const [isEditing, setIsEditing] = useState(false);
   {/* PROJECTS */}
 
   <div className="rounded-2xl border bg-white p-6 shadow-sm">
-    <h3 className="mb-4 text-lg font-semibold">Projectsssss</h3>
+    <h3 className="mb-4 text-lg font-semibold">Projects</h3>
 
     <div className="space-y-3">
       {user?.projects?.length ? (
