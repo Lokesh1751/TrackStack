@@ -35,7 +35,7 @@ export default function ProfilePage() {
 
   const [avatarUrl, setAvatarUrl] = useState("");
 
-const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [uploading, setUploading] = useState(false);
 
@@ -79,9 +79,7 @@ const [isEditing, setIsEditing] = useState(false);
   // CLOUDINARY IMAGE UPLOAD
   // =========================
 
-  const handleAvatarUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
@@ -187,9 +185,7 @@ const [isEditing, setIsEditing] = useState(false);
                       className="mt-2 w-full rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
                     />
                   ) : (
-                    <p className="mt-2 text-sm text-slate-700">
-                      {name || "-"}
-                    </p>
+                    <p className="mt-2 text-sm text-slate-700">{name || "-"}</p>
                   )}
                 </div>
 
@@ -255,9 +251,7 @@ const [isEditing, setIsEditing] = useState(false);
                       className="mt-2 w-full resize-none rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
                     />
                   ) : (
-                    <p className="mt-2 text-sm text-slate-700">
-                      {bio || "-"}
-                    </p>
+                    <p className="mt-2 text-sm text-slate-700">{bio || "-"}</p>
                   )}
                 </div>
 
@@ -290,9 +284,7 @@ const [isEditing, setIsEditing] = useState(false);
                       </Button>
 
                       <Button
-                        disabled={
-                          updateMutation.isPending || uploading
-                        }
+                        disabled={updateMutation.isPending || uploading}
                         onClick={() =>
                           updateMutation.mutate({
                             name,
@@ -360,111 +352,109 @@ const [isEditing, setIsEditing] = useState(false);
         </div>
         {/* ACTIVITY SECTION */}
 
-<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-  {/* PROJECTS */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* PROJECTS */}
 
-  <div className="rounded-2xl border bg-white p-6 shadow-sm">
-    <h3 className="mb-4 text-lg font-semibold">Projects</h3>
+          <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold">Projects</h3>
 
-    <div className="space-y-3">
-      {user?.projects?.length ? (
-        user.projects.map((project: any) => (
-          <div
-            key={project.id}
-            className="rounded-xl border p-3 cursor-pointer"
-            onClick={() => router.push(`/workspace/${project.workspace.id}/projects`)}
-          >
-            <p className="font-medium">{project.name}</p>
+            <div className="space-y-3">
+              {user?.projects?.length ? (
+                user.projects.map((project: any) => (
+                  <div
+                    key={project.id}
+                    className="rounded-xl border p-3 cursor-pointer"
+                    onClick={() =>
+                      router.push(`/workspace/${project.workspace.id}/projects`)
+                    }
+                  >
+                    <p className="font-medium">{project.name}</p>
 
-            <p className="mt-1 text-xs text-slate-500">
-              {project.role}
-            </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {project.role}
+                    </p>
 
-            {project.activeSprint && (
-              <p className="mt-2 text-xs text-green-600">
-                Active Sprint: {project.activeSprint.name}
-              </p>
-            )}
+                    {project.activeSprint && (
+                      <p className="mt-2 text-xs text-green-600">
+                        Active Sprint: {project.activeSprint.name}
+                      </p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No projects found</p>
+              )}
+            </div>
           </div>
-        ))
-      ) : (
-        <p className="text-sm text-slate-500">
-          No projects found
-        </p>
-      )}
-    </div>
-  </div>
 
-  {/* REPORTED TASKS */}
+          {/* REPORTED TASKS */}
 
-  <div className="rounded-2xl border bg-white p-6 shadow-sm">
-    <h3 className="mb-4 text-lg font-semibold">
-      Assigned Tasks
-    </h3>
+          <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold">Assigned Tasks</h3>
 
-    <div className="space-y-3">
-      {user?.assignedTasks?.length ? (
-        user.assignedTasks.map((task: any) => (
-          <div
-            key={task.id}
-            className="rounded-xl border p-3 cursor-pointer"
-            onClick={() => router.push(`/tasks/${task.project?.id}?sprintId=${task.sprint?.id}&taskId=${task.id}`)}
-          >
-            <p className="font-medium">{task.title}</p>
+            <div className="space-y-3">
+              {user?.assignedTasks?.length ? (
+                user.assignedTasks.map((task: any) => (
+                  <div
+                    key={task.id}
+                    className="rounded-xl border p-3 cursor-pointer"
+                    onClick={() =>
+                      router.push(
+                        `/tasks/${task.project?.id}?sprintId=${task.sprint?.id}&taskId=${task.id}`,
+                      )
+                    }
+                  >
+                    <p className="font-medium">{task.title}</p>
 
-            <p className="mt-1 text-xs text-slate-500">
-              {task.project?.name}
-            </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {task.project?.name}
+                    </p>
 
-            <span className="mt-2 inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
-              {task.status}
-            </span>
+                    <span className="mt-2 inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                      {task.status}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No reported tasks</p>
+              )}
+            </div>
           </div>
-        ))
-      ) : (
-        <p className="text-sm text-slate-500">
-          No reported tasks
-        </p>
-      )}
-    </div>
-  </div>
 
-  {/* RECENT COMMENTS */}
+          {/* RECENT COMMENTS */}
 
-  <div className="rounded-2xl border bg-white p-6 shadow-sm">
-    <h3 className="mb-4 text-lg font-semibold">
-      Recent Comments
-    </h3>
+          <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold">Recent Comments</h3>
 
-    <div className="space-y-3">
-      {user?.taskComments?.length ? (
-        user.taskComments.slice(0, 5).map((comment: any) => (
-          <div
-            key={comment.id}
-            className="rounded-xl border p-3 cursor-pointer"
-            onClick={() => router.push(`/tasks/${comment?.task?.project?.id}?sprintId=${comment?.task?.sprint?.id}&taskId=${comment?.task?.id}&commentId=${comment.id}`)}
-          >
-            <p className="line-clamp-2 text-sm">
-              {comment.content}
-            </p>
+            <div className="space-y-3">
+              {user?.taskComments?.length ? (
+                user.taskComments.slice(0, 5).map((comment: any) => (
+                  <div
+                    key={comment.id}
+                    className="rounded-xl border p-3 cursor-pointer"
+                    onClick={() =>
+                      router.push(
+                        `/tasks/${comment?.task?.project?.id}?sprintId=${comment?.task?.sprint?.id}&taskId=${comment?.task?.id}&commentId=${comment.id}`,
+                      )
+                    }
+                  >
+                    <p className="line-clamp-2 text-sm">{comment.content}</p>
 
-            <p className="mt-2 text-xs text-slate-500">
-              {comment.task?.taskKey}
-            </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {comment.task?.taskKey}
+                    </p>
 
-            <p className="text-xs text-slate-400">
-              {new Date(comment.createdAt).toLocaleString()}
-            </p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No comments yet</p>
+              )}
+            </div>
           </div>
-        ))
-      ) : (
-        <p className="text-sm text-slate-500">
-          No comments yet
-        </p>
-      )}
-    </div>
-  </div>
-</div>
+        </div>
       </div>
     </div>
   );
