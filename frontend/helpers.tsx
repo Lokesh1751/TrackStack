@@ -210,3 +210,7 @@ export const slugify = (text: string) =>
 
   return roots;
 };
+
+export const enumtoText = (key: string) => {
+  return key.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+};

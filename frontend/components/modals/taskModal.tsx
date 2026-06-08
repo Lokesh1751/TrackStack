@@ -23,7 +23,15 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MentionsInput, Mention } from "react-mentions";
 
-import { Loader2, MessageSquare, Link2 } from "lucide-react";
+import {
+  Loader2,
+  MessageSquare,
+  Link2,
+  Pencil,
+  X,
+  Delete,
+  Trash,
+} from "lucide-react";
 import { getTaskTypeIcon } from "@/helpers";
 
 import { toast } from "sonner";
@@ -33,6 +41,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CommentItem } from "@/components/comment-item";
 import { CommentsSkeleton } from "../skeleton/comments";
+import { enumtoText } from "@/helpers";
 
 export function TaskModal({
   task,
@@ -54,7 +63,10 @@ export function TaskModal({
     estimateMinutes: task.estimateMinutes || 0,
     type: task.type,
     dueDate: task.dueDate,
+    status: task.status,
   });
+
+  const [isEditing, setIsEditing] = useState(false);
 
   // =========================
   // TASK LINK FORM
@@ -128,15 +140,13 @@ export function TaskModal({
         block: "end",
       });
 
-      el.classList.add("bg-[#DCE2F6]");
+      el.classList.add("bg-red-800");
       el.classList.add("ring-1");
-      el.classList.add("ring-[#DCE2F6]");
 
       setTimeout(() => {
-        el.classList.remove("bg-[#DCE2F6]");
+        el.classList.remove("bg-red-800");
         el.classList.remove("ring-1");
-        el.classList.remove("ring-[#DCE2F6]");
-      }, 2000);
+      }, 5000);
     }
   }, [commentIdFromUrl, comments]);
   // =========================
@@ -601,10 +611,24 @@ export function TaskModal({
 
             <h2 className="text-3xl font-bold">{task.title}</h2>
           </div>
-
-          <Button onClick={onClose} className="rounded-xl border px-4 py-2">
-            Close
-          </Button>
+          <div className="flex gap-2 items-center ">
+            <Button
+              size={"lg"}
+              variant="destructive"
+              className="border border-red-600 rounded-full cursor-pointer"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-5 h-5 text-red-600 cursor-pointer animate-spin" />
+              ) : (
+                <Trash className="w-5 h-5 text-red-600 cursor-pointer" />
+              )}
+            </Button>
+            <Button onClick={onClose} className="rounded-xl border px-4 py-2">
+              Close
+            </Button>
+          </div>
         </div>
 
         {/* SPRINT */}
@@ -636,142 +660,199 @@ export function TaskModal({
 
         {/* EDIT */}
         <div className="mt-6 rounded-3xl border bg-neutral-50 p-5">
-          <h3 className="mb-5 text-lg font-semibold">Task Details</h3>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <input
-              value={editForm.title}
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  title: e.target.value,
-                })
-              }
-              className="rounded-2xl border bg-white p-3"
-            />
-
-            <select
-              value={editForm.priority}
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  priority: e.target.value,
-                })
-              }
-              className="rounded-2xl border bg-white p-3"
-            >
-              <option value="LOW">LOW</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="HIGH">HIGH</option>
-              <option value="HIGHEST">HIGHEST</option>
-            </select>
-
-            <select
-              value={editForm.type}
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  type: e.target.value as
-                    | "STORY"
-                    | "TASK"
-                    | "SUBTASK"
-                    | "EPIC"
-                    | "IMPROVEMENT"
-                    | "BUG",
-                })
-              }
-              className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-            >
-              <option value="STORY">STORY</option>
-
-              <option value="TASK">TASK</option>
-
-              <option value="SUBTASK">SUBTASK</option>
-
-              <option value="EPIC">EPIC</option>
-
-              <option value="IMPROVEMENT">IMPROVEMENT</option>
-
-              <option value="BUG">BUG</option>
-            </select>
-
-            <input
-              type="date"
-              value={
-                editForm.dueDate
-                  ? new Date(editForm.dueDate).toISOString().split("T")[0]
-                  : ""
-              }
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  dueDate: new Date(e.target.value).toISOString(),
-                })
-              }
-              className="w-full rounded-2xl border border-neutral-200 bg-white p-3"
-            />
+          <div className="flex justify-between items-center">
+            <div className="flex flex-row gap-2">
+              <h3 className="mb-5 text-lg font-semibold">Task Details</h3>
+              <span
+                className="rounded-full  cursor-pointer p-1 items-center justify-center"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {!isEditing ? (
+                  <Pencil className="w-4 h-4" />
+                ) : (
+                  <X className="w-4 h-4" />
+                )}
+              </span>
+            </div>
+            {isEditing ? (
+              <select
+                value={editForm.status}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, status: e.target.value })
+                }
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-black"
+              >
+                <option value="TODO">Todo</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="IN_REVIEW">In Review</option>
+                <option value="DONE">Done</option>
+              </select>
+            ) : (
+              <div className="rounded-lg  px-2 py-1 text-black">
+                {enumtoText(editForm.status) || "-"}
+              </div>
+            )}
           </div>
 
-          <div className="mt-4">
-            <label className="mb-2 block text-sm font-medium text-neutral-600">
-              Estimate
-            </label>
-
-            <div className="relative">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* TITLE */}
+            {isEditing ? (
               <input
-                type="number"
+                value={editForm.title}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    title: e.target.value,
+                  })
+                }
+                className="rounded-2xl border bg-white p-3"
+              />
+            ) : (
+              <div className="rounded-2xl border bg-white p-3">
+                {editForm.title || "-"}
+              </div>
+            )}
+
+            {/* PRIORITY */}
+            {isEditing ? (
+              <select
+                value={editForm.priority}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    priority: e.target.value,
+                  })
+                }
+                className="rounded-2xl border bg-white p-3"
+              >
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+                <option value="HIGHEST">HIGHEST</option>
+              </select>
+            ) : (
+              <div className="rounded-2xl border bg-white p-3">
+                {editForm.priority}
+              </div>
+            )}
+
+            {/* TYPE */}
+            {isEditing ? (
+              <select
+                value={editForm.type}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    type: e.target.value as
+                      | "STORY"
+                      | "TASK"
+                      | "SUBTASK"
+                      | "EPIC"
+                      | "IMPROVEMENT"
+                      | "BUG",
+                  })
+                }
+                className="rounded-2xl border bg-white p-3"
+              >
+                <option value="STORY">STORY</option>
+                <option value="TASK">TASK</option>
+                <option value="SUBTASK">SUBTASK</option>
+                <option value="EPIC">EPIC</option>
+                <option value="IMPROVEMENT">IMPROVEMENT</option>
+                <option value="BUG">BUG</option>
+              </select>
+            ) : (
+              <div className="rounded-2xl border bg-white p-3">
+                {editForm.type}
+              </div>
+            )}
+
+            {/* DUE DATE */}
+            {isEditing ? (
+              <input
+                type="date"
                 value={
-                  editForm.estimateMinutes
-                    ? new Date(editForm.estimateMinutes)
-                        .toISOString()
-                        .split("T")[0]
+                  editForm.dueDate
+                    ? new Date(editForm.dueDate).toISOString().split("T")[0]
                     : ""
                 }
                 onChange={(e) =>
                   setEditForm({
                     ...editForm,
-                    dueDate: task.dueDate
-                      ? new Date(task.dueDate).toISOString().split("T")[0]
-                      : "",
+                    dueDate: new Date(e.target.value).toISOString(),
                   })
                 }
-                className="w-full rounded-2xl border border-neutral-200 bg-white p-3 pr-20 outline-none"
+                className="rounded-2xl border bg-white p-3"
               />
+            ) : (
+              <div className="rounded-2xl border bg-white p-3">
+                {editForm.dueDate
+                  ? new Date(editForm.dueDate).toLocaleDateString()
+                  : "-"}
+              </div>
+            )}
+          </div>
 
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">
+          {/* ESTIMATE */}
+          <div className="mt-4">
+            <label className="mb-2 block text-sm font-medium text-neutral-600">
+              Estimate
+            </label>
+
+            {isEditing ? (
+              <input
+                type="number"
+                value={editForm.estimateMinutes || ""}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    estimateMinutes: Number(e.target.value),
+                  })
+                }
+                className="w-full rounded-2xl border bg-white p-3"
+              />
+            ) : (
+              <div className="rounded-2xl border bg-white p-3">
                 {formatEstimate(editForm.estimateMinutes)}
               </div>
+            )}
+          </div>
+
+          {/* DESCRIPTION */}
+          <div className="mt-4">
+            {isEditing ? (
+              <textarea
+                rows={5}
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    description: e.target.value,
+                  })
+                }
+                className="w-full rounded-2xl border bg-white p-4"
+              />
+            ) : (
+              <div className="min-h-[120px] whitespace-pre-wrap rounded-2xl border bg-white p-4">
+                {editForm.description || "No description available"}
+              </div>
+            )}
+          </div>
+
+          {isEditing && (
+            <div className="mt-5 flex gap-3">
+              <Button
+                onClick={() => updateTaskMutation.mutate()}
+                disabled={updateTaskMutation.isPending}
+              >
+                {updateTaskMutation.isPending ? "Updating..." : "Update Task"}
+              </Button>
+
+              <Button variant="destructive" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
             </div>
-          </div>
-
-          <textarea
-            rows={5}
-            value={editForm.description}
-            onChange={(e) =>
-              setEditForm({
-                ...editForm,
-                description: e.target.value,
-              })
-            }
-            className="mt-4 w-full rounded-2xl border bg-white p-4"
-          />
-
-          <div className="mt-5 flex gap-3">
-            <Button
-              onClick={() => updateTaskMutation.mutate()}
-              disabled={updateTaskMutation.isPending}
-              className="rounded-2xl bg-[#7189D0] px-5 py-3 text-white"
-            >
-              {updateTaskMutation.isPending ? "Updating..." : "Update Task"}
-            </Button>
-
-            <Button
-              onClick={() => deleteMutation.mutate()}
-              className="rounded-2xl  px-5 py-3 text-white"
-            >
-              Delete
-            </Button>
-          </div>
+          )}
         </div>
 
         {/* TASK LINKING */}
@@ -1152,11 +1233,15 @@ export function TaskModal({
               >
                 <option value="">Select team member</option>
 
-                {members?.filter((member: any) => member.userId !== task?.assignee?.id).map((member: any) => (
-                  <option key={member.userId} value={member.userId}>
-                    {member.email} ({member.role})
-                  </option>
-                ))}
+                {members
+                  ?.filter(
+                    (member: any) => member.userId !== task?.assignee?.id,
+                  )
+                  .map((member: any) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.email} ({member.role})
+                    </option>
+                  ))}
               </select>
             </div>
 
