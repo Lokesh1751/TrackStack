@@ -1539,7 +1539,7 @@ export function TaskModal({
                         }}
                         className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer w-4 h-4 flex items-center justify-center rounded hover:bg-neutral-200 transition relative z-10"
                       >
-                        <Trash className="h-3 w-3" />
+                        {commentUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash className="h-3 w-3" />}
                       </button>
                     </div>
                   ))}
