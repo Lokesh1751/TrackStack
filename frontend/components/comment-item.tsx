@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { MentionsInput, Mention } from "react-mentions";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Loader2 } from "lucide-react";
+import { Paperclip, Loader2, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteCommentAttachment } from "@/lib/api";
@@ -326,7 +326,7 @@ export const CommentItem = function CommentItem({
                         {deleteCommentAttachmentMutation.isPending && deleteCommentAttachmentMutation.variables === file.id ? (
                           <Loader2 className="h-3 w-3 animate-spin text-neutral-400" />
                         ) : (
-                          "×"
+                          <Trash className="h-3 w-3" />
                         )}
                       </button>
                     </div>
@@ -428,8 +428,12 @@ export const CommentItem = function CommentItem({
                         <span className="truncate max-w-[150px]">{file.fileName}</span>
                         <button
                           type="button"
-                          onClick={() => removeReplyAttachment(idx)}
-                          className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            removeReplyAttachment(idx);
+                          }}
+                          className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer w-4 h-4 flex items-center justify-center rounded hover:bg-neutral-200 transition relative z-10"
                         >
                           ×
                         </button>

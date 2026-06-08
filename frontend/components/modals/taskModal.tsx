@@ -20,7 +20,6 @@ import {
   editComment,
   addTaskAttachment,
   deleteTaskAttachment,
-  getTaskAttachments,
 } from "@/lib/api";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1451,7 +1450,7 @@ export function TaskModal({
                     disabled={deleteAttachmentMutation.isPending}
                     className="text-red-500 hover:text-red-700 p-2"
                   >
-                    <Trash className="h-4 w-4" />
+                    {deleteAttachmentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
                   </Button>
                 </div>
               ))}
@@ -1533,10 +1532,14 @@ export function TaskModal({
                       <span className="truncate max-w-[150px]">{file.fileName}</span>
                       <button
                         type="button"
-                        onClick={() => removeCommentAttachment(idx)}
-                        className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          removeCommentAttachment(idx);
+                        }}
+                        className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer w-4 h-4 flex items-center justify-center rounded hover:bg-neutral-200 transition relative z-10"
                       >
-                        ×
+                        <Trash className="h-3 w-3" />
                       </button>
                     </div>
                   ))}
