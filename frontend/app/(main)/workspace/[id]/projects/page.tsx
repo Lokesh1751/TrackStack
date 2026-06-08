@@ -345,33 +345,42 @@ export default function Projects() {
                       >
                         <td
                           className="px-6 py-4 font-medium"
-                          onClick={() =>
-                            router.push(
-                              `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
-                            )
-                          }
+                          onClick={() => {
+                            if (project?.activeSprint) {
+                              router.push(
+                                `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                              );
+                            }
+                            else{
+                              toast.error("No active sprint found")
+                            }
+                          }}
                         >
                           {project.name}
                         </td>
 
                         <td
                           className="px-6 py-4 text-sm text-slate-600"
-                          onClick={() =>
-                            router.push(
-                              `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
-                            )
-                          }
+                          onClick={() => {
+                            if (project?.activeSprint) {
+                              router.push(
+                                `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                              );
+                            }
+                          }}
                         >
                           {project.description || "No description"}
                         </td>
 
                         <td
                           className="px-6 py-4 text-sm text-slate-500"
-                          onClick={() =>
-                            router.push(
-                              `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
-                            )
-                          }
+                          onClick={() => {
+                            if (project?.activeSprint) {
+                              router.push(
+                                `/tasks/${project.id}?sprint=${project?.activeSprint?.id}`,
+                              );
+                            }
+                          }}
                         >
                           {new Date(project.createdAt).toLocaleDateString()}
                         </td>

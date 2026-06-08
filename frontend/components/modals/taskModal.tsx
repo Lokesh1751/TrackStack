@@ -1152,7 +1152,7 @@ export function TaskModal({
               >
                 <option value="">Select team member</option>
 
-                {members.map((member: any) => (
+                {members?.filter((member: any) => member.userId !== task?.assignee?.id).map((member: any) => (
                   <option key={member.userId} value={member.userId}>
                     {member.email} ({member.role})
                   </option>
