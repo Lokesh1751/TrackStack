@@ -48,143 +48,137 @@ export const slugify = (text: string) =>
     .replace(/[^a-z0-9\-]/g, "")
     .replace(/\-+/g, "-");
 
-   export const getNotificationIcon = (type: string) => {
-      switch (type) {
-        case "WORKSPACE_CREATED":
-        case "WORKSPACE_UPDATED":
-        case "WORKSPACE_DELETED":
-          return <FolderKanban className="h-5 w-5" />;
-  
-        case "WORKSPACE_MEMBER_INVITED":
-        case "PROJECT_MEMBER_INVITED":
-          return <UserPlus className="h-5 w-5" />;
-  
-        case "WORKSPACE_MEMBER_REMOVED":
-        case "PROJECT_MEMBER_REMOVED":
-          return <UserMinus className="h-5 w-5" />;
-  
-        case "WORKSPACE_ROLE_UPDATED":
-          return <Shield className="h-5 w-5" />;
-  
-        case "WORKSPACE_INVITE_ACCEPTED":
-        case "SPRINT_COMPLETED":
-          return <CheckCircle2 className="h-5 w-5" />;
-  
-        case "WORKSPACE_INVITE_DECLINED":
-          return <AlertCircle className="h-5 w-5" />;
-  
-        case "PROJECT_CREATED":
-        case "PROJECT_UPDATED":
-        case "PROJECT_DELETED":
-          return <FolderOpen className="h-5 w-5" />;
-  
-        case "PROJECT_MEMBER_ADDED":
-        case "PROJECT_MEMBER_JOINED":
-          return <Users className="h-5 w-5" />;
-  
-        case "SPRINT_CREATED":
-        case "SPRINT_UPDATED":
-        case "SPRINT_STARTED":
-        case "SPRINT_DELETED":
-        case "SPRINT_HEALTH":
-          return <Rocket className="h-5 w-5" />;
-  
-        case "TASK_ADDED_TO_SPRINT":
-        case "TASK_REMOVED_FROM_SPRINT":
-        case "TASK_CREATED":
-        case "TASK_UPDATED":
-        case "TASK_DELETED":
-        case "TASK_ASSIGNED":
-        case "TASK_STATUS_UPDATED":
-        case "TASK_MOVED_TO_SPRINT":
-        case "TASK_MOVED_TO_BACKLOG":
-        case "TASK_COMMENT_MENTION":
-        case "TASK_COMMENT_REPLY":
-          return <ClipboardList className="h-5 w-5" />;
-  
-        case "TASK_COMMENT_ADDED":
-        case "TASK_COMMENT_DELETED":
-          return <MessageSquare className="h-5 w-5" />;
-  
-        case "TASK_LINKED":
-        case "TASK_LINK_REMOVED":
-        case "TASK_LINK_UPDATED":
-          return <Link2 className="h-5 w-5" />;
-  
-        case "SYSTEM":
-          return <Sparkles className="h-5 w-5" />;
-  
-        default:
-          return <Bell className="h-5 w-5" />;
-      }
-    };
-  
-    // =====================================================
-    // REDIRECT URL
-    // =====================================================
-  
-    export const getRedirectUrl = (notification: any) => {
-      switch (notification?.type) {
-        case "WORKSPACE_CREATED":
-        case "WORKSPACE_UPDATED":
-        case "WORKSPACE_DELETED":
-        case "WORKSPACE_MEMBER_INVITED":
-        case "PROJECT_MEMBER_INVITED":
-        case "WORKSPACE_ROLE_UPDATED":
-        case "WORKSPACE_INVITE_ACCEPTED":
-        case "WORKSPACE_INVITE_DECLINED":
-        case "WORKSPACE_MEMBER_REMOVED":
-        case "PROJECT_MEMBER_REMOVED":
-          return `/workspace/${notification?.workspaceId}`;
-  
-        case "PROJECT_CREATED":
-        case "PROJECT_UPDATED":
-        case "PROJECT_DELETED":
-        case "PROJECT_MEMBER_ADDED":
-        case "PROJECT_MEMBER_JOINED":
-          return `/workspace/${notification?.workspaceId}/projects`;
-  
-        case "SPRINT_CREATED":
-        case "SPRINT_UPDATED":
-        case "SPRINT_STARTED":
-        case "SPRINT_COMPLETED":
-        case "SPRINT_DELETED":
-          return `/sprint/${notification?.projectId}?sprintId=${notification?.sprintId}`;
-  
-        case "TASK_ADDED_TO_SPRINT":
-        case "TASK_CREATED":
-        case "TASK_UPDATED":
-        case "TASK_DELETED":
-        case "TASK_ASSIGNED":
-        case "TASK_STATUS_UPDATED":
-        case "TASK_MOVED_TO_SPRINT":
-        case "TASK_MOVED_TO_BACKLOG":
-        case "TASK_LINKED":
-        case "TASK_LINK_REMOVED":
-        case "TASK_LINK_UPDATED":
-        case "TASK_DUE_REMINDER":
-        case "TASK_OVERDUE":
-          return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}`;
+export const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case "WORKSPACE_CREATED":
+    case "WORKSPACE_UPDATED":
+    case "WORKSPACE_DELETED":
+      return <FolderKanban className="h-5 w-5" />;
 
-        case "SPRINT_HEALTH":
-          return `/sprint/${notification?.sprintId}/dashboard`
+    case "WORKSPACE_MEMBER_INVITED":
+    case "PROJECT_MEMBER_INVITED":
+      return <UserPlus className="h-5 w-5" />;
 
-        case "TASK_REMOVED_FROM_SPRINT":
-          return `/sprint/${notification?.projectId}/backlog?taskId=${notification?.taskId}`
+    case "WORKSPACE_MEMBER_REMOVED":
+    case "PROJECT_MEMBER_REMOVED":
+      return <UserMinus className="h-5 w-5" />;
 
-        case "TASK_COMMENT_ADDED":
-        case "TASK_COMMENT_DELETED":
-        case "TASK_COMMENT_MENTION":
-        case "TASK_COMMENT_REPLY":
-          return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}&commentId=${notification?.commentId}`;
-          
-  
-        default:
-          return "#";
-      }
-    };
+    case "WORKSPACE_ROLE_UPDATED":
+      return <Shield className="h-5 w-5" />;
 
-  export const buildCommentTree = (comments: any[]) => {
+    case "WORKSPACE_INVITE_ACCEPTED":
+    case "SPRINT_COMPLETED":
+      return <CheckCircle2 className="h-5 w-5" />;
+
+    case "WORKSPACE_INVITE_DECLINED":
+      return <AlertCircle className="h-5 w-5" />;
+
+    case "PROJECT_CREATED":
+    case "PROJECT_UPDATED":
+    case "PROJECT_DELETED":
+      return <FolderOpen className="h-5 w-5" />;
+
+    case "PROJECT_MEMBER_ADDED":
+    case "PROJECT_MEMBER_JOINED":
+      return <Users className="h-5 w-5" />;
+
+    case "SPRINT_CREATED":
+    case "SPRINT_UPDATED":
+    case "SPRINT_STARTED":
+    case "SPRINT_DELETED":
+    case "SPRINT_HEALTH":
+      return <Rocket className="h-5 w-5" />;
+
+    case "TASK_ADDED_TO_SPRINT":
+    case "TASK_REMOVED_FROM_SPRINT":
+    case "TASK_CREATED":
+    case "TASK_UPDATED":
+    case "TASK_DELETED":
+    case "TASK_ASSIGNED":
+    case "TASK_STATUS_UPDATED":
+    case "TASK_MOVED_TO_SPRINT":
+    case "TASK_MOVED_TO_BACKLOG":
+    case "TASK_COMMENT_MENTION":
+    case "TASK_COMMENT_REPLY":
+      return <ClipboardList className="h-5 w-5" />;
+
+    case "TASK_COMMENT_ADDED":
+    case "TASK_COMMENT_DELETED":
+      return <MessageSquare className="h-5 w-5" />;
+
+    case "TASK_LINKED":
+    case "TASK_LINK_REMOVED":
+    case "TASK_LINK_UPDATED":
+      return <Link2 className="h-5 w-5" />;
+
+    case "SYSTEM":
+      return <Sparkles className="h-5 w-5" />;
+
+    default:
+      return <Bell className="h-5 w-5" />;
+  }
+};
+
+// =====================================================
+// REDIRECT URL
+// =====================================================
+
+export const getRedirectUrl = (notification: any) => {
+  switch (notification?.type) {
+    case "WORKSPACE_CREATED":
+    case "WORKSPACE_UPDATED":
+    case "WORKSPACE_MEMBER_INVITED":
+    case "PROJECT_MEMBER_INVITED":
+    case "WORKSPACE_ROLE_UPDATED":
+    case "WORKSPACE_INVITE_ACCEPTED":
+    case "WORKSPACE_INVITE_DECLINED":
+    case "WORKSPACE_MEMBER_REMOVED":
+    case "PROJECT_MEMBER_REMOVED":
+      return `/workspace/${notification?.workspaceId}`;
+
+    case "PROJECT_CREATED":
+    case "PROJECT_UPDATED":
+    case "PROJECT_MEMBER_ADDED":
+    case "PROJECT_MEMBER_JOINED":
+      return `/workspace/${notification?.workspaceId}/projects`;
+
+    case "SPRINT_CREATED":
+    case "SPRINT_UPDATED":
+    case "SPRINT_STARTED":
+    case "SPRINT_COMPLETED":
+      return `/sprint/${notification?.projectId}?sprintId=${notification?.sprintId}`;
+
+    case "TASK_ADDED_TO_SPRINT":
+    case "TASK_CREATED":
+    case "TASK_UPDATED":
+    case "TASK_ASSIGNED":
+    case "TASK_STATUS_UPDATED":
+    case "TASK_MOVED_TO_SPRINT":
+    case "TASK_MOVED_TO_BACKLOG":
+    case "TASK_LINKED":
+    case "TASK_LINK_REMOVED":
+    case "TASK_LINK_UPDATED":
+    case "TASK_DUE_REMINDER":
+    case "TASK_OVERDUE":
+      return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}`;
+
+    case "SPRINT_HEALTH":
+      return `/sprint/${notification?.sprintId}/dashboard`;
+
+    case "TASK_REMOVED_FROM_SPRINT":
+      return `/sprint/${notification?.projectId}/backlog?taskId=${notification?.taskId}`;
+
+    case "TASK_COMMENT_ADDED":
+    case "TASK_COMMENT_MENTION":
+    case "TASK_COMMENT_REPLY":
+      return `/tasks/${notification?.projectId}?sprintId=${notification?.sprintId}&taskId=${notification?.taskId}&commentId=${notification?.commentId}`;
+
+    default:
+      return "#";
+  }
+};
+
+export const buildCommentTree = (comments: any[]) => {
   const map = new Map();
 
   const roots: any[] = [];
@@ -212,5 +206,8 @@ export const slugify = (text: string) =>
 };
 
 export const enumtoText = (key: string) => {
-  return key.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  return key
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 };
