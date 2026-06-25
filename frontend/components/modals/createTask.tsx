@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-import { createPortal } from "react-dom";
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Loader2, Plus, Paperclip } from "lucide-react";
@@ -12,6 +10,7 @@ import { toast } from "sonner";
 
 import { createTask, getProjectMembers } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 type Props = {
   projectId: string;
@@ -152,278 +151,272 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
   });
 
   return (
-    <>
+    <Dialog open={open} onOpenChange={(val) => { if (!val) handleClose(); else setOpen(val); }}>
       {/* OPEN BUTTON */}
-      <Button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
-      >
-        <Plus className="h-4 w-4" />
-        Create Task
-      </Button>
+      <DialogTrigger asChild>
+        <Button
+          className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" />
+          Create Task
+        </Button>
+      </DialogTrigger>
 
       {/* MODAL */}
-      {typeof window !== "undefined" &&
-        open &&
-        createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-              {/* HEADER */}
-              <div className="border-b px-6 py-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-neutral-900">
-                      Create New Task
-                    </h2>
+      <DialogContent className="max-w-3xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-white border-none rounded-3xl" showCloseButton={false}>
+        {/* HEADER */}
+        <div className="border-b px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-900">
+                Create New Task
+              </h2>
 
-                    <p className="mt-1 text-sm text-neutral-500">
-                      Add a new task to your project
-                    </p>
-                  </div>
-
-                  <Button
-                    onClick={handleClose}
-                    className="rounded-xl border px-4 py-2 text-sm"
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
-
-              {/* BODY */}
-              <div className="space-y-6 p-6">
-                {/* TITLE */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-neutral-700">
-                    Task Title
-                  </label>
-
-                  <input
-                    placeholder="Enter task title"
-                    value={form.title}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        title: e.target.value,
-                      })
-                    }
-                    className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-                  />
-                </div>
-
-                {/* DESCRIPTION */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-neutral-700">
-                    Description
-                  </label>
-
-                  <textarea
-                    rows={5}
-                    placeholder="Describe task..."
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        description: e.target.value,
-                      })
-                    }
-                    className="w-full resize-none rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-                  />
-                </div>
-
-                {/* GRID */}
-                <div className="grid gap-4 md:grid-cols-2">
-                  {/* PRIORITY */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">
-                      Priority
-                    </label>
-
-                    <select
-                      value={form.priority}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          priority: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-                    >
-                      <option value="LOW">LOW</option>
-                      <option value="MEDIUM">MEDIUM</option>
-                      <option value="HIGH">HIGH</option>
-                      <option value="HIGHEST">HIGHEST</option>
-                    </select>
-                  </div>
-
-                  {/* TYPE */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">
-                      Task Type
-                    </label>
-
-                    <select
-                      value={form.type}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          type: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-                    >
-                      <option value="STORY">STORY</option>
-                      <option value="TASK">TASK</option>
-                      <option value="SUBTASK">SUBTASK</option>
-                      <option value="EPIC">EPIC</option>
-                      <option value="IMPROVEMENT">IMPROVEMENT</option>
-                      <option value="BUG">BUG</option>
-                    </select>
-                  </div>
-
-                  {/* ESTIMATE */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">
-                      Estimate Minutes
-                    </label>
-
-                    <input
-                      type="number"
-                      value={form.estimateMinutes}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          estimateMinutes: Number(e.target.value),
-                        })
-                      }
-                      className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-                    />
-                  </div>
-
-                  {/* DUE DATE */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">
-                      Due Date
-                    </label>
-
-                    <input
-                      type="date"
-                      value={form.dueDate}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          dueDate: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-                    />
-                  </div>
-                </div>
-
-                {/* ASSIGNEE */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-neutral-700">
-                    Assign Member
-                  </label>
-
-                  <select
-                    value={form.assigneeId}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        assigneeId: e.target.value,
-                      })
-                    }
-                    className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
-                  >
-                    <option value="">Unassigned</option>
-
-                    {members.map((member: any) => (
-                      <option key={member.userId} value={member.userId}>
-                        {member.email} ({member.role})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* ATTACHMENTS */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-neutral-700 flex items-center justify-between">
-                    <span>Attachments</span>
-                    {uploading && (
-                      <span className="text-xs text-neutral-500 flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Uploading...
-                      </span>
-                    )}
-                  </label>
-
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      id="create-task-file-upload"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                    <label
-                      htmlFor="create-task-file-upload"
-                      className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-neutral-300 px-6 py-4 hover:border-black/55 transition text-sm font-medium text-neutral-600 w-full"
-                    >
-                      <Paperclip className="h-4 w-4" />
-                      Select Files to Upload
-                    </label>
-                  </div>
-
-                  {uploadedFiles.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {uploadedFiles.map((file, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm"
-                        >
-                          <span className="truncate max-w-[80%] font-medium text-neutral-700">
-                            {file.fileName}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeAttachment(idx)}
-                            className="text-red-500 hover:text-red-700 font-medium transition cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* FOOTER */}
-              <div className="flex items-center justify-end gap-3 border-t px-6 py-5">
-                <Button
-                  onClick={handleClose}
-                  className="rounded-2xl border px-5 py-3 text-sm font-medium"
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  disabled={!form.title || createTaskMutation.isPending}
-                  onClick={() => createTaskMutation.mutate()}
-                  className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-                >
-                  {createTaskMutation.isPending && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
-
-                  {createTaskMutation.isPending ? "Creating..." : "Create Task"}
-                </Button>
-              </div>
+              <p className="mt-1 text-sm text-neutral-500">
+                Add a new task to your project
+              </p>
             </div>
-          </div>,
-          document.body,
-        )}
-    </>
+
+            <Button
+              onClick={handleClose}
+              className="rounded-xl border px-4 py-2 text-sm"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+
+        {/* BODY */}
+        <div className="space-y-6 p-6">
+          {/* TITLE */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700">
+              Task Title
+            </label>
+
+            <input
+              placeholder="Enter task title"
+              value={form.title}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  title: e.target.value,
+                })
+              }
+              className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+            />
+          </div>
+
+          {/* DESCRIPTION */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700">
+              Description
+            </label>
+
+            <textarea
+              rows={5}
+              placeholder="Describe task..."
+              value={form.description}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  description: e.target.value,
+                })
+              }
+              className="w-full resize-none rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+            />
+          </div>
+
+          {/* GRID */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* PRIORITY */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-neutral-700">
+                Priority
+              </label>
+
+              <select
+                value={form.priority}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    priority: e.target.value,
+                  })
+                }
+                className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+              >
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+                <option value="HIGHEST">HIGHEST</option>
+              </select>
+            </div>
+
+            {/* TYPE */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-neutral-700">
+                Task Type
+              </label>
+
+              <select
+                value={form.type}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    type: e.target.value,
+                  })
+                }
+                className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+              >
+                <option value="STORY">STORY</option>
+                <option value="TASK">TASK</option>
+                <option value="SUBTASK">SUBTASK</option>
+                <option value="EPIC">EPIC</option>
+                <option value="IMPROVEMENT">IMPROVEMENT</option>
+                <option value="BUG">BUG</option>
+              </select>
+            </div>
+
+            {/* ESTIMATE */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-neutral-700">
+                Estimate Minutes
+              </label>
+
+              <input
+                type="number"
+                value={form.estimateMinutes}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    estimateMinutes: Number(e.target.value),
+                  })
+                }
+                className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+              />
+            </div>
+
+            {/* DUE DATE */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-neutral-700">
+                Due Date
+              </label>
+
+              <input
+                type="date"
+                value={form.dueDate}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    dueDate: e.target.value,
+                  })
+                }
+                className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+              />
+            </div>
+          </div>
+
+          {/* ASSIGNEE */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700">
+              Assign Member
+            </label>
+
+            <select
+              value={form.assigneeId}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  assigneeId: e.target.value,
+                })
+              }
+              className="w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none transition focus:border-black"
+            >
+              <option value="">Unassigned</option>
+
+              {members.map((member: any) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.email} ({member.role})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* ATTACHMENTS */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700 flex items-center justify-between">
+              <span>Attachments</span>
+              {uploading && (
+                <span className="text-xs text-neutral-500 flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Uploading...
+                </span>
+              )}
+            </label>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                id="create-task-file-upload"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+              <label
+                htmlFor="create-task-file-upload"
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-neutral-300 px-6 py-4 hover:border-black/55 transition text-sm font-medium text-neutral-600 w-full"
+              >
+                <Paperclip className="h-4 w-4" />
+                Select Files to Upload
+              </label>
+            </div>
+
+            {uploadedFiles.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {uploadedFiles.map((file, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm"
+                  >
+                    <span className="truncate max-w-[80%] font-medium text-neutral-700">
+                      {file.fileName}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(idx)}
+                      className="text-red-500 hover:text-red-700 font-medium transition cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="flex items-center justify-end gap-3 border-t px-6 py-5">
+          <Button
+            onClick={handleClose}
+            className="rounded-2xl border px-5 py-3 text-sm font-medium"
+          >
+            Cancel
+          </Button>
+
+          <Button
+            disabled={!form.title || createTaskMutation.isPending}
+            onClick={() => createTaskMutation.mutate()}
+            className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-6 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            {createTaskMutation.isPending && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
+
+            {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

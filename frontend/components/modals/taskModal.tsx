@@ -31,7 +31,6 @@ import {
   Link2,
   Pencil,
   X,
-  Delete,
   Trash,
   Paperclip,
 } from "lucide-react";
@@ -45,6 +44,7 @@ import { Button } from "@/components/ui/button";
 import { CommentItem } from "@/components/comment-item";
 import { CommentsSkeleton } from "../skeleton/comments";
 import { enumtoText } from "@/helpers";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export function TaskModal({
   task,
@@ -718,8 +718,8 @@ export function TaskModal({
   const isAdmin = userDataa?.data?.role === "ADMIN";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-3xl bg-white p-6 shadow-2xl">
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-white border-none rounded-3xl" showCloseButton={false}>
         {/* HEADER */}
         <div className="mb-8 flex items-start justify-between">
           <div>
@@ -1608,7 +1608,7 @@ export function TaskModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

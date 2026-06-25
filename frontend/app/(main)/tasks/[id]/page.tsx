@@ -337,7 +337,7 @@ export default function Page() {
   }
   return (
     <Suspense fallback={null}>
-      <div className="flex h-screen flex-col overflow-hidden bg-neutral-100 p-6">
+      <div className="flex h-full flex-col overflow-hidden bg-neutral-100 p-6">
         {/* HEADER */}
         <div className="sticky top-0 z-20 bg-neutral-100 pb-4">
           <div className="mb-6 flex items-center justify-between">
@@ -352,7 +352,7 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button
                 onClick={() => { if (sprintId) completeSprintMutation.mutate(sprintId) }}
                 className="rounded-xl border px-4 py-2 text-sm cursor-pointer"
