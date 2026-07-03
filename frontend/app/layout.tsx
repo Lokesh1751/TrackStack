@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 import "./globals.css";
 
@@ -39,7 +40,9 @@ export default function RootLayout({
         <QueryProvider>
           <SocketProvider>
             {children}
-
+            <GoogleAnalytics
+              gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ""}
+            />
             <Toaster richColors position="top-right" />
           </SocketProvider>
         </QueryProvider>
