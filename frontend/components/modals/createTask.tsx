@@ -10,7 +10,13 @@ import { toast } from "sonner";
 
 import { createTask, getProjectMembers } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type Props = {
   projectId: string;
@@ -32,7 +38,9 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
     assigneeId: "",
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState<{ fileName: string; fileUrl: string }[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    { fileName: string; fileUrl: string }[]
+  >([]);
   const [uploading, setUploading] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +53,7 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append(
@@ -151,19 +159,29 @@ export function CreateTaskModal({ projectId, sprintId }: Props) {
   });
 
   return (
-    <Dialog open={open} onOpenChange={(val) => { if (!val) handleClose(); else setOpen(val); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        if (!val) handleClose();
+        else setOpen(val);
+      }}
+    >
       {/* OPEN BUTTON */}
       <DialogTrigger asChild>
-        <Button
-          className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
-        >
+        <Button className="flex items-center gap-2 rounded-2xl bg-[#7189D0] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90">
           <Plus className="h-4 w-4" />
           Create Task
         </Button>
       </DialogTrigger>
 
       {/* MODAL */}
-      <DialogContent className="max-w-3xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-white border-none rounded-3xl" showCloseButton={false}>
+      <DialogContent
+        className="max-w-3xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-white border-none rounded-3xl"
+        showCloseButton={false}
+      >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Create New Task</DialogTitle>
+        </DialogHeader>
         {/* HEADER */}
         <div className="border-b px-6 py-5">
           <div className="flex items-center justify-between">
