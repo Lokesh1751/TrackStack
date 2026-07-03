@@ -44,7 +44,12 @@ import { Button } from "@/components/ui/button";
 import { CommentItem } from "@/components/comment-item";
 import { CommentsSkeleton } from "../skeleton/comments";
 import { enumtoText } from "@/helpers";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function TaskModal({
   task,
@@ -58,10 +63,14 @@ export function TaskModal({
   const router = useRouter();
 
   const [comment, setComment] = useState("");
-  const [commentAttachments, setCommentAttachments] = useState<{ fileName: string; fileUrl: string }[]>([]);
+  const [commentAttachments, setCommentAttachments] = useState<
+    { fileName: string; fileUrl: string }[]
+  >([]);
   const [commentUploading, setCommentUploading] = useState(false);
 
-  const handleCommentFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCommentFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -71,7 +80,7 @@ export function TaskModal({
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append(
@@ -153,7 +162,7 @@ export function TaskModal({
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append(
@@ -718,8 +727,19 @@ export function TaskModal({
   const isAdmin = userDataa?.data?.role === "ADMIN";
 
   return (
-    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-white border-none rounded-3xl" showCloseButton={false}>
+    <Dialog
+      open={true}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        className="max-w-4xl sm:max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-white border-none rounded-3xl"
+        showCloseButton={false}
+      >
+        <DialogHeader className="sr-only">
+          <DialogTitle>{task.title}</DialogTitle>
+        </DialogHeader>
         {/* HEADER */}
         <div className="mb-8 flex items-start justify-between">
           <div>
@@ -1393,7 +1413,7 @@ export function TaskModal({
               <Paperclip className="h-5 w-5" />
               <h3 className="text-lg font-semibold">Attachments</h3>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <input
                 type="file"
@@ -1436,7 +1456,11 @@ export function TaskModal({
                       rel="noopener noreferrer"
                       className="font-medium text-[#7189D0] hover:underline truncate"
                     >
-                      <img src={file.fileUrl} alt={file.fileName} className="w-10 h-10 rounded-md" />
+                      <img
+                        src={file.fileUrl}
+                        alt={file.fileName}
+                        className="w-10 h-10 rounded-md"
+                      />
                       {file.fileName}
                     </a>
                     <span className="text-xs text-neutral-400">
@@ -1450,13 +1474,19 @@ export function TaskModal({
                     disabled={deleteAttachmentMutation.isPending}
                     className="text-red-500 hover:text-red-700 p-2"
                   >
-                    {deleteAttachmentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
+                    {deleteAttachmentMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-neutral-500 italic">No attachments uploaded yet</p>
+            <p className="text-sm text-neutral-500 italic">
+              No attachments uploaded yet
+            </p>
           )}
         </div>
 
@@ -1529,7 +1559,9 @@ export function TaskModal({
                       className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs text-neutral-700"
                     >
                       <Paperclip className="h-3 w-3" />
-                      <span className="truncate max-w-[150px]">{file.fileName}</span>
+                      <span className="truncate max-w-[150px]">
+                        {file.fileName}
+                      </span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1539,7 +1571,11 @@ export function TaskModal({
                         }}
                         className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer w-4 h-4 flex items-center justify-center rounded hover:bg-neutral-200 transition relative z-10"
                       >
-                        {commentUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash className="h-3 w-3" />}
+                        {commentUploading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash className="h-3 w-3" />
+                        )}
                       </button>
                     </div>
                   ))}
